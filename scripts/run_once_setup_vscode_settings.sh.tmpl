@@ -1,0 +1,11 @@
+#!/bin/bash
+
+{{- if eq .chezmoi.os "darwin" }}
+TARGET_DIR="$HOME/Library/Application Support/Code/User"
+{{- else }}
+TARGET_DIR="$HOME/.config/Code/User"
+{{- end }}
+
+mkdir -p "$TARGET_DIR"
+ln -sf "$HOME/.config/shared/editor-settings.json" "$TARGET_DIR/settings.json"
+ln -sf "$HOME/.config/shared/editor-keybindings.json" "$TARGET_DIR/keybindings.json"

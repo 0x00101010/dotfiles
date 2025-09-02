@@ -1,0 +1,142 @@
+{
+  // ----------------------------------------------------------------------------
+  // workbench / UI related settings
+  // ----------------------------------------------------------------------------
+  "workbench.activityBar.orientation": "vertical",
+  "workbench.iconTheme": "material-icon-theme",
+  "workbench.colorTheme": "Visual Studio Dark",
+
+  "editor.fontFamily": "SauceCodePro Nerd Font",
+  "security.workspace.trust.untrustedFiles": "open",
+  "editor.accessibilitySupport": "off",
+  "files.watcherExclude": {
+    "**/target/**": true,
+    "**/.git/**": true,
+    "**/.cargo/registry/**": true,
+    "**/.cargo/git/**": true,
+    "**/node_modules/**": true
+  },
+  "search.exclude": {
+    "**/target/**": true,
+    "**/.git/**": true,
+    "**/.cargo/**": true
+  },
+  "files.exclude": {
+    "**/target": true
+  },
+  "terminal.integrated.env.osx": {
+    "FIG_NEW_SESSION": "1"
+  },
+  "explorer.confirmDelete": false,
+  "[ruby]": {
+    "editor.tabSize": 2
+  },
+  "[javascript]": {
+    "editor.tabSize": 2,
+    "editor.formatOnPaste": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[python]": {
+    "editor.tabSize": 2,
+    "editor.formatOnType": true
+  },
+  "[html]": {
+    "editor.tabSize": 2,
+    "editor.defaultFormatter": "vscode.html-language-features"
+  },
+  "[css]": {
+    "editor.tabSize": 2
+  },
+  "[typescript]": {
+    "editor.tabSize": 2,
+    "editor.formatOnPaste": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[proto3]": {
+    "editor.tabSize": 2
+  },
+  "[erb]": {
+    "editor.tabSize": 2,
+    "editor.defaultFormatter": "aliariff.vscode-erb-beautify"
+  },
+  "[go]": {
+    "editor.insertSpaces": true,
+    "editor.formatOnSave": true
+  },
+  "ruby.useLanguageServer": true,
+  "ruby.intellisense": "rubyLocate",
+  "editor.wordWrap": "on",
+  "editor.formatOnSave": true,
+  "emeraldwalk.runonsave": {
+    "debug": true,
+    "commands": [
+      {
+        "match": ".*rs",
+        "cmd": "cargo clippy --fix --allow-dirty --allow-staged"
+      },
+      {
+        "match": "Cargo\\.toml$",
+        "cmd": "cargo sort -w"
+      }
+      // {
+      //   "match": "*.go",
+      //   "cmd": "gosimports -local github.cbhq.net -w -format-only ${file}"
+      // }
+    ]
+  },
+  "go.formatTool": "goimports",
+  "go.formatFlags": ["-local=github.cbhq.net"],
+  "go.testTimeout": "1800s",
+  "go.useLanguageServer": true,
+  "[jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "explorer.confirmDragAndDrop": false,
+  "githubPullRequests.remotes": ["origin"],
+  "git.openRepositoryInParentFolders": "never",
+  "githubPullRequests.pullBranch": "never",
+  "editor.wordWrapColumn": 120,
+  "[dockerfile]": {
+    "editor.defaultFormatter": "ms-azuretools.vscode-docker"
+  },
+  "makefile.configureOnOpen": false,
+
+  // ----------------------------------------------------------------------------
+  // Rust related settings
+  // ----------------------------------------------------------------------------
+  "[rust]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "rust-lang.rust-analyzer"
+  },
+  "rust-analyzer.rustfmt.extraArgs": ["--config", "trailing_semicolon=false"],
+  // "rust-analyzer.cargo.features": ["dynamodb"],
+  // "rust-analyzer.procMacro.attributes.enable": true,
+  // "rust-analyzer.check.command": "clippy"
+
+  // Rust-analyzer performance optimizations
+  "rust-analyzer.files.exclude": [
+    "target",
+    "node_modules",
+    ".git",
+    "vendor",
+    "dist",
+    "build"
+  ],
+
+  // Reduce checking frequency
+  "rust-analyzer.checkOnSave": true,
+  "rust-analyzer.check.allTargets": false,
+  "rust-analyzer.check.command": "clippy",
+  "rust-analyzer.check.workspace": false,
+
+  // Let RA handle file watching (scales better?)
+  "rust-analyzer.files.watcher": "server",
+
+  // Faster, steadier indexing -> better navigation
+  "rust-analyzer.cargo.autoreload": true,
+  "rust-analyzer.procMacro.enable": true,
+  "rust-analyzer.cargo.buildScripts.enable": true
+}
