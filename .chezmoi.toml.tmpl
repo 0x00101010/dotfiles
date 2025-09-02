@@ -1,0 +1,21 @@
+# If a file called .chezmoi.$FORMAT.tmpl exists in the root of the source state
+# then chezmoi init will use it to create or update the chezmoi config file. 
+# $FORMAT must be one of the supported config file formats.
+# This template differs from source state templates because this template is executed prior to the reading of the source state.
+
+# Rendered to ~/.config/chezmoi/chezmoi.toml
+
+[source]
+  # Default is fine; keep explicit for clarity
+  directory = "{{ .chezmoi.sourceDir }}"
+
+[edit]
+  command = "code"
+
+[data]
+  email = {{ promptStringOnce . "email" "What is your email address?" | quote }}
+  fullName = {{ promptStringOnce . "name" "What is your name?" | quote }}
+
+[secret]
+  # Optional: enable if you use 1Password CLI (op)
+  command = "op"

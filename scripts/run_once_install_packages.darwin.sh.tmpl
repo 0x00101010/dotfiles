@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+{{- if eq .chezmoi.os "darwin" }}
+
+# Ensure Homebrew is installed
+if ! command -v brew >/dev/null 2>&1; then
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+fi
+
+brew update
+
+{{- if and (hasKey . "packages") (hasKey .packages "darwin") (hasKey .packages.darwin "brew") }}
+echo "[chezmoi] Installing brew packages: {{ join " " .packages.darwin.brew }}"
+brew install{{ range .packages.darwin.brew }} {{ . }}{{ end }}
+{{- end }}
+
+{{- if and (hasKey . "packages") (hasKey .packages "darwin") (hasKey .packages.darwin "casks") }}
+echo "[chezmoi] Installing brew casks: {{ join " " .packages.darwin.casks }}"
+brew install --cask{{ range .packages.darwin.casks }} {{ . }}{{ end }}
+{{- end }}
+
+{{- else }}
+echo "[chezmoi] Skipping Darwin installer, this is {{ .chezmoi.os }}"
+{{- end }}

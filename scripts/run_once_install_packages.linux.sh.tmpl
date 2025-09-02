@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+{{- if eq .chezmoi.os "linux" }}
+
+sudo apt update && sudo apt upgrade -y
+
+{{- if and (hasKey . "packages") (hasKey .packages "linux") (hasKey .packages.linux "apt") }}
+sudo apt install -y{{ range .packages.linux.apt }} {{ . }}{{ end }}
+{{- end }}
+
+# mise (asdf replacement)
+if ! command -v mise >/dev/null 2>&1; then
+  curl https://mise.run | sh
+fi
+
+{{- else }}
+echo "[chezmoi] Skipping Linux installer, this is {{ .chezmoi.os }}"
+{{- end }}
