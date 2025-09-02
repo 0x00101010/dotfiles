@@ -1,7 +1,18 @@
 # Variables available to all templates via .<key>
 # Surface common data into templates
 [packages.darwin]
-brew = ["git", "nushell", "ripgrep", "fd", "fzf", "zoxide", "starship", "mise"]
+brew = [
+    "git",
+    "nushell",
+    "ripgrep",
+    "fd",
+    "fzf",
+    "zoxide",
+    "starship",
+    "mise",
+    "zsh-autosuggestions",
+    "bat",
+]
 # casks = ["iterm2", "visual-studio-code", "raycast"]
 
 [packages.linux]
