@@ -12,6 +12,7 @@ brew = [
     "zsh-autosuggestions",
     "bat",
     "jandedobbeleer/oh-my-posh/oh-my-posh",
+    "fish",
 ]
 casks = [
     "iterm2",
