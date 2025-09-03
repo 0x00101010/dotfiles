@@ -26,6 +26,7 @@ casks = [
     "discord",
     "spotify",
     "1password",
+    "warp",
 ]
 
 [packages.linux]
