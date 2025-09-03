@@ -48,9 +48,14 @@ alias gcp="git cherry-pick"
 alias gca="git commit -v --amend"
 alias gc="git commit"
 alias gempty="git commit --allow-empty -m "empty""
-alias gps="git push origin $(git branch --show-current)"
-alias gpu="git push upstream $(git branch --show-current)"
-alias gpsf="git push francis $(git branch --show-current)"
+
+function gps
+    git push origin $(git branch --show-current)
+end
+
+function gpu
+    git push upstream $(git branch --show-current)
+end
 
 # Branch Management
 alias gb="git --no-pager branch" # make _git_push_auto_branch_local
