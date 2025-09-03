@@ -8,20 +8,9 @@ compinit
 source <(kubectl completion zsh)
 complete -C '/usr/local/bin/aws_completer' aws
 
-[[ -s "$HOME/.zsh/home.zsh" ]] && source "$HOME/.zsh/home.zsh"                          # load home specific variables
-[[ -s "$HOME/.zsh/local.zsh" ]] && source "$HOME/.zsh/local.zsh"                        # load environment variables and secret keys
-[[ -s "$HOME/.zsh/scripts.zsh" ]] && source "$HOME/.zsh/scripts.zsh"                    # load functions
-[[ -s "$HOME/.zsh/alias.zsh" ]] && source "$HOME/.zsh/alias.zsh"                        # load aliases
-[[ -s "$HOME/.zsh/ctrl-z.zsh" ]] && source "$HOME/.zsh/ctrl-z.zsh"                      # load ctrl-z command
-[[ -s "$HOME/.zsh/zsh-autocomplete.zsh" ]] && source "$HOME/.zsh/zsh-autocomplete.zsh"  # load zsh-autocomplete
-[[ -s "$HOME/.zsh/key-binding.zsh" ]] && source "$HOME/.zsh/key-binding.zsh"            # load key bindings
-[[ -s "$HOME/.zsh/devnet.zsh" ]] && source "$HOME/.zsh/devnet.zsh"                        # load devnet development related helpers
-
-[[ -s "$HOME/.zsh/cb.zsh" ]] && source "$HOME/.zsh/cb.zsh"                              # load cb env vars
-[[ -s "$HOME/.zsh/salus.zsh" ]] && source "$HOME/.zsh/salus.zsh"                        # load salus command
-
 export EDITOR=/opt/homebrew/bin/nvim
 export PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin:$PATH"
+export XDG_CONFIG_HOME="$HOME/.config"
 # ${ASDF_DATA_DIR-$HOME/.asdf}/shims:
 
 # pnpm
@@ -31,6 +20,19 @@ case ":$PATH:" in
 *) export PATH="$PNPM_HOME:$PATH" ;;
 esac
 # pnpm end
+
+[[ -s "$HOME/.zsh/home.zsh" ]] && source "$HOME/.zsh/home.zsh"                          # load home specific variables
+[[ -s "$HOME/.zsh/local.zsh" ]] && source "$HOME/.zsh/local.zsh"                        # load environment variables and secret keys
+[[ -s "$HOME/.zsh/scripts.zsh" ]] && source "$HOME/.zsh/scripts.zsh"                    # load functions
+[[ -s "$HOME/.zsh/alias.zsh" ]] && source "$HOME/.zsh/alias.zsh"                        # load aliases
+[[ -s "$HOME/.zsh/ctrl-z.zsh" ]] && source "$HOME/.zsh/ctrl-z.zsh"                      # load ctrl-z command
+[[ -s "$HOME/.zsh/zsh-autocomplete.zsh" ]] && source "$HOME/.zsh/zsh-autocomplete.zsh"  # load zsh-autocomplete
+[[ -s "$HOME/.zsh/key-binding.zsh" ]] && source "$HOME/.zsh/key-binding.zsh"            # load key bindings
+[[ -s "$HOME/.zsh/devnet.zsh" ]] && source "$HOME/.zsh/devnet.zsh"                      # load devnet development related helpers
+[[ -s "$HOME/.zsh/history.zsh" ]] && source "$HOME/.zsh/history.zsh"                    # load devnet development related helpers
+
+[[ -s "$HOME/.zsh/cb.zsh" ]] && source "$HOME/.zsh/cb.zsh"                              # load cb env vars
+[[ -s "$HOME/.zsh/salus.zsh" ]] && source "$HOME/.zsh/salus.zsh"                        # load salus command
 
 # activate configurations
 # Disable starship for now
@@ -47,3 +49,4 @@ esac
 eval "$(oh-my-posh init zsh --config https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/refs/heads/main/themes/emodipt-extend.omp.json)"
 eval "$(mise activate zsh)"
 eval "$(zoxide init zsh)"
+eval "$(fzf --zsh)"

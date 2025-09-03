@@ -12,3 +12,4 @@ git clone git@github.com:0x00101010/dotfiles.git
 rm -rf ~/.local/share/chezmoi
 ln -s ~/src/dotfiles ~/.local/share/chezmoi
 chezmoi init
+chezmoi apply -v

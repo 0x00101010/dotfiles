@@ -13,7 +13,19 @@ brew = [
     "bat",
     "jandedobbeleer/oh-my-posh/oh-my-posh",
 ]
-# casks = ["iterm2", "visual-studio-code", "raycast"]
+casks = [
+    "iterm2",
+    "visual-studio-code",
+    "raycast",
+    "google-chrome",
+    "orbstack",
+    "linear-linear",
+    "cursor",
+    "telegram-desktop",
+    "discord",
+    "spotify",
+    "1password",
+]
 
 [packages.linux]
 apt = [
