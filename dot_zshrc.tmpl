@@ -33,7 +33,17 @@ esac
 # pnpm end
 
 # activate configurations
-export STARSHIP_CONFIG=~/.config/starship/starship.toml
-eval "$(starship init zsh)"
+# Disable starship for now
+# export STARSHIP_CONFIG=~/.config/starship/starship.toml
+# eval "$(starship init zsh)"
+
+# list of themes for oh-my-posh
+# https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/refs/heads/main/themes/amro.omp.json
+# https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/refs/heads/main/themes/emodipt-extend.omp.json
+# https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/refs/heads/main/themes/honukai.omp.json
+# https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/refs/heads/main/themes/material.omp.json
+# https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/refs/heads/main/themes/negligible.omp.json
+# https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/refs/heads/main/themes/sim-web.omp.json
+eval "$(oh-my-posh init zsh --config https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/refs/heads/main/themes/emodipt-extend.omp.json)"
 eval "$(mise activate zsh)"
 eval "$(zoxide init zsh)"

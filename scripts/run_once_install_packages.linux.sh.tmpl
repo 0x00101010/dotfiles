@@ -14,6 +14,11 @@ if ! command -v mise >/dev/null 2>&1; then
   curl https://mise.run | sh
 fi
 
+# oh-my-posh
+if ! command -v oh-my-pose >/dev/null 2>&1; then
+  curl -s https://ohmyposh.dev/install.sh | bash -s
+fi
+
 {{- else }}
 echo "[chezmoi] Skipping Linux installer, this is {{ .chezmoi.os }}"
 {{- end }}

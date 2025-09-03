@@ -11,6 +11,7 @@ brew = [
     "mise",
     "zsh-autosuggestions",
     "bat",
+    "jandedobbeleer/oh-my-posh/oh-my-posh",
 ]
 # casks = ["iterm2", "visual-studio-code", "raycast"]
 

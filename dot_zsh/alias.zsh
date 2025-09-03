@@ -133,3 +133,5 @@ alias cc='cargo check'
 
 # chezmoi
 alias ci="chezmoi"
+alias cia="chezmoi apply -v"
+alias cid="cd ~/.local/share/chezmoi"
