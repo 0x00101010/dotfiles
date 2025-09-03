@@ -1,0 +1,13 @@
+[tools]
+go = "prefix:1.23"
+golangci-lint = "latest"
+jj = "latest"
+just = "latest"
+k9s = "latest"
+kubie = "latest"
+node = "lts"
+op = "latest"
+python = "prefix:3.13"
+rust = "prefix:1.88"
+tmux = "latest"
+zoxide = "latest"
