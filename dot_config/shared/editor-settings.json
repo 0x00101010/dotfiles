@@ -4,11 +4,12 @@
   // ----------------------------------------------------------------------------
   "workbench.activityBar.orientation": "vertical",
   "workbench.iconTheme": "material-icon-theme",
-  "workbench.colorTheme": "Visual Studio Dark",
-
+  "workbench.colorTheme": "One Dark Pro Darker",
   "editor.fontFamily": "SauceCodePro Nerd Font",
-  "security.workspace.trust.untrustedFiles": "open",
+  "editor.fontSize": 13,
   "editor.accessibilitySupport": "off",
+  "security.workspace.trust.untrustedFiles": "open",
+  "terminal.integrated.defaultProfile.osx": "fish",
   "files.watcherExclude": {
     "**/target/**": true,
     "**/.git/**": true,
@@ -85,7 +86,9 @@
     ]
   },
   "go.formatTool": "goimports",
-  "go.formatFlags": ["-local=github.cbhq.net"],
+  "go.formatFlags": [
+    "-local=github.cbhq.net"
+  ],
   "go.testTimeout": "1800s",
   "go.useLanguageServer": true,
   "[jsonc]": {
@@ -95,7 +98,9 @@
     "editor.defaultFormatter": "vscode.json-language-features"
   },
   "explorer.confirmDragAndDrop": false,
-  "githubPullRequests.remotes": ["origin"],
+  "githubPullRequests.remotes": [
+    "origin"
+  ],
   "git.openRepositoryInParentFolders": "never",
   "githubPullRequests.pullBranch": "never",
   "editor.wordWrapColumn": 120,
@@ -103,7 +108,6 @@
     "editor.defaultFormatter": "ms-azuretools.vscode-docker"
   },
   "makefile.configureOnOpen": false,
-
   // ----------------------------------------------------------------------------
   // Rust related settings
   // ----------------------------------------------------------------------------
@@ -111,11 +115,13 @@
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "rust-lang.rust-analyzer"
   },
-  "rust-analyzer.rustfmt.extraArgs": ["--config", "trailing_semicolon=false"],
+  "rust-analyzer.rustfmt.extraArgs": [
+    "--config",
+    "trailing_semicolon=false"
+  ],
   // "rust-analyzer.cargo.features": ["dynamodb"],
   // "rust-analyzer.procMacro.attributes.enable": true,
   // "rust-analyzer.check.command": "clippy"
-
   // Rust-analyzer performance optimizations
   "rust-analyzer.files.exclude": [
     "target",
@@ -125,16 +131,13 @@
     "dist",
     "build"
   ],
-
   // Reduce checking frequency
   "rust-analyzer.checkOnSave": true,
   "rust-analyzer.check.allTargets": false,
   "rust-analyzer.check.command": "clippy",
   "rust-analyzer.check.workspace": false,
-
   // Let RA handle file watching (scales better?)
   "rust-analyzer.files.watcher": "server",
-
   // Faster, steadier indexing -> better navigation
   "rust-analyzer.cargo.autoreload": true,
   "rust-analyzer.procMacro.enable": true,

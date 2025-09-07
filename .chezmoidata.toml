@@ -13,6 +13,7 @@ brew = [
     "bat",
     "jandedobbeleer/oh-my-posh/oh-my-posh",
     "fish",
+    "gemini",
 ]
 # casks = [
 #     "iterm2",
