@@ -119,10 +119,6 @@
     "--config",
     "trailing_semicolon=false"
   ],
-  // "rust-analyzer.cargo.features": ["dynamodb"],
-  // "rust-analyzer.procMacro.attributes.enable": true,
-  // "rust-analyzer.check.command": "clippy"
-  // Rust-analyzer performance optimizations
   "rust-analyzer.files.exclude": [
     "target",
     "node_modules",
@@ -131,15 +127,17 @@
     "dist",
     "build"
   ],
-  // Reduce checking frequency
+  "rust-analyzer.cargo.autoreload": true,
+  "rust-analyzer.cargo.buildScripts.enable": true,
+  "rust-analyzer.cargo.features": "all",
   "rust-analyzer.checkOnSave": true,
   "rust-analyzer.check.allTargets": false,
   "rust-analyzer.check.command": "clippy",
   "rust-analyzer.check.workspace": false,
-  // Let RA handle file watching (scales better?)
+  "rust-analyzer.diagnostics.disabled": [
+    "unresolved-proc-macro"
+  ],
   "rust-analyzer.files.watcher": "server",
-  // Faster, steadier indexing -> better navigation
-  "rust-analyzer.cargo.autoreload": true,
-  "rust-analyzer.procMacro.enable": true,
-  "rust-analyzer.cargo.buildScripts.enable": true
+  "rust-analyzer.lru.capacity": 512,
+  "rust-analyzer.procMacro.enable": true
 }
