@@ -2,6 +2,8 @@ if status is-interactive
     # Commands to run in interactive sessions can go here
 end
 
+set -U fish_autocd 1
+
 # Add Homebrew to PATH
 fish_add_path /opt/homebrew/bin
 
