@@ -15,20 +15,20 @@ brew = [
     "fish",
     "gemini",
     "tmux",
-    "zxoide",
+    "zoxide",
 ]
 casks = [
     "iterm2",
     "visual-studio-code",
     "raycast",
     "orbstack",
-    "google-chrome",
+    # "google-chrome",
     "linear-linear",
     "cursor",
     "telegram-desktop",
     "discord",
     "spotify",
-    "1password",
+    # "1password",
     "warp",
     "font-sauce-code-pro-nerd-font",
 ]
