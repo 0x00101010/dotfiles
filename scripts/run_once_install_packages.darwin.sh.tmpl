@@ -26,6 +26,9 @@ brew install --cask{{ range .packages.darwin.casks }} {{ . }}{{ end }} || true
 git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm || true
 ~/.tmux/plugins/tpm/bin/install_plugins
 
+# Install programming language environments
+mise install
+
 {{- else }}
 echo "[chezmoi] Skipping Darwin installer, this is {{ .chezmoi.os }}"
 {{- end }}
