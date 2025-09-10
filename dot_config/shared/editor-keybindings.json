@@ -94,16 +94,12 @@
     "when": "editorTextFocus && !editorReadonly"
   },
   {
-    "key": "cmd+1",
+    "key": "ctrl+cmd+1",
     "command": "workbench.files.action.focusFilesExplorer"
   },
   {
-    "key": "cmd+2",
-    "command": "gitlens.views.commitDetails.focus"
-  },
-  {
     "key": "ctrl+cmd+2",
-    "command": "timeline.toggleVisibility"
+    "command": "gitlens.views.commitDetails.focus"
   },
   {
     "key": "ctrl+cmd+3",
@@ -125,5 +121,9 @@
   {
     "key": "cmd+t",
     "command": "-workbench.action.showAllSymbols"
+  },
+  {
+    "key": "ctrl+cmd+3",
+    "command": "workbench.view.extension.codexViewContainer"
   }
 ]
