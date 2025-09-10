@@ -8,16 +8,18 @@ if ! command -v brew >/dev/null 2>&1; then
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 fi
 
+echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
+eval "$(/opt/homebrew/bin/brew shellenv)"
 brew update
 
 {{- if and (hasKey . "packages") (hasKey .packages "darwin") (hasKey .packages.darwin "brew") }}
 echo "[chezmoi] Installing brew packages: {{ join " " .packages.darwin.brew }}"
-brew install{{ range .packages.darwin.brew }} {{ . }}{{ end }}
+brew install{{ range .packages.darwin.brew }} {{ . }}{{ end }} || true
 {{- end }}
 
 {{- if and (hasKey . "packages") (hasKey .packages "darwin") (hasKey .packages.darwin "casks") }}
 echo "[chezmoi] Installing brew casks: {{ join " " .packages.darwin.casks }}"
-brew install --cask{{ range .packages.darwin.casks }} {{ . }}{{ end }}
+brew install --cask{{ range .packages.darwin.casks }} {{ . }}{{ end }} || true
 {{- end }}
 
 # Install tmux plugins

@@ -14,21 +14,24 @@ brew = [
     "jandedobbeleer/oh-my-posh/oh-my-posh",
     "fish",
     "gemini",
+    "tmux",
+    "zxoide",
 ]
-# casks = [
-#     "iterm2",
-#     "visual-studio-code",
-#     "raycast",
-#     "google-chrome",
-#     "orbstack",
-#     "linear-linear",
-#     "cursor",
-#     "telegram-desktop",
-#     "discord",
-#     "spotify",
-#     "1password",
-#     "warp",
-# ]
+casks = [
+    "iterm2",
+    "visual-studio-code",
+    "raycast",
+    "orbstack",
+    "google-chrome",
+    "linear-linear",
+    "cursor",
+    "telegram-desktop",
+    "discord",
+    "spotify",
+    "1password",
+    "warp",
+    "font-sauce-code-pro-nerd-font",
+]
 
 [packages.linux]
 apt = [
