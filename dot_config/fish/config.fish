@@ -13,4 +13,8 @@ zoxide init fish | source
 
 source ~/.config/fish/alias.fish
 
-
+# Enable mise automatically if installed
+if command -v mise >/dev/null
+    # Run mise activation for fish
+    mise activate fish | source
+end

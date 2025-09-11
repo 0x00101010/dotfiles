@@ -64,8 +64,6 @@
     "editor.insertSpaces": true,
     "editor.formatOnSave": true
   },
-  "ruby.useLanguageServer": true,
-  "ruby.intellisense": "rubyLocate",
   "editor.wordWrap": "on",
   "editor.formatOnSave": true,
   "emeraldwalk.runonsave": {
