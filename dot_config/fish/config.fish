@@ -18,3 +18,7 @@ if command -v mise >/dev/null
     # Run mise activation for fish
     mise activate fish | source
 end
+
+# Carapace setup
+set -Ux CARAPACE_BRIDGES 'zsh,fish,bash,inshellisense' # optional
+carapace _carapace | source

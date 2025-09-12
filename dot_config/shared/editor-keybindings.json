@@ -125,5 +125,13 @@
   {
     "key": "ctrl+cmd+3",
     "command": "workbench.view.extension.codexViewContainer"
+  },
+  {
+    "key": "shift+cmd+l",
+    "command": "workbench.action.toggleAuxiliaryBar"
+  },
+  {
+    "key": "alt+cmd+b",
+    "command": "-workbench.action.toggleAuxiliaryBar"
   }
 ]
