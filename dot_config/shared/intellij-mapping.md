@@ -36,3 +36,4 @@
 ## Window management
 
 * Split Pane - cmd+\
+* Toggle Terminal - cmd+J

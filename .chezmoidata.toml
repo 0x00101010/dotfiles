@@ -16,6 +16,7 @@ brew = [
     "gemini",
     "tmux",
     "zoxide",
+    "gemini-cli",
 ]
 casks = [
     "iterm2",
@@ -31,6 +32,7 @@ casks = [
     # "1password",
     "warp",
     "font-sauce-code-pro-nerd-font",
+    "claude-code",
 ]
 
 [packages.linux]
