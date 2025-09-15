@@ -74,7 +74,7 @@ alias gpomain='git pull origin main'
 alias gpod='git pull origin develop'
 
 # Experimental
-alias gpop='git reset --soft head^ && git unadd :/'
+alias grhh="git reset --hard HEAD"
 alias gsave='git add :/ && git commit -m "save point"'
 
 # Git Status

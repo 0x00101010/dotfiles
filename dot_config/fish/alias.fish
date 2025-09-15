@@ -72,6 +72,7 @@ alias gpud="git pull upstream develop"
 alias gpom="git pull origin master"
 alias gpomain="git pull origin main"
 alias gpod="git pull origin develop"
+alias grhh="git reset --hard HEAD"
 
 # Experimental
 alias gpop="git reset --soft head^ && git unadd :/"
