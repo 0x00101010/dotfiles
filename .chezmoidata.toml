@@ -17,6 +17,7 @@ brew = [
     "tmux",
     "zoxide",
     "gemini-cli",
+    "dotenv",
 ]
 casks = [
     "iterm2",

@@ -7,6 +7,9 @@ set -U fish_autocd 1
 # Add Homebrew to PATH
 fish_add_path /opt/homebrew/bin
 
+# direnv enable, before oh-my-posh
+direnv hook fish | source
+
 # init additional plugins
 oh-my-posh init fish --config https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/refs/heads/main/themes/emodipt-extend.omp.json | source
 zoxide init fish | source
@@ -22,3 +25,7 @@ end
 # Carapace setup
 set -Ux CARAPACE_BRIDGES 'zsh,fish,bash,inshellisense' # optional
 carapace _carapace | source
+
+if test -f ~/.config/fish/local.fish
+    source ~/.config/fish/local.fish
+end
