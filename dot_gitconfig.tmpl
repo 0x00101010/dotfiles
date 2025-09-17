@@ -2,6 +2,7 @@
 [user]
 	name = {{ .fullName }}
 	email = {{ .email }}
+	signingkey = {{ .signingkey }}
 [pull]
 	ff = only
 [filter "lfs"]
@@ -11,3 +12,7 @@
 	required = true
 [http]
 	sslVerify = true
+[commit]
+	gpgsign = true
+[gpg]
+	program = /opt/homebrew/bin/gpg
