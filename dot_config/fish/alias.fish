@@ -83,7 +83,7 @@ alias gs="git status -sb" # short and concise
 alias gst="git status"
 
 # Git Log
-alias gl="_git_commit_all"
+alias gl='git log --color --graph --pretty=format:"%Cred%h%Creset %C(blue)<%an>%Creset %s -%C(bold yellow)%d%Creset %Cgreen(%cr)" --abbrev-commit'
 alias gll="git log --stat"     # git log with file info
 alias glll="git log --stat -p" # git log with file info + content
 
