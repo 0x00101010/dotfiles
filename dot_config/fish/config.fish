@@ -6,6 +6,7 @@ set -U fish_autocd 1
 
 # Add Homebrew to PATH
 fish_add_path /opt/homebrew/bin
+fish_add_path (npm get prefix)/bin
 
 # direnv enable, before oh-my-posh
 direnv hook fish | source
@@ -13,6 +14,7 @@ direnv hook fish | source
 # init additional plugins
 oh-my-posh init fish --config https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/refs/heads/main/themes/emodipt-extend.omp.json | source
 zoxide init fish | source
+aws_completer fish | source
 
 source ~/.config/fish/alias.fish
 

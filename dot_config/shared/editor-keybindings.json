@@ -133,5 +133,21 @@
   {
     "key": "alt+cmd+b",
     "command": "-workbench.action.toggleAuxiliaryBar"
+  },
+  {
+    "key": "cmd+k cmd+t",
+    "command": "go.test.cursor"
+  },
+  {
+    "key": "cmd+k cmd+d",
+    "command": "go.debug.cursor"
+  },
+  {
+    "key": "cmd+l",
+    "command": "workbench.action.gotoLine"
+  },
+  {
+    "key": "ctrl+g",
+    "command": "-workbench.action.gotoLine"
   }
 ]

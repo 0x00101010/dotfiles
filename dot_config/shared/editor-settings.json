@@ -51,7 +51,8 @@
   "[typescript]": {
     "editor.tabSize": 2,
     "editor.formatOnPaste": true,
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
+    "editor.detectIndentation": true,
+    "editor.defaultFormatter": "vscode.typescript-language-features"
   },
   "[proto3]": {
     "editor.tabSize": 2
@@ -59,10 +60,6 @@
   "[erb]": {
     "editor.tabSize": 2,
     "editor.defaultFormatter": "aliariff.vscode-erb-beautify"
-  },
-  "[go]": {
-    "editor.insertSpaces": true,
-    "editor.formatOnSave": true
   },
   "editor.wordWrap": "on",
   "editor.formatOnSave": true,
@@ -83,12 +80,6 @@
       // }
     ]
   },
-  "go.formatTool": "goimports",
-  "go.formatFlags": [
-    "-local=github.cbhq.net"
-  ],
-  "go.testTimeout": "1800s",
-  "go.useLanguageServer": true,
   "[jsonc]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
@@ -106,6 +97,22 @@
     "editor.defaultFormatter": "ms-azuretools.vscode-docker"
   },
   "makefile.configureOnOpen": false,
+  // ----------------------------------------------------------------------------
+  // Golang related settings
+  // ----------------------------------------------------------------------------
+  "[go]": {
+    "editor.insertSpaces": true,
+    "editor.formatOnSave": true
+  },
+  "go.formatTool": "goimports",
+  "go.formatFlags": [
+    "-local=github.cbhq.net"
+  ],
+  "go.testTimeout": "1800s",
+  "go.useLanguageServer": true,
+  "go.toolsEnvVars": {
+    "GOTOOLCHAIN": "local"
+  },
   // ----------------------------------------------------------------------------
   // Rust related settings
   // ----------------------------------------------------------------------------
