@@ -7,6 +7,7 @@ set -U fish_autocd 1
 # Add Homebrew to PATH
 fish_add_path /opt/homebrew/bin
 fish_add_path (npm get prefix)/bin
+fish_add_path /Applications/RustRover.app/Contents/MacOS
 
 # direnv enable, before oh-my-posh
 direnv hook fish | source
