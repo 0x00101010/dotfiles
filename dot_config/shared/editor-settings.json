@@ -9,7 +9,6 @@
   "editor.fontSize": 13,
   "editor.accessibilitySupport": "off",
   "security.workspace.trust.untrustedFiles": "open",
-  "terminal.integrated.defaultProfile.osx": "fish",
   "files.watcherExclude": {
     "**/target/**": true,
     "**/.git/**": true,

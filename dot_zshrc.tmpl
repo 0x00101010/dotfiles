@@ -35,7 +35,7 @@ complete -C '/opt/homebrew/bin/aws_completer' aws
 
 export EDITOR=/opt/homebrew/bin/nvim
 export RUSTROVER_PATH="/Applications/RustRover.app/Contents/MacOS"
-export PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin:$PATH:$RUSTROVER_PATH"
+export PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin:$RUSTROVER_PATH:$HOME/.local/bin:$PATH"
 export XDG_CONFIG_HOME="$HOME/.config"
 
 [[ -s "$HOME/.zsh/home.zsh" ]] && source "$HOME/.zsh/home.zsh"                          # load home specific variables
