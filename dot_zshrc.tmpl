@@ -5,7 +5,6 @@ export XDG_CONFIG_HOME="$HOME/.config"
 
 # Path to your oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
-source $ZSH/oh-my-zsh.sh
 
 plugins=(
     aws
@@ -17,11 +16,14 @@ plugins=(
     git
     golang
     history-substring-search
+    uni
     ssh
     zoxide
     zsh-autosuggestions
     zsh-syntax-highlighting
 )
+
+source $ZSH/oh-my-zsh.sh
 
 # Reevaluate the prompt string each time it's displaying a prompt
 # fzf-tab & completion UI (set BEFORE sourcing OMZ)
