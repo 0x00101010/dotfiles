@@ -1,147 +1,153 @@
-{
-  // ----------------------------------------------------------------------------
-  // workbench / UI related settings
-  // ----------------------------------------------------------------------------
-  "workbench.activityBar.orientation": "vertical",
-  "workbench.iconTheme": "material-icon-theme",
-  "workbench.colorTheme": "One Dark Pro Darker",
-  "editor.fontFamily": "SauceCodePro Nerd Font",
-  "editor.fontSize": 13,
-  "editor.accessibilitySupport": "off",
-  "security.workspace.trust.untrustedFiles": "open",
-  "files.watcherExclude": {
-    "**/target/**": true,
-    "**/.git/**": true,
-    "**/.cargo/registry/**": true,
-    "**/.cargo/git/**": true,
-    "**/node_modules/**": true
+// Place your key bindings in this file to override the defaults
+[
+  {
+    "key": "shift+cmd+d",
+    "command": "editor.action.revealDefinition",
+    "when": "editorHasDefinitionProvider && editorTextFocus"
   },
-  "search.exclude": {
-    "**/target/**": true,
-    "**/.git/**": true,
-    "**/.cargo/**": true
+  {
+    "key": "f12",
+    "command": "-editor.action.revealDefinition",
+    "when": "editorHasDefinitionProvider && editorTextFocus"
   },
-  "files.exclude": {
-    "**/target": true
+  {
+    "key": "shift+cmd+t",
+    "command": "editor.action.goToTypeDefinition",
+    "when": "editorHasTypeDefinitionProvider && editorTextFocus"
   },
-  "terminal.integrated.env.osx": {
-    "FIG_NEW_SESSION": "1"
+  {
+    "key": "shift+cmd+i",
+    "command": "editor.action.goToImplementation",
+    "when": "editorHasImplementationProvider && editorTextFocus"
   },
-  "explorer.confirmDelete": false,
-  "[ruby]": {
-    "editor.tabSize": 2
+  {
+    "key": "cmd+f12",
+    "command": "-editor.action.goToImplementation",
+    "when": "editorHasImplementationProvider && editorTextFocus"
   },
-  "[javascript]": {
-    "editor.tabSize": 2,
-    "editor.formatOnPaste": true,
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  {
+    "key": "shift+cmd+r",
+    "command": "editor.action.goToReferences",
+    "when": "editorHasReferenceProvider && editorTextFocus && !inReferenceSearchEditor && !isInEmbeddedEditor"
   },
-  "[python]": {
-    "editor.tabSize": 2,
-    "editor.formatOnType": true
+  {
+    "key": "shift+f12",
+    "command": "-editor.action.goToReferences",
+    "when": "editorHasReferenceProvider && editorTextFocus && !inReferenceSearchEditor && !isInEmbeddedEditor"
   },
-  "[html]": {
-    "editor.tabSize": 2,
-    "editor.defaultFormatter": "vscode.html-language-features"
+  {
+    "key": "cmd+d",
+    "command": "editor.action.peekDefinition",
+    "when": "editorHasDefinitionProvider && editorTextFocus && !inReferenceSearchEditor && !isInEmbeddedEditor"
   },
-  "[css]": {
-    "editor.tabSize": 2
+  {
+    "key": "alt+f12",
+    "command": "-editor.action.peekDefinition",
+    "when": "editorHasDefinitionProvider && editorTextFocus && !inReferenceSearchEditor && !isInEmbeddedEditor"
   },
-  "[typescript]": {
-    "editor.tabSize": 2,
-    "editor.formatOnPaste": true,
-    "editor.detectIndentation": true,
-    "editor.defaultFormatter": "vscode.typescript-language-features"
+  {
+    "key": "cmd+t",
+    "command": "editor.action.peekTypeDefinition"
   },
-  "[proto3]": {
-    "editor.tabSize": 2
+  {
+    "key": "cmd+i",
+    "command": "editor.action.peekImplementation",
+    "when": "editorHasImplementationProvider && editorTextFocus && !inReferenceSearchEditor && !isInEmbeddedEditor"
   },
-  "[erb]": {
-    "editor.tabSize": 2,
-    "editor.defaultFormatter": "aliariff.vscode-erb-beautify"
+  {
+    "key": "shift+cmd+f12",
+    "command": "-editor.action.peekImplementation",
+    "when": "editorHasImplementationProvider && editorTextFocus && !inReferenceSearchEditor && !isInEmbeddedEditor"
   },
-  "editor.wordWrap": "on",
-  "editor.formatOnSave": true,
-  "emeraldwalk.runonsave": {
-    "debug": true,
-    "commands": [
-      {
-        "match": ".*rs",
-        "cmd": "cargo clippy --fix --allow-dirty --allow-staged"
-      },
-      {
-        "match": "Cargo\\.toml$",
-        "cmd": "cargo sort -w"
-      }
-      // {
-      //   "match": "*.go",
-      //   "cmd": "gosimports -local github.cbhq.net -w -format-only ${file}"
-      // }
-    ]
+  {
+    "key": "cmd+r",
+    "command": "editor.action.referenceSearch.trigger"
   },
-  "[jsonc]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  {
+    "key": "cmd+[",
+    "command": "workbench.action.navigateBack",
+    "when": "canNavigateBack"
   },
-  "[json]": {
-    "editor.defaultFormatter": "vscode.json-language-features"
+  {
+    "key": "ctrl+-",
+    "command": "-workbench.action.navigateBack",
+    "when": "canNavigateBack"
   },
-  "explorer.confirmDragAndDrop": false,
-  "githubPullRequests.remotes": [
-    "origin"
-  ],
-  "git.openRepositoryInParentFolders": "never",
-  "githubPullRequests.pullBranch": "never",
-  "editor.wordWrapColumn": 120,
-  "[dockerfile]": {
-    "editor.defaultFormatter": "ms-azuretools.vscode-docker"
+  {
+    "key": "cmd+]",
+    "command": "workbench.action.navigateForward",
+    "when": "canNavigateForward"
   },
-  "makefile.configureOnOpen": false,
-  // ----------------------------------------------------------------------------
-  // Golang related settings
-  // ----------------------------------------------------------------------------
-  "[go]": {
-    "editor.insertSpaces": true,
-    "editor.formatOnSave": true
+  {
+    "key": "ctrl+shift+-",
+    "command": "-workbench.action.navigateForward",
+    "when": "canNavigateForward"
   },
-  "go.formatTool": "goimports",
-  "go.formatFlags": [
-    "-local=github.cbhq.net"
-  ],
-  "go.testTimeout": "1800s",
-  "go.useLanguageServer": true,
-  "go.toolsEnvVars": {
-    "GOTOOLCHAIN": "local"
+  {
+    "key": "cmd+]",
+    "command": "-editor.action.indentLines",
+    "when": "editorTextFocus && !editorReadonly"
   },
-  // ----------------------------------------------------------------------------
-  // Rust related settings
-  // ----------------------------------------------------------------------------
-  "[rust]": {
-    "editor.formatOnSave": true,
-    "editor.defaultFormatter": "rust-lang.rust-analyzer"
+  {
+    "key": "cmd+[",
+    "command": "-editor.action.outdentLines",
+    "when": "editorTextFocus && !editorReadonly"
   },
-  "rust-analyzer.rustfmt.extraArgs": [
-    "--config",
-    "trailing_semicolon=false"
-  ],
-  "rust-analyzer.files.exclude": [
-    "target",
-    "node_modules",
-    ".git",
-    "vendor",
-    "dist",
-    "build"
-  ],
-  "rust-analyzer.cargo.autoreload": true,
-  "rust-analyzer.cargo.buildScripts.enable": true,
-  "rust-analyzer.cargo.features": "all",
-  "rust-analyzer.checkOnSave": true,
-  "rust-analyzer.check.allTargets": false,
-  "rust-analyzer.check.command": "clippy",
-  "rust-analyzer.check.workspace": false,
-  "rust-analyzer.diagnostics.disabled": [
-    "unresolved-proc-macro"
-  ],
-  "rust-analyzer.files.watcher": "server",
-  "rust-analyzer.lru.capacity": 512,
-  "rust-analyzer.procMacro.enable": true
-}
+  {
+    "key": "ctrl+cmd+1",
+    "command": "workbench.files.action.focusFilesExplorer"
+  },
+  {
+    "key": "ctrl+cmd+2",
+    "command": "gitlens.views.commitDetails.focus"
+  },
+  {
+    "key": "ctrl+cmd+3",
+    "command": "outline.toggleVisibility"
+  },
+  {
+    "key": "shift+enter",
+    "command": "workbench.action.terminal.sendSequence",
+    "args": {
+      "text": "\\\r\n"
+    },
+    "when": "terminalFocus"
+  },
+  {
+    "key": "cmd+t",
+    "command": "workbench.action.showAllSymbols",
+    "when": "editorFocus"
+  },
+  {
+    "key": "cmd+t",
+    "command": "-workbench.action.showAllSymbols"
+  },
+  {
+    "key": "ctrl+cmd+3",
+    "command": "workbench.view.extension.codexViewContainer"
+  },
+  {
+    "key": "shift+cmd+a",
+    "command": "workbench.action.toggleAuxiliaryBar"
+  },
+  {
+    "key": "alt+cmd+b",
+    "command": "-workbench.action.toggleAuxiliaryBar"
+  },
+  {
+    "key": "cmd+k cmd+t",
+    "command": "go.test.cursor"
+  },
+  {
+    "key": "cmd+k cmd+d",
+    "command": "go.debug.cursor"
+  },
+  {
+    "key": "cmd+l",
+    "command": "workbench.action.gotoLine"
+  },
+  {
+    "key": "ctrl+g",
+    "command": "-workbench.action.gotoLine"
+  }
+]
