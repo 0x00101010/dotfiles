@@ -109,8 +109,12 @@
   ],
   "go.testTimeout": "1800s",
   "go.useLanguageServer": true,
+  "go.alternateTools": {
+    "go": "/Users/francis/.local/share/mise/shims/go"
+  },
   "go.toolsEnvVars": {
-    "GOTOOLCHAIN": "local"
+    "PATH": "/Users/francis/.local/share/mise/shims/go:${env:PATH}",
+    "GOTOOLCHAIN": "auto"
   },
   // ----------------------------------------------------------------------------
   // Rust related settings
@@ -143,5 +147,6 @@
   ],
   "rust-analyzer.files.watcher": "server",
   "rust-analyzer.lru.capacity": 512,
-  "rust-analyzer.procMacro.enable": true
+  "rust-analyzer.procMacro.enable": true,
+  "window.commandCenter": true
 }

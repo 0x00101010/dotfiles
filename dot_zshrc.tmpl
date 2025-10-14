@@ -15,34 +15,53 @@ complete -C '/opt/homebrew/bin/aws_completer' aws
 
 LISTMAX=10000
 
+# zmodload zsh/complist
+# setopt AUTO_MENU                  # start menu on repeated <Tab>
+# setopt MENU_COMPLETE              # cycle through items with <Tab>
+
+# # Use a scrollable menu, vertical, with selection
+# zstyle ':completion:*' menu yes select
+# zstyle ':completion:*' group-name ''            # group results by type
+# zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}  # colored entries
+# zstyle ':completion:*' fzf-search-display true
+# zstyle ':completion:*' fzf-pad 4
+# zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}' 'r:|[._-]=** r:|=**'
+# zstyle ':completion:*:descriptions' format '%F{yellow}%d%f'
+# zstyle ':fzf-tab:*' switch-group '<' '>'          # jump groups with < / >
+# zstyle ':fzf-tab:complete:*' fzf-preview 'less -R {} 2>/dev/null || cat {} 2>/dev/null'
+# zstyle ':fzf-tab:complete:cd:*' fzf-preview 'ls --color=always -la {} 2>/dev/null'
+
+# Load zsh completion and complist
 zmodload zsh/complist
-setopt AUTO_MENU                  # start menu on repeated <Tab>
-setopt MENU_COMPLETE              # cycle through items with <Tab>
+setopt AUTO_MENU                 # start menu on repeated <Tab>
+setopt MENU_COMPLETE             # cycle through items with <Tab>
 
-# Use a scrollable menu, vertical, with selection
+# Base zsh completion styles
 zstyle ':completion:*' menu yes select
-zstyle ':completion:*' group-name ''            # group results by type
-zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}  # colored entries
-zstyle ':completion:*' fzf-search-display true
-zstyle ':completion:*' fzf-pad 4
-zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}' 'r:|[._-]=** r:|=**'
+zstyle ':completion:*' group-name ''             # group results by type
 zstyle ':completion:*:descriptions' format '%F{yellow}%d%f'
-zstyle ':fzf-tab:*' switch-group '<' '>'          # jump groups with < / >
-zstyle ':fzf-tab:complete:*' fzf-preview 'less -R {} 2>/dev/null || cat {} 2>/dev/null'
-zstyle ':fzf-tab:complete:cd:*' fzf-preview 'ls --color=always -la {} 2>/dev/null'
+zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}  # colored entries
+zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}' \
+    'r:|[._-]=** r:|=**'
 
-# --- SMART TAB: if cursor is on the command word, insert a space and complete args ---
-_fzf_smart_tab() {
-  # Are we completing the *first* word (the command)?
-  # If so, insert a space so we trigger subcommand/arg completion immediately.
-  if [[ $LBUFFER = ([[:space:]]|)${words[1]} && $RBUFFER != ' '* ]]; then
-    LBUFFER+=" "
-  fi
-  zle _fzf_tab_completion
-}
-zle -N _fzf_smart_tab
-bindkey '^I' _fzf_smart_tab     # Tab -> smart fzf completion
-bindkey '^[I' expand-or-complete # Alt-Tab -> native completion (multi-column), optional
+# --- fzf-tab setup ---
+# Global flags for fzf
+zstyle ':fzf-tab:*' fzf-flags --layout=reverse-list --height=60% --ansi --cycle --info=inline
+
+# Preview window (right half of terminal)
+zstyle ':fzf-tab:*' fzf-preview-window 'right:50%:wrap'
+
+# Safe preview for generic completions
+zstyle ':fzf-tab:complete:*:*' fzf-preview \
+'if [[ -d $realpath ]]; then ls -la "$realpath"; \
+elif [[ -f $realpath ]]; then (command -v bat >/dev/null && bat --style=plain --color=always -n "$realpath") || head -200 "$realpath"; \
+else print -r -- "$realpath"; fi'
+
+# Preview for `cd` specifically
+zstyle ':fzf-tab:complete:cd:*' fzf-preview 'ls -la "$realpath"'
+
+# Allow jumping between grouped completions
+zstyle ':fzf-tab:*' switch-group '<' '>'
 
 plugins=(
     aws
