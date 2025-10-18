@@ -18,6 +18,8 @@ brew = [
     "zoxide",
     "gemini-cli",
     "dotenv",
+    "gnupg",
+    "direnv",
 ]
 casks = [
     "iterm2",
