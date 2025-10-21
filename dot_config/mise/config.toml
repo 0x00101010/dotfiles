@@ -1,5 +1,5 @@
 [tools]
-go = "prefix:1.23"
+go = "prefix:1.24"
 golangci-lint = "latest"
 jj = "latest"
 just = "latest"
@@ -8,4 +8,4 @@ kubie = "latest"
 node = "lts"
 op = "latest"
 python = "prefix:3.13"
-rust = "prefix:1.88"
+rust = "prefix:1.90"
