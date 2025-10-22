@@ -20,6 +20,8 @@ brew = [
     "dotenv",
     "gnupg",
     "direnv",
+    "gnu-tar",
+    "wget",
 ]
 casks = [
     "iterm2",
