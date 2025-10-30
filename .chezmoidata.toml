@@ -52,6 +52,9 @@ apt = [
     "mdadm",
     "ripgrep",
     "tmux",
+    "unzip",
     "wget",
     "zoxide",
+    "zsh",
+    "zsh-autosuggestions",
 ]

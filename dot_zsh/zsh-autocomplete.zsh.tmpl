@@ -1,4 +1,11 @@
+{{- if eq .chezmoi.os "darwin" }}
 source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+{{- end }}
+
+{{- if eq .chezmoi.os "linux" }}
+source /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+{{- end }}
+
 bindkey '^w' autosuggest-execute
 bindkey '^e' autosuggest-accept
 bindkey '^u' autosuggest-toggle
