@@ -43,6 +43,7 @@ casks = [
 [packages.linux]
 apt = [
     "build-essential",
+    "clang",
     "curl",
     "direnv",
     "fd-find",
