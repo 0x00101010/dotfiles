@@ -1,22 +1,27 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-{{- if eq .chezmoi.os "linux" }}
+{{- if eq .chezmoi.os "darwin" }}
+  echo "This script is for Linux systems only."
+  exit 1
+{{- end }}
 
+# Install packages
 {{- if and (hasKey . "packages") (hasKey .packages "linux") (hasKey .packages.linux "apt") }}
 sudo apt install -y{{ range .packages.linux.apt }} {{ . }}{{ end }}
 {{- end }}
 
-# mise (asdf replacement)
-if ! command -v mise >/dev/null 2>&1; then
-  curl https://mise.run | sh
-fi
+# Install tmux plugins
+git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm || true
+~/.tmux/plugins/tpm/bin/install_plugins
 
-# oh-my-posh
-if ! command -v oh-my-pose >/dev/null 2>&1; then
-  curl -s https://ohmyposh.dev/install.sh | bash -s
-fi
+# Install oh-my-zsh
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" || true
+git clone https://github.com/zsh-users/zsh-autosuggestions ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions || true
+git clone https://github.com/zsh-users/zsh-syntax-highlighting ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting || true
 
-{{- else }}
-echo "[chezmoi] Skipping Linux installer, this is {{ .chezmoi.os }}"
-{{- end }}
+# Install fzf-tab
+git clone https://github.com/Aloxaf/fzf-tab ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/fzf-tab || true
+
+# Install programming language environments
+mise install

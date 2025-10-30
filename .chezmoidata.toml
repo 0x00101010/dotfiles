@@ -42,15 +42,16 @@ casks = [
 
 [packages.linux]
 apt = [
-    "git",
-    "nushell",
-    "ripgrep",
+    "build-essential",
+    "curl",
+    "direnv",
     "fd-find",
     "fzf",
-    "starship",
-    "direnv",
-    "curl",
-    "build-essential",
+    "git",
     "gpg",
+    "mdadm",
+    "ripgrep",
+    "tmux",
     "wget",
+    "zoxide",
 ]
