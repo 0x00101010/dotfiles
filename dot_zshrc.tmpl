@@ -106,4 +106,8 @@ eval "$(oh-my-posh init zsh --config https://raw.githubusercontent.com/JanDeDobb
 
 eval "$(zoxide init zsh)"
 # eval "$(fzf --zsh)"
+
+# increase file descriptor limit to help with some testing situations
 ulimit -n 10240
+# There are some mmap issues on mac that can be alleviated by limiting rayon threads
+export RAYON_NUM_THREADS=8
