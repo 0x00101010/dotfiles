@@ -3,8 +3,6 @@ set -euo pipefail
 
 {{- if eq .chezmoi.os "linux" }}
 
-sudo apt update && sudo apt upgrade -y
-
 {{- if and (hasKey . "packages") (hasKey .packages "linux") (hasKey .packages.linux "apt") }}
 sudo apt install -y{{ range .packages.linux.apt }} {{ . }}{{ end }}
 {{- end }}
