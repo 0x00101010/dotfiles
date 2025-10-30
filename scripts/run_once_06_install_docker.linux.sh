@@ -14,5 +14,16 @@ echo \
   sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 sudo apt-get update
 
-sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
+
+# fix docker user group issue
+newgrp docker
+sudo groupadd docker
 sudo usermod -aG docker $USER
+sudo chgrp docker /var/run/docker.sock
+
+# change docker data root to raid0 mount if /data exists
+if [ -d "/data" ]; then
+  echo '{"data-root": "/data/docker"}' | sudo tee /etc/docker/daemon.json >/dev/null
+  sudo systemctl restart docker
+fi
