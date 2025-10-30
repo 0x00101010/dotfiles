@@ -57,4 +57,5 @@ apt = [
     "zoxide",
     "zsh",
     "zsh-autosuggestions",
+    "mise",
 ]
