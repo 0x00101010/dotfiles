@@ -10,8 +10,10 @@ export ZSH="$HOME/.oh-my-zsh"
 
 autoload bashcompinit && bashcompinit
 autoload -Uz compinit && compinit
-source <(kubectl completion zsh)
 complete -C '/opt/homebrew/bin/aws_completer' aws
+if command -v kubectl >/dev/null 2>&1; then
+  source <(kubectl completion zsh)
+fi
 
 LISTMAX=10000
 
