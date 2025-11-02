@@ -17,10 +17,11 @@ sudo apt-get update
 sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
 
 # fix docker user group issue
-newgrp docker
-sudo groupadd docker
+# Create docker group if it doesn't exist (may already exist from docker-ce installation)
+sudo groupadd docker 2>/dev/null || true
 sudo usermod -aG docker $USER
 sudo chgrp docker /var/run/docker.sock
+# Note: User needs to log out and back in (or run 'newgrp docker' manually) for group changes to take effect
 
 # change docker data root to raid0 mount if /data exists
 if [ -d "/data" ]; then
