@@ -3,7 +3,7 @@ set -euo pipefail
 
 {{- if eq .chezmoi.os "darwin" }}
   echo "This script is for Linux systems only."
-  exit 1
+  exit 0
 {{- end }}
 
 # Setup mise

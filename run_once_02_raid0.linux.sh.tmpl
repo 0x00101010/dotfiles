@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+{{- if eq .chezmoi.os "darwin" }}
+  echo "This script is for Linux systems only."
+  exit 0
+{{- end }}
+
 # Detect all NVMe drives excluding nvme0n1 (system partition)
 NVME_DRIVES=($(ls /dev/nvme*n1 2>/dev/null | grep -v nvme0n1))
 RAID_DEVICE_COUNT=${#NVME_DRIVES[@]}

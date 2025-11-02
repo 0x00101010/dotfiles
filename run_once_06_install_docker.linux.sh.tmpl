@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -ex
+
+{{- if eq .chezmoi.os "darwin" }}
+  echo "This script is for Linux systems only."
+  exit 0
+{{- end }}
 
 sudo apt-get update
 sudo apt-get install ca-certificates curl

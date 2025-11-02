@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+{{- if eq .chezmoi.os "darwin" }}
+  echo "This script is for Linux systems only."
+  exit 0
+{{- end }}
+
 # Change shell to zsh for the user
 # no need, oh-my-zsh handles this automatically
 # sudo passwd ubuntu
