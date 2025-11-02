@@ -13,3 +13,4 @@ rm -rf ~/.local/share/chezmoi
 mkdir -p ~/.local/share
 ln -s ~/src/dotfiles ~/.local/share/chezmoi
 chezmoi init
+chezmoi apply -v
