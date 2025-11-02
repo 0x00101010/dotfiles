@@ -18,7 +18,7 @@ sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin 
 
 # fix docker user group issue
 # Create docker group if it doesn't exist (may already exist from docker-ce installation)
-sudo groupadd docker 2>/dev/null || true
+sudo groupadd docker
 sudo usermod -aG docker $USER
 sudo chgrp docker /var/run/docker.sock
 # Note: User needs to log out and back in (or run 'newgrp docker' manually) for group changes to take effect
