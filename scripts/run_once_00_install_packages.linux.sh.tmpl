@@ -21,6 +21,9 @@ sudo apt install -y{{ range .packages.linux.apt }} {{ . }}{{ end }}
 git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm || true
 ~/.tmux/plugins/tpm/bin/install_plugins
 
+# Install oh-my-posh (for my favorite theme)
+curl -s https://ohmyposh.dev/install.sh | bash -s
+
 # Install oh-my-zsh
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" || true
 git clone https://github.com/zsh-users/zsh-autosuggestions ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions || true
