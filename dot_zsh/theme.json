@@ -48,7 +48,7 @@
                 {
                     "foreground": "#b8ff75",
                     "style": "plain",
-                    "template": "{{ .UserName }}@{{ .HostName }} ",
+                    "template": " {{ .UserName }}@{{ .HostName }} ",
                     "type": "session"
                 }
             ],
