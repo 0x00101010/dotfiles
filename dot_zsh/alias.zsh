@@ -117,6 +117,8 @@ alias de='docker exec -it'
 alias dl='docker logs'
 alias dp='docker ps --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}"'
 alias dpg='docker ps | grep'
+alias dv='docker volume'
+alias dvi='docker volume inspect'
 
 alias cu='cursor'
 alias co='code'
