@@ -1,4 +1,3 @@
-// Place your key bindings in this file to override the defaults
 [
   {
     "key": "shift+cmd+d",
@@ -26,7 +25,7 @@
     "when": "editorHasImplementationProvider && editorTextFocus"
   },
   {
-    "key": "shift+cmd+r",
+    "key": "shift+cmd+u",
     "command": "editor.action.goToReferences",
     "when": "editorHasReferenceProvider && editorTextFocus && !inReferenceSearchEditor && !isInEmbeddedEditor"
   },
@@ -60,7 +59,7 @@
     "when": "editorHasImplementationProvider && editorTextFocus && !inReferenceSearchEditor && !isInEmbeddedEditor"
   },
   {
-    "key": "cmd+r",
+    "key": "cmd+u",
     "command": "editor.action.referenceSearch.trigger"
   },
   {
@@ -149,5 +148,23 @@
   {
     "key": "ctrl+g",
     "command": "-workbench.action.gotoLine"
+  },
+  {
+    "key": "cmd+r",
+    "command": "editor.action.startFindReplaceAction",
+    "when": "editorFocus || editorIsOpen"
+  },
+  {
+    "key": "alt+cmd+f",
+    "command": "-editor.action.startFindReplaceAction",
+    "when": "editorFocus || editorIsOpen"
+  },
+  {
+    "key": "shift+cmd+r",
+    "command": "workbench.action.replaceInFiles"
+  },
+  {
+    "key": "shift+cmd+h",
+    "command": "-workbench.action.replaceInFiles"
   }
 ]
