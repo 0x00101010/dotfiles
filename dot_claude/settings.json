@@ -65,6 +65,11 @@
       "Bash(git fsck*)",
       "Bash(git verify-*)",
 
+      // gh related commands
+      "Bash(gh project:*)",
+      "Bash(gh issue list:*)",
+      "Bash(gh issue view:*)",
+
       // File system access
       "Read(//private/tmp/**)",
       "Read(//tmp/**)",
