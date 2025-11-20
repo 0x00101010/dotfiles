@@ -25,6 +25,7 @@
       "Bash(diff:*)",
       "Bash(file:*)",
       "Bash(find:*)",
+      "Bash(xargs:*)",
       "Bash(locate:*)",
       "Bash(which:*)",
       "Bash(whereis:*)",
