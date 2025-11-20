@@ -31,6 +31,8 @@
       "Bash(which:*)",
       "Bash(whereis:*)",
       "Bash(cargo:*)",
+      "Base(forge:*)",
+      "Base(cast:*)",
       "Bash(git status:*)",
       "Bash(git log:*)",
       "Bash(git show:*)",
