@@ -4,6 +4,7 @@
     "allow": [
       "WebFetch(domain:*)",
 
+      "Base(cd:*)",
       "Bash(make:*)",
       "Bash(ls:*)",
       "Bash(cat:*)",
