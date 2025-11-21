@@ -122,6 +122,7 @@ alias dvi='docker volume inspect'
 
 alias cu='cursor'
 alias co='code'
+alias rr='RustRover'
 
 # kubernetes
 alias k='kubectl'
