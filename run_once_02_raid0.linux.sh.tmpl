@@ -16,6 +16,25 @@ if [ $RAID_DEVICE_COUNT -eq 0 ]; then
 fi
 
 echo "Found $RAID_DEVICE_COUNT NVMe drive(s): ${NVME_DRIVES[@]}"
+
+# Check if all NVMe drives are already in use
+ALL_IN_USE=true
+for drive in "${NVME_DRIVES[@]}"; do
+  # Check if the drive or any of its partitions are mounted
+  if ! grep -q "^${drive}" /proc/mounts && ! lsblk -no MOUNTPOINT "${drive}" 2>/dev/null | grep -q .; then
+    # Check if the drive is part of an existing RAID array
+    if ! sudo mdadm --examine "${drive}" &>/dev/null; then
+      ALL_IN_USE=false
+      break
+    fi
+  fi
+done
+
+if [ "$ALL_IN_USE" = true ]; then
+  echo "All NVMe drives are already mounted or in use. Skipping RAID setup."
+  exit 0
+fi
+
 sudo mdadm --create --verbose /dev/md0 --level=0 --raid-devices=$RAID_DEVICE_COUNT ${NVME_DRIVES[@]} --force
 sudo mkfs.ext4 /dev/md0
 
