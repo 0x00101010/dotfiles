@@ -15,4 +15,4 @@
 [commit]
 	gpgsign = true
 [gpg]
-	program = /opt/homebrew/bin/gpg
+	program = {{ output "which" "gpg" | trim }}
