@@ -21,6 +21,8 @@
       "Bash(tree:*)",
       "Bash(awk:*)",
       "Bash(sed:*)",
+      "Bash(wc:*)",
+      "Bash(grep:*)",
       "Bash(cut:*)",
       "Bash(sort:*)",
       "Bash(uniq:*)",
