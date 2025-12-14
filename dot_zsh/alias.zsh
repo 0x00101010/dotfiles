@@ -44,6 +44,9 @@ alias pingg='ping www.google.com'                                               
 # git
 alias g='git'
 
+# Git Config
+alias gcpe='git config user.email "lihuiyi0406@gmail.com"' # set git personal email
+
 # Commit Management
 alias ga='git add'
 alias gu='git unadd' # git config --global alias.unadd reset HEAD
