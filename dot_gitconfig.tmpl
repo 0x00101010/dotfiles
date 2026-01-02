@@ -1,4 +1,12 @@
 # This is Git's per-user configuration file.
+[core]
+	pager = delta
+[interactive]
+	diffFilter = delta
+[delta]
+	navigate = true
+[merge]
+    conflictStyle = zdiff3
 [user]
 	name = {{ .fullName }}
 	email = {{ .email }}
