@@ -2,7 +2,7 @@
   "alwaysThinkingEnabled": false,
   "permissions": {
     "allow": [
-      "WebFetch(domain:*)",
+      "WebFetch(domain:github.com)",
       "Fetch(domain:*)",
 
       "Base(cd:*)",
