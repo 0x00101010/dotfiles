@@ -3,7 +3,9 @@
   "permissions": {
     "allow": [
       "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
       "Fetch(domain:*)",
+      "WebSearch",
 
       "Base(cd:*)",
       "Bash(make:*)",
@@ -71,5 +73,8 @@
       "Read(/home/**/src/**)"
     ],
     "deny": ["Read(.env*)", "Read(**/secrets/**)", "Read(**/*.key)"]
+  },
+  "enabledPlugins": {
+    "rust-analyzer-lsp@claude-plugins-official": true
   }
 }

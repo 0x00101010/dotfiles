@@ -143,3 +143,5 @@ alias ci="chezmoi"
 alias cia="chezmoi apply -v"
 alias cid="cd ~/.local/share/chezmoi"
 alias cz="chezmoi apply -v && source ~/.zshrc"
+
+alias j="just"
