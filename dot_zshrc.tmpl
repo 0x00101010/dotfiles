@@ -1,5 +1,19 @@
 eval "$(mise activate zsh)"
 
+# History settings
+HISTFILE=~/.zsh_history
+HISTSIZE=50000
+SAVEHIST=50000
+setopt HIST_IGNORE_ALL_DUPS
+setopt HIST_FIND_NO_DUPS
+setopt EXTENDED_HISTORY
+setopt SHARE_HISTORY
+
+# Shell options
+setopt AUTO_CD
+setopt NO_CASE_GLOB
+setopt EXTENDED_GLOB
+
 export EDITOR=/opt/homebrew/bin/nvim
 export RUSTROVER_PATH="/Applications/RustRover.app/Contents/MacOS"
 export PATH="$HOME/.local/bin:$PATH:$RUSTROVER_PATH"
@@ -16,22 +30,6 @@ if command -v kubectl >/dev/null 2>&1; then
 fi
 
 LISTMAX=10000
-
-# zmodload zsh/complist
-# setopt AUTO_MENU                  # start menu on repeated <Tab>
-# setopt MENU_COMPLETE              # cycle through items with <Tab>
-
-# # Use a scrollable menu, vertical, with selection
-# zstyle ':completion:*' menu yes select
-# zstyle ':completion:*' group-name ''            # group results by type
-# zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}  # colored entries
-# zstyle ':completion:*' fzf-search-display true
-# zstyle ':completion:*' fzf-pad 4
-# zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}' 'r:|[._-]=** r:|=**'
-# zstyle ':completion:*:descriptions' format '%F{yellow}%d%f'
-# zstyle ':fzf-tab:*' switch-group '<' '>'          # jump groups with < / >
-# zstyle ':fzf-tab:complete:*' fzf-preview 'less -R {} 2>/dev/null || cat {} 2>/dev/null'
-# zstyle ':fzf-tab:complete:cd:*' fzf-preview 'ls --color=always -la {} 2>/dev/null'
 
 # Load zsh completion and complist
 zmodload zsh/complist

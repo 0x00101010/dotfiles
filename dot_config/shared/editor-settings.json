@@ -37,7 +37,7 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "[python]": {
-    "editor.tabSize": 2,
+    "editor.tabSize": 4,
     "editor.formatOnType": true
   },
   "[html]": {

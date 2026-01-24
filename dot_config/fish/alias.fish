@@ -22,7 +22,6 @@ alias ......="cd ../../../../.."
 # applications
 alias tree="cb-tree -C"
 alias d="docker"
-alias dc="docker-compose"
 alias v="nvim"
 alias y="yarn"
 alias m="make"
@@ -47,7 +46,7 @@ alias grb="git rebase"
 alias gcp="git cherry-pick"
 alias gca="git commit -v --amend"
 alias gc="git commit"
-alias gempty="git commit --allow-empty -m "empty""
+alias gempty='git commit --allow-empty -m "empty"'
 
 function gps
     git push origin $(git branch --show-current)
@@ -93,8 +92,6 @@ alias glc="_git_commit_diff" # show commits diff against (upstream|origin)/maste
 # Git Diff
 alias gd="git diff HEAD"
 
-# Git Reset
-alias grhh="git reset --hard HEAD"
 
 # Git Worktree
 alias gw="git worktree"

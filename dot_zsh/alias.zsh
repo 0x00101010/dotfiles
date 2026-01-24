@@ -25,7 +25,6 @@ alias ......="cd ../../../../.."
 # applications
 alias tree='cb-tree -C'
 alias d='docker'
-alias dc='docker-compose'
 alias v='nvim'
 alias y='yarn'
 alias m='make'
@@ -33,7 +32,7 @@ alias m='make'
 # create and delete files/folders
 alias t='touch'   # create file
 alias md='mkdir'  # make directory
-alias rd='rm -rf' # remove directory and file
+alias rd='rm -rfi' # remove directory and file (interactive)
 
 # misc.
 alias q='exit'                                                                                # vim like quit command to close terminal pane
@@ -43,9 +42,6 @@ alias pingg='ping www.google.com'                                               
 
 # git
 alias g='git'
-
-# Git Config
-alias gcpe='git config user.email "lihuiyi0406@gmail.com"' # set git personal email
 
 # Commit Management
 alias ga='git add'
@@ -96,8 +92,6 @@ alias glc='_git_commit_diff' # show commits diff against (upstream|origin)/maste
 # Git Diff
 alias gd='git diff HEAD'
 
-# Git Reset
-alias grhh='git reset --hard HEAD'
 
 # Git Worktree
 alias gw='git worktree'
