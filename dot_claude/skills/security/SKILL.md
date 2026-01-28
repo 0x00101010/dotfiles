@@ -1,3 +1,8 @@
+---
+name: security
+description: Scan files or directories for hardcoded secrets, API keys, and sensitive data leaks
+---
+
 Execute security-validator agent to scan $ARGUMENTS for sensitive secrets and environment variable leaks.
 
 The security validator will:
