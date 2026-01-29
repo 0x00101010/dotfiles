@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+{{- if eq .chezmoi.os "darwin" }}
+
+# install bun
+curl -fsSL https://bun.com/install | bash
+
+{{- else }}
+echo "[chezmoi] Skipping Darwin installer, this is {{ .chezmoi.os }}"
+{{- end }}

@@ -116,3 +116,10 @@ eval "$(zoxide init zsh)"
 ulimit -n 10240
 # There are some mmap issues on mac that can be alleviated by limiting rayon threads
 export RAYON_NUM_THREADS=8
+
+# bun completions
+[ -s "/Users/francis/.oh-my-zsh/completions/_bun" ] && source "/Users/francis/.oh-my-zsh/completions/_bun"
+
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
