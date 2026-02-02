@@ -36,7 +36,6 @@ casks = [
     "discord",
     "spotify",
     # "1password",
-    "warp",
     "font-sauce-code-pro-nerd-font",
     "claude-code",
 ]
