@@ -4,7 +4,7 @@
   // ----------------------------------------------------------------------------
   "workbench.activityBar.orientation": "vertical",
   "workbench.iconTheme": "material-icon-theme",
-  "workbench.colorTheme": "One Dark Pro Darker",
+  "workbench.colorTheme": "Catppuccin Macchiato",
   "editor.fontFamily": "SauceCodePro Nerd Font",
   "editor.fontSize": 13,
   "editor.accessibilitySupport": "off",
