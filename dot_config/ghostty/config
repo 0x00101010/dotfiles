@@ -50,3 +50,4 @@ font-family = SauceCodePro Nerd Font
 
 keybind = global:cmd+grave_accent=toggle_visibility
 keybind = shift+enter=text:\x1b[13;2u
+copy-on-select = clipboard
