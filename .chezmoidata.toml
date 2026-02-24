@@ -18,7 +18,6 @@ brew = [
     "tmux",
     "zoxide",
     "gemini-cli",
-    "dotenv",
     "gnupg",
     "direnv",
     "gnu-tar",
