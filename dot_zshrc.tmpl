@@ -72,7 +72,6 @@ plugins=(
     fzf
     fzf-tab
     git
-    git-worktree
     golang
     history-substring-search
     ssh
@@ -91,6 +90,7 @@ source $ZSH/oh-my-zsh.sh
 [[ -s "$HOME/.zsh/ctrl-z.zsh" ]] && source "$HOME/.zsh/ctrl-z.zsh"                      # load ctrl-z command
 [[ -s "$HOME/.zsh/zsh-autocomplete.zsh" ]] && source "$HOME/.zsh/zsh-autocomplete.zsh"  # load zsh-autocomplete
 [[ -s "$HOME/.zsh/key-bindings.zsh" ]] && source "$HOME/.zsh/key-bindings.zsh"          # load key bindings
+[[ -s "$HOME/.zsh/git-worktree.zsh" ]] && source "$HOME/.zsh/git-worktree.zsh"          # load git worktree helpers (wclone, wremote)
 [[ -s "$HOME/.zsh/devnet.zsh" ]] && source "$HOME/.zsh/devnet.zsh"                      # load devnet development related helpers
 [[ -s "$HOME/.zsh/history.zsh" ]] && source "$HOME/.zsh/history.zsh"                    # load devnet development related helpers
 
