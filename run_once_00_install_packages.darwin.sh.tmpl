@@ -37,6 +37,10 @@ git clone https://github.com/Aloxaf/fzf-tab ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/p
 # Install programming language environments
 mise install
 
+# Install foundry
+curl -L https://foundry.paradigm.xyz | bash
+foundryup
+
 {{- else }}
 echo "[chezmoi] Skipping Darwin installer, this is {{ .chezmoi.os }}"
 {{- end }}
