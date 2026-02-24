@@ -11,3 +11,6 @@ Thumbs.db
 # Environment
 .env.local
 .direnv/
+
+# local .claude
+.claude/

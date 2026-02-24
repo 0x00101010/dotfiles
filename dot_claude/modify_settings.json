@@ -19,7 +19,6 @@ BASE_CONFIG='
       "WebFetch(domain:raw.githubusercontent.com)",
       "Fetch",
       "WebSearch",
-
       "Base(cd:*)",
       "Bash(make:*)",
       "Bash(ls:*)",
@@ -80,12 +79,16 @@ BASE_CONFIG='
       "Bash(gh issue list:*)",
       "Bash(gh issue view:*)",
       "Bash(gh:*)",
-
       "Read(//private/tmp/**)",
       "Read(//tmp/**)",
-      "Read(/home/**/src/**)"
+      "Read(/home/**/src/**)",
+      "Read(/Users/**/src/**)"
     ],
-    "deny": ["Read(.env*)", "Read(**/secrets/**)", "Read(**/*.key)"]
+    "deny": [
+      "Read(.env*)",
+      "Read(**/secrets/**)",
+      "Read(**/*.key)"
+    ]
   },
   "model": "opus",
   "enabledPlugins": {
@@ -97,7 +100,9 @@ BASE_CONFIG='
     "enabled": true,
     "autoAllowBashIfSandboxed": true,
     "network": {
-      "allowUnixSockets": ["/var/run/docker.sock"],
+      "allowUnixSockets": [
+        "/var/run/docker.sock"
+      ],
       "allowLocalBinding": true
     }
   },
