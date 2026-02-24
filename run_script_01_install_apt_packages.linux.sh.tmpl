@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+{{- if ne .chezmoi.os "linux" }}
+exit 0
+{{- end }}
+
+# Idempotent package install: only install what's missing.
+# Runs on every apply but is fast when everything is already installed.
+
+{{- if and (hasKey . "packages") (hasKey .packages "linux") (hasKey .packages.linux "apt") }}
+missing=()
+for pkg in{{ range .packages.linux.apt }} {{ . | quote }}{{ end }}; do
+  if ! dpkg -s "$pkg" &>/dev/null; then
+    missing+=("$pkg")
+  fi
+done
+if [[ ${#missing[@]} -gt 0 ]]; then
+  echo "[chezmoi] Installing apt packages: ${missing[*]}"
+  sudo apt install -y "${missing[@]}"
+fi
+{{- end }}

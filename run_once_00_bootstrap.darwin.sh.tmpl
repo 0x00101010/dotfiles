@@ -12,16 +12,6 @@ echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
 eval "$(/opt/homebrew/bin/brew shellenv)"
 brew update
 
-{{- if and (hasKey . "packages") (hasKey .packages "darwin") (hasKey .packages.darwin "brew") }}
-echo "[chezmoi] Installing brew packages: {{ join " " .packages.darwin.brew }}"
-brew install{{ range .packages.darwin.brew }} {{ . }}{{ end }} || true
-{{- end }}
-
-{{- if and (hasKey . "packages") (hasKey .packages "darwin") (hasKey .packages.darwin "casks") }}
-echo "[chezmoi] Installing brew casks: {{ join " " .packages.darwin.casks }}"
-brew install --cask{{ range .packages.darwin.casks }} {{ . }}{{ end }} || true
-{{- end }}
-
 # Install tmux plugins
 git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm || true
 ~/.tmux/plugins/tpm/bin/install_plugins
@@ -42,5 +32,5 @@ curl -L https://foundry.paradigm.xyz | bash
 foundryup
 
 {{- else }}
-echo "[chezmoi] Skipping Darwin installer, this is {{ .chezmoi.os }}"
+echo "[chezmoi] Skipping Darwin bootstrap, this is {{ .chezmoi.os }}"
 {{- end }}

@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+{{- if ne .chezmoi.os "darwin" }}
+exit 0
+{{- end }}
+
+# Idempotent package install: only install what's missing.
+# Runs on every apply but is fast when everything is already installed.
+
+eval "$(/opt/homebrew/bin/brew shellenv)" 2>/dev/null || true
+
+{{- if and (hasKey . "packages") (hasKey .packages "darwin") (hasKey .packages.darwin "brew") }}
+for pkg in{{ range .packages.darwin.brew }} {{ . | quote }}{{ end }}; do
+  # Tap formulae are installed under the last path component
+  name="${pkg##*/}"
+  if ! brew list --formula "$name" &>/dev/null; then
+    echo "[chezmoi] Installing brew formula: $pkg"
+    brew install "$pkg"
+  fi
+done
+{{- end }}
+
+{{- if and (hasKey . "packages") (hasKey .packages "darwin") (hasKey .packages.darwin "casks") }}
+for cask in{{ range .packages.darwin.casks }} {{ . | quote }}{{ end }}; do
+  name="${cask##*/}"
+  if ! brew list --cask "$name" &>/dev/null; then
+    echo "[chezmoi] Installing brew cask: $cask"
+    brew install --cask "$cask"
+  fi
+done
+{{- end }}
