@@ -121,8 +121,7 @@ BASE_CONFIG='
 # Read current target from stdin (may be empty on first run)
 EXISTING=$(cat)
 
-if [ -z "$EXISTING"
-] || ! echo "$EXISTING" | jq empty 2>/dev/null; then
+if [ -z "$EXISTING" ] || ! echo "$EXISTING" | jq empty 2>/dev/null; then
   # No existing file or invalid JSON — use base config as-is
   echo "$BASE_CONFIG" | jq .
 else

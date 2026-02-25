@@ -96,8 +96,6 @@ alias gd='git diff HEAD'
 # Git Worktree
 alias gw='git worktree'
 alias gwl='git worktree list'
-alias gwa='git worktree add'
-alias gwr='git worktree remove'
 alias gwp='git worktree prune'
 
 # Fuzzyhub

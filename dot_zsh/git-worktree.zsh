@@ -1,5 +1,5 @@
 # Clone repo as bare + worktree setup
-wclone() {
+gwc() {
     local repo_url=$1
     local folder_name=${2:-$(basename "$repo_url" .git)}
 
@@ -29,8 +29,32 @@ wclone() {
     echo "  git worktree add <name> -b <new-branch> $default_branch"
 }
 
+# Add a worktree and cd into it
+# Usage: gwa <branch-name> [path]  (path defaults to ../<branch-name>)
+gwa() {
+    local branch=$1
+    local dest=${2:-"../$branch"}
+
+    if [[ -z "$branch" ]]; then
+        echo "Usage: wadd <branch-name> [path]"
+        return 1
+    fi
+
+    git worktree add "$dest" -b "$branch" && cd "$dest"
+}
+
+# Remove a worktree and cd to ../main
+# Usage: gwrm [path]  (defaults to current directory)
+gwrm() {
+    local dest=${1:-$(pwd)}
+    dest=$(cd "$dest" && pwd)
+    local main=$(dirname "$dest")/main
+
+    git worktree remove "$dest" && cd "$main"
+}
+
 # Add remote with proper fetch config for worktree repos
-wremote() {
+gwr() {
     local remote_name=$1
     local remote_url=$2
 
