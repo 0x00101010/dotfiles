@@ -6,7 +6,7 @@ exit 0
 {{- end }}
 
 # Idempotent package install: only install what's missing.
-# Runs on every apply but is fast when everything is already installed.
+# Runs once (right after bootstrap); runs again only if package list changes.
 
 {{- if and (hasKey . "packages") (hasKey .packages "linux") (hasKey .packages.linux "apt") }}
 missing=()

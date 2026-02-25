@@ -6,7 +6,7 @@ exit 0
 {{- end }}
 
 # Idempotent package install: only install what's missing.
-# Runs on every apply but is fast when everything is already installed.
+# Runs once (right after bootstrap); runs again only if package list changes.
 
 eval "$(/opt/homebrew/bin/brew shellenv)" 2>/dev/null || true
 

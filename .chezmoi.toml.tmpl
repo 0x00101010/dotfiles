@@ -14,7 +14,7 @@
 
 [data]
   email = {{ promptStringOnce . "email" "What is your email address" | quote }}
-  fullName = {{ promptStringOnce . "name" "What is your name" | quote }}
+  fullName = {{ promptStringOnce . "fullName" "What is your name" | quote }}
   signingkey = {{ promptStringOnce . "signingkey" "What is your GPG signing key" | quote }}
 
 [secret]
