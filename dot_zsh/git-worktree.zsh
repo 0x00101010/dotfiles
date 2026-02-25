@@ -40,7 +40,7 @@ gwa() {
         return 1
     fi
 
-    git worktree add "$dest" -b "$branch" && cd "$dest"
+    git worktree add "$dest" -B "$branch" && cd "$dest"
 }
 
 # Remove a worktree and cd to ../main
