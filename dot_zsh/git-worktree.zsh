@@ -43,12 +43,39 @@ gwa() {
     git worktree add "$dest" -B "$branch" && cd "$dest"
 }
 
-# Remove a worktree and cd to ../main
-# Usage: gwrm [path]  (defaults to current directory)
+# Remove a worktree and cd to main
+# Usage: gwrm [.|worktree-name]  (defaults to current worktree)
 gwrm() {
-    local dest=${1:-$(pwd)}
-    dest=$(cd "$dest" && pwd)
-    local main=$(dirname "$dest")/main
+    local input=${1:-.}
+
+    # Find repo root (parent of .bare)
+    local git_common_dir
+    git_common_dir=$(git rev-parse --git-common-dir 2>/dev/null) || {
+        echo "Not in a git repository"
+        return 1
+    }
+    local repo_root
+    repo_root=$(cd "$git_common_dir/.." && pwd)
+
+    # Resolve the worktree to remove
+    local dest
+    if [[ "$input" == "." ]]; then
+        dest=$(git rev-parse --show-toplevel 2>/dev/null)
+    else
+        dest="$repo_root/$input"
+    fi
+
+    local main="$repo_root/main"
+
+    if [[ "$dest" == "$main" ]]; then
+        echo "Cannot remove main worktree"
+        return 1
+    fi
+
+    # cd out first if we're inside the worktree being removed
+    if [[ "$(pwd)" == "$dest" || "$(pwd)" == "$dest/"* ]]; then
+        cd "$main" || return 1
+    fi
 
     git worktree remove "$dest" && cd "$main"
 }
