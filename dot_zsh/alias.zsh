@@ -134,6 +134,6 @@ alias cc='cargo check'
 alias ci="chezmoi"
 alias cia="chezmoi apply -v"
 alias cid="cd ~/src/dotfiles"
-alias cz="chezmoi apply -v && exec zsh"
+alias cz="chezmoi apply -v && tmux source-file ~/.config/tmux/tmux.conf && exec zsh"
 
 alias j="just"
