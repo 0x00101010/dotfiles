@@ -134,6 +134,6 @@ alias cc='cargo check'
 alias ci="chezmoi"
 alias cia="chezmoi apply -v"
 alias cid="cd ~/src/dotfiles"
-alias cz="chezmoi apply -v && source ~/.zshrc"
+alias cz="chezmoi apply -v && exec zsh"
 
 alias j="just"
