@@ -2,7 +2,7 @@
 alias ez="$EDITOR ~/.zshrc"     # alias for Edit Zshrc
 alias ea="$EDITOR ~/.alias.zsh" # alias for Edit Alias
 alias el="$EDITOR ~/.local.zsh" # alias for Edit Local
-alias sz='source ~/.zshrc'      # alias for Source Zsh
+alias ez='exec zsh'             # alias for exec zsh
 
 # bookmarks
 alias @tmp='cd ~/tmp'

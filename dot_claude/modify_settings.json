@@ -83,7 +83,8 @@ BASE_CONFIG='
       "Read(//private/tmp/**)",
       "Read(//tmp/**)",
       "Read(/home/**/src/**)",
-      "Read(/Users/**/src/**)"
+      "Read(/Users/**/src/**)",
+      "Read(~/src/**)"
     ],
     "deny": [
       "Read(.env*)",
@@ -100,6 +101,13 @@ BASE_CONFIG='
   "sandbox": {
     "enabled": true,
     "autoAllowBashIfSandboxed": true,
+    "filesystem": {
+      "read": {
+        "allow": [
+          "'"$HOME"'/src"
+        ]
+      }
+    },
     "network": {
       "allowedHosts": [
         "api.github.com"
