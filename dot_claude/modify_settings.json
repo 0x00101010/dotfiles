@@ -79,6 +79,7 @@ BASE_CONFIG='
       "Bash(gh issue list:*)",
       "Bash(gh issue view:*)",
       "Bash(gh:*)",
+      "Base(just:*)",
       "Read(//private/tmp/**)",
       "Read(//tmp/**)",
       "Read(/home/**/src/**)",
@@ -90,7 +91,7 @@ BASE_CONFIG='
       "Read(**/*.key)"
     ]
   },
-  "model": "claude-opus-4-6",
+  "model": "opus[1m]",
   "enabledPlugins": {
     "rust-analyzer-lsp@claude-plugins-official": true,
     "hookify@claude-plugins-official": true,
@@ -100,6 +101,9 @@ BASE_CONFIG='
     "enabled": true,
     "autoAllowBashIfSandboxed": true,
     "network": {
+      "allowedHosts": [
+        "api.github.com"
+      ],
       "allowUnixSockets": [
         "/var/run/docker.sock"
       ],
