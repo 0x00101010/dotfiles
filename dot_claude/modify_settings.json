@@ -99,24 +99,7 @@ BASE_CONFIG='
     "ralph-loop@claude-plugins-official": true
   },
   "sandbox": {
-    "enabled": true,
-    "autoAllowBashIfSandboxed": true,
-    "filesystem": {
-      "read": {
-        "allow": [
-          "'"$HOME"'/src"
-        ]
-      }
-    },
-    "network": {
-      "allowedHosts": [
-        "api.github.com"
-      ],
-      "allowUnixSockets": [
-        "/var/run/docker.sock"
-      ],
-      "allowLocalBinding": true
-    }
+    "enabled": false
   },
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
