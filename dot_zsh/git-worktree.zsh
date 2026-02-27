@@ -30,14 +30,23 @@ gwc() {
 }
 
 # Add a worktree and cd into it
-# Usage: gwa <branch-name> [path]  (path defaults to ../<branch-name>)
+# Usage: gwa <branch-name> [path]  (path defaults to <repo-root>/<branch-name>)
 gwa() {
     local branch=$1
-    local dest=${2:-"../$branch"}
 
     if [[ -z "$branch" ]]; then
-        echo "Usage: wadd <branch-name> [path]"
+        echo "Usage: gwa <branch-name> [path]"
         return 1
+    fi
+
+    local dest=$2
+    if [[ -z "$dest" ]]; then
+        local git_common_dir
+        git_common_dir=$(git rev-parse --git-common-dir 2>/dev/null) || {
+            echo "Not in a git repository"
+            return 1
+        }
+        dest="$(cd "$git_common_dir/.." && pwd)/$branch"
     fi
 
     git worktree add "$dest" -B "$branch" && cd "$dest"
@@ -78,6 +87,27 @@ gwrm() {
     fi
 
     git worktree remove "$dest" && cd "$main"
+}
+
+# cd to the main/master worktree
+gwm() {
+    local git_common_dir
+    git_common_dir=$(git rev-parse --git-common-dir 2>/dev/null) || {
+        echo "Not in a git repository"
+        return 1
+    }
+    local repo_root
+    repo_root=$(cd "$git_common_dir/.." && pwd)
+
+    for branch in main master; do
+        if [[ -d "$repo_root/$branch" ]]; then
+            cd "$repo_root/$branch"
+            return
+        fi
+    done
+
+    echo "No main or master worktree found in $repo_root"
+    return 1
 }
 
 # Add remote with proper fetch config for worktree repos
