@@ -62,14 +62,17 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ## 5. Plans
 
-**Plans go to `$HOME/.claude/plans/<project>/` with descriptive names.**
+**Plans MUST go to `$HOME/.claude/plans/<project>/` with descriptive names. NEVER use auto-generated or random plan names.**
 
 - IMPORTANT: Always use `$HOME` (not `~`) in paths passed to `mkdir` and file operations, since `~` does not expand inside quotes.
+- NEVER write plans to `$HOME/.claude/plans/` directly — always use a `<project>` subfolder.
+- NEVER use random/auto-generated names like `iterative-hugging-parnas.md` or `adjective-adjective-noun.md`. These are WRONG.
 - Derive `<project>` from the git repo name (e.g., `dotfiles`, `my-api`). Use `basename $(git rev-parse --show-toplevel)`.
-- Name plan files after what they accomplish, not random IDs. Examples:
+- Name plan files after what they accomplish. Examples:
   - `add-user-auth.md`, `fix-payment-race-condition.md`, `refactor-db-layer.md`
 - Format: lowercase, hyphen-separated, concise but specific.
 - Create the project subdirectory if it doesn't exist.
+- Full example: `$HOME/.claude/plans/dotfiles/add-webfetch-permissions.md`
 
 ## 6. Debugging
 
