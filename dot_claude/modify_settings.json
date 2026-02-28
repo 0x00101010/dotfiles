@@ -29,6 +29,7 @@ BASE_CONFIG='
       "Bash(head:*)",
       "Bash(tail:*)",
       "Bash(more:*)",
+      "Bash(echo:*)",
       "Bash(ping:*)",
       "Bash(curl:*)",
       "Bash(ifconfig:*)",
