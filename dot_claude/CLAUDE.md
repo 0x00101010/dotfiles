@@ -60,7 +60,17 @@ For multi-step tasks, state a brief plan:
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
-## 5. Debugging
+## 5. Plans
+
+**Plans go to `~/.claude/plans/<project>/` with descriptive names.**
+
+- Derive `<project>` from the git repo name (e.g., `dotfiles`, `my-api`). Use `basename $(git rev-parse --show-toplevel)`.
+- Name plan files after what they accomplish, not random IDs. Examples:
+  - `add-user-auth.md`, `fix-payment-race-condition.md`, `refactor-db-layer.md`
+- Format: lowercase, hyphen-separated, concise but specific.
+- Create the project subdirectory if it doesn't exist.
+
+## 6. Debugging
 
 When I report a bug, don't start by trying to fix it. Instead, start by writing a test that reproduces the bug. Then, have subagents try to fix the bug and prove it with a passing test.
 
