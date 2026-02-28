@@ -62,8 +62,9 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ## 5. Plans
 
-**Plans go to `~/.claude/plans/<project>/` with descriptive names.**
+**Plans go to `$HOME/.claude/plans/<project>/` with descriptive names.**
 
+- IMPORTANT: Always use `$HOME` (not `~`) in paths passed to `mkdir` and file operations, since `~` does not expand inside quotes.
 - Derive `<project>` from the git repo name (e.g., `dotfiles`, `my-api`). Use `basename $(git rev-parse --show-toplevel)`.
 - Name plan files after what they accomplish, not random IDs. Examples:
   - `add-user-auth.md`, `fix-payment-race-condition.md`, `refactor-db-layer.md`
