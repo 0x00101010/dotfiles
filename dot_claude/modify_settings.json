@@ -22,6 +22,7 @@ BASE_CONFIG='
       "Fetch",
       "WebSearch",
       "Base(cd:*)",
+      "Bash(cd:*)",
       "Bash(make:*)",
       "Bash(ls:*)",
       "Bash(cat:*)",
@@ -95,7 +96,7 @@ BASE_CONFIG='
       "Read(**/*.key)"
     ]
   },
-  "model": "opus[1m]",
+  "model": "claude-opus-4-6[1m]",
   "enabledPlugins": {
     "rust-analyzer-lsp@claude-plugins-official": true,
     "hookify@claude-plugins-official": true,
