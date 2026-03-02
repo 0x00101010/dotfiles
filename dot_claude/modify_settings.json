@@ -89,7 +89,8 @@ BASE_CONFIG='
       "Read(//tmp/**)",
       "Read(/home/**/src/**)",
       "Read(/Users/**/src/**)",
-      "Read(~/src/**)"
+      "Read(~/src/**)",
+      "mcp__linear__*"
     ],
     "deny": [
       "Read(.env*)",
