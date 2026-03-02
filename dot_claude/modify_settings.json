@@ -90,6 +90,8 @@ BASE_CONFIG='
       "Read(/home/**/src/**)",
       "Read(/Users/**/src/**)",
       "Read(~/src/**)",
+      "Edit(~/src/**)",
+      "Write(~/src/**)",
       "mcp__linear__*"
     ],
     "deny": [

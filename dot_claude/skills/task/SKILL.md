@@ -31,6 +31,7 @@ There is no static mapping. Figure it out dynamically:
 
 1. `cd` to the resolved repo's main worktree. For bare-repo layouts (`.bare` directory), `cd ~/src/<repo>/main`. For standard repos, `cd ~/src/<repo>`.
 2. Run `gwa <prefix>/<slug>` to create and enter the worktree. This shell function is defined in `~/.zsh/git-worktree.zsh` and handles worktree creation + cd.
+3. Run `pwd` to capture the worktree absolute path. This is `$WORKTREE_PATH` for the rest of the session.
 
 **Branch naming** — pick the prefix based on task nature:
 
@@ -58,7 +59,7 @@ Never include Linear issue IDs in branch names — reference them in PR descript
 
 ## Step 5 — Work on the task
 
-Proceed with the actual work described by `$ARGUMENTS`. You are now in the worktree — implement, test, iterate.
+Proceed with the actual work described by `$ARGUMENTS`. You are now in the worktree — implement, test, iterate. Use absolute paths based on `$WORKTREE_PATH` for all file operations (Read, Edit, Write, Glob, Grep).
 
 ## Step 6 — When the user says done
 
