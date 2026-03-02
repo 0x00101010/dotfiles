@@ -47,6 +47,7 @@ BASE_CONFIG='
       "Bash(uniq:*)",
       "Bash(diff:*)",
       "Bash(file:*)",
+      "Bash(stat:*)",
       "Bash(find:*)",
       "Bash(xargs:*)",
       "Bash(locate:*)",
