@@ -74,7 +74,17 @@ gwrm() {
         dest="$repo_root/$input"
     fi
 
-    local main="$repo_root/main"
+    local main
+    for branch in main master; do
+        if [[ -d "$repo_root/$branch" ]]; then
+            main="$repo_root/$branch"
+            break
+        fi
+    done
+    if [[ -z "$main" ]]; then
+        echo "No main or master worktree found in $repo_root"
+        return 1
+    fi
 
     if [[ "$dest" == "$main" ]]; then
         echo "Cannot remove main worktree"
