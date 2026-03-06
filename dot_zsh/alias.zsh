@@ -66,10 +66,10 @@ alias gcob="git checkout -b"
 alias gp='_git_push_auto_branch' # git push to origin on current branch if no argument specified. Otherwise, git push to specified remote. (from cb-zsh)
 alias gprune="git remote prune origin | grep -o '\[pruned\] origin\/.*$' | sed -e 's/\[pruned\] origin\///' | xargs git branch -D"
 alias gpum='git pull upstream main'
-alias gpumaster='git pull upstream master'
+alias gpumr='git pull upstream master'
 alias gpud='git pull upstream develop'
 alias gpom='git pull origin main'
-alias gpomaster='git pull origin master'
+alias gpomr='git pull origin master'
 alias gpod='git pull origin develop'
 
 
