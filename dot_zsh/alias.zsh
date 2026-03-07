@@ -136,3 +136,6 @@ alias cid="cd ~/src/dotfiles"
 alias cz="chezmoi apply -v && tmux source-file ~/.config/tmux/tmux.conf && exec zsh"
 
 alias j="just"
+
+alias sshfw="ssh francis@192.168.68.61"
+alias sshfwr="ssh -p 3333 francis@0x00101010.tplinkdns.com"
