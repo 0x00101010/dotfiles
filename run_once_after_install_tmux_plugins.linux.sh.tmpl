@@ -5,10 +5,13 @@ set -euo pipefail
 exit 0
 {{- end }}
 
-# Install TPM plugins after chezmoi has placed tmux.conf
+# Install TPM plugins after chezmoi has placed tmux.conf.
+# TPM requires a running tmux server, so start a detached one temporarily.
 if [[ -x ~/.tmux/plugins/tpm/bin/install_plugins ]]; then
   echo "[chezmoi] Installing tmux plugins via TPM..."
-  ~/.tmux/plugins/tpm/bin/install_plugins
+  tmux new-session -d -s _chezmoi_tpm_install 2>/dev/null || true
+  ~/.tmux/plugins/tpm/bin/install_plugins || true
+  tmux kill-session -t _chezmoi_tpm_install 2>/dev/null || true
 else
   echo "[chezmoi] WARNING: TPM not found, skipping tmux plugin install"
 fi
