@@ -6,11 +6,29 @@ echo "[chezmoi] Skipping Linux bootstrap, this is {{ .chezmoi.os }}"
 exit 0
 {{- end }}
 
-# Setup mise
+# Install core dependencies first (needed by everything below)
+sudo apt update
+sudo apt install -y curl wget git gpg
+
+# Setup mise apt repo
 sudo install -dm 755 /etc/apt/keyrings
 wget -qO - https://mise.jdx.dev/gpg-key.pub | gpg --dearmor | sudo tee /etc/apt/keyrings/mise-archive-keyring.gpg 1> /dev/null
 echo "deb [signed-by=/etc/apt/keyrings/mise-archive-keyring.gpg arch=amd64] https://mise.jdx.dev/deb stable main" | sudo tee /etc/apt/sources.list.d/mise.list
 sudo apt update
+
+# Install all apt packages from .chezmoidata.toml
+{{- if and (hasKey . "packages") (hasKey .packages "linux") (hasKey .packages.linux "apt") }}
+missing=()
+for pkg in{{ range .packages.linux.apt }} {{ . | quote }}{{ end }}; do
+  if ! dpkg -s "$pkg" &>/dev/null; then
+    missing+=("$pkg")
+  fi
+done
+if [[ ${#missing[@]} -gt 0 ]]; then
+  echo "[chezmoi] Installing apt packages: ${missing[*]}"
+  sudo apt install -y "${missing[@]}"
+fi
+{{- end }}
 
 # Install ghostty terminfo so tmux/ncurses don't choke on xterm-ghostty.
 # The terminfo ships with ncurses >= 6.5-20241228. On older systems we
