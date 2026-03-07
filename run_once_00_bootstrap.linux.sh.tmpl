@@ -12,9 +12,17 @@ wget -qO - https://mise.jdx.dev/gpg-key.pub | gpg --dearmor | sudo tee /etc/apt/
 echo "deb [signed-by=/etc/apt/keyrings/mise-archive-keyring.gpg arch=amd64] https://mise.jdx.dev/deb stable main" | sudo tee /etc/apt/sources.list.d/mise.list
 sudo apt update
 
-# Install tmux plugins
+# Install ghostty terminfo so tmux/ncurses don't choke on xterm-ghostty
+if ! infocmp xterm-ghostty &>/dev/null 2>&1; then
+  echo "[chezmoi] Installing ghostty terminfo..."
+  tempfile=$(mktemp)
+  curl -fsSL https://raw.githubusercontent.com/ghostty-org/ghostty/main/src/terminfo/ghostty.terminfo -o "$tempfile"
+  tic -x "$tempfile"
+  rm -f "$tempfile"
+fi
+
+# Install tmux plugin manager (plugins installed in run_after script, after tmux.conf is in place)
 git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm || true
-~/.tmux/plugins/tpm/bin/install_plugins
 
 # Install oh-my-posh (for my favorite theme)
 curl -s https://ohmyposh.dev/install.sh | bash -s

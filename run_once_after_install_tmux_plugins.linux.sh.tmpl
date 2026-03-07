@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+{{- if ne .chezmoi.os "linux" }}
+exit 0
+{{- end }}
+
+# Install TPM plugins after chezmoi has placed tmux.conf
+if [[ -x ~/.tmux/plugins/tpm/bin/install_plugins ]]; then
+  echo "[chezmoi] Installing tmux plugins via TPM..."
+  ~/.tmux/plugins/tpm/bin/install_plugins
+else
+  echo "[chezmoi] WARNING: TPM not found, skipping tmux plugin install"
+fi
