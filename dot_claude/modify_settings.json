@@ -124,9 +124,14 @@ BASE_CONFIG='
 # Read current target from stdin (may be empty on first run)
 EXISTING=$(cat)
 
+output() {
+  # Strip trailing newline to match Claude Code's output format
+  perl -pe 'chomp if eof'
+}
+
 if [ -z "$EXISTING" ] || ! echo "$EXISTING" | jq empty 2>/dev/null; then
   # No existing file or invalid JSON — use base config as-is
-  echo "$BASE_CONFIG" | jq .
+  echo "$BASE_CONFIG" | jq . | output
 else
   # Deep-merge: existing * base, with special handling for "env"
   # 1. Merge env separately (existing env + base env, base wins on conflicts)
@@ -137,5 +142,5 @@ else
     # Shallow merge top-level: existing + base (base wins), then set merged env
     . * $base |
     .env = $merged_env
-  '
+  ' | output
 fi
