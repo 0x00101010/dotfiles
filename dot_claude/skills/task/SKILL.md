@@ -12,7 +12,7 @@ Given: `$ARGUMENTS`
 - **Linear issue ID** (e.g. `ENG-123`): fetch via `mcp__linear__get_issue`. Also check `~/src/workspace/todos/work.md` and `personal.md` for a related checkbox entry.
 - **Otherwise**: search all three sources below for matches:
   1. `~/src/workspace/todos/work.md` and `~/src/workspace/todos/personal.md` — checkbox lines matching the text
-  2. `~/src/workspace/plans/` — list all `.md` files recursively, match `$ARGUMENTS` against filenames (slugified, e.g. "extend blockhash" matches `extend-blockhash.md`)
+  2. `~/src/workspace/projects/` — search recursively for `plans/` subdirectories, list all `.md` files within them, match `$ARGUMENTS` against filenames (slugified, e.g. "extend blockhash" matches `extend-blockhash.md`)
 - If **multiple matches** across todos and plans: show all candidates and let the user pick.
 - If a **plan file** is selected: read its contents and use them as the task specification in Step 5.
 - If **no match**: ask the user to clarify.
@@ -68,7 +68,7 @@ Proceed with the actual work described by `$ARGUMENTS`. You are now in the workt
 When they do:
 - Mark `- [ ]` to `- [x]` in the corresponding `~/src/workspace/todos/{work,personal}.md` file.
 - If a corresponding Linear issue exists: update its status via `mcp__linear__save_issue`.
-- If working from a plan file: move it to `~/src/workspace/plans/done/<project>/<plan-name>.md` (create the `done/<project>/` directory if needed).
+- If working from a plan file: move it to a `done/` subdirectory next to it (e.g. `projects/work/qmdb/plans/done/<plan-name>.md` — create `done/` if needed).
 - Commit changes in the worktree.
 - If the work involved design/analysis: **suggest** (don't auto-create) a plan file at `~/src/workspace/projects/{work,personal}/<project>/<name>.md`.
 - Do NOT create PRs, clean up worktrees, or perform other lifecycle actions unless explicitly asked.

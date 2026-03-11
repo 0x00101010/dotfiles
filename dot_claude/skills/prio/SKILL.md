@@ -23,9 +23,9 @@ Compute the target date at the start. All schedule generation uses the target da
 
 | Horizon | File | Stale when |
 |---------|------|------------|
-| 5yr | `~/src/workspace/strategies/vision-5yr.md` | Doesn't exist or last modified > 1 year ago |
-| year | `~/src/workspace/strategies/year-<yyyy>.md` | Doesn't exist for current year |
-| quarter | `~/src/workspace/strategies/quarter-<yyyy>-Q<n>.md` | Doesn't exist for current quarter |
+| 5yr | `~/src/workspace/identity/goals/5-year.md` | Doesn't exist or last modified > 1 year ago |
+| year | `~/src/workspace/identity/goals/<yyyy>.md` | Doesn't exist for current year |
+| quarter | `~/src/workspace/identity/goals/<yyyy>-Q<n>.md` | Doesn't exist for current quarter |
 | week | `~/src/workspace/schedules/<yyyy-mm-dd>-week.md` | No file for current week (use Monday's date) |
 | target date | `~/src/workspace/schedules/<yyyy-mm-dd>.md` | Doesn't exist for target date |
 
@@ -41,16 +41,16 @@ If any horizon is missing/stale, **stop at the highest gap** and guide the user 
 
 Each horizon reads from the one above it plus its own input sources:
 
-**5yr vision** — Read: `strategies/career.md`, `strategies/ideas.md`, `strategies/personal-board-of-directors.md`
+**5yr vision** — Read: `identity/career-strategy.md`, `strategies/ideas.md`, `identity/board-of-directors.md`
 Output: Vision statement, life areas (career, personal, financial, health), directional bets.
 
-**Year** — Read: 5yr plan, all `strategies/*`, `projects/work/priorities.md`
+**Year** — Read: 5yr plan, `identity/career-strategy.md`, all `strategies/*`, `projects/work/priorities.md`
 Output: 3-5 themes/goals, milestone targets, success criteria.
 
 **Quarter** — Read: year plan, `todos/work.md`, `todos/personal.md`, Linear issues.
 Output: 3-5 objectives with key results (OKR-style).
 
-**Week** — Read: quarter plan, all `todos/*`, Linear, trickle list, recent daily schedules.
+**Week** — Read: quarter plan, all `todos/*`, Linear, trickle list, recent daily schedules, recent `journal/` entries.
 Output: 2-3 focus areas, key deliverables (checkboxes), carryover, "not this week" section.
 
 All paths above are relative to `~/src/workspace/`.

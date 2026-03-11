@@ -62,16 +62,17 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ## 5. Plans
 
-**Plans MUST go to `~/src/workspace/plans/<project>/` with descriptive names. NEVER use auto-generated or random plan names.**
+**Plans live inside their project directory. NEVER use auto-generated or random plan names.**
 
-- NEVER write plans to `~/src/workspace/plans/` directly — always use a `<project>` subfolder.
-- NEVER use random/auto-generated names like `iterative-hugging-parnas.md` or `adjective-adjective-noun.md`. These are WRONG.
-- Derive `<project>` from the git repo name (e.g., `dotfiles`, `my-api`). Use `basename $(git rev-parse --show-toplevel)`.
+- Plans go to `~/src/workspace/projects/{work,personal}/<project>/plans/<plan-name>.md`
+- Derive `<project>` from the task context (e.g., `qmdb`, `multiprover`, `reth-everywhere`)
+- For non-project plans (dotfiles, workspace tooling): use `~/src/workspace/projects/work/<repo>/plans/`
 - Name plan files after what they accomplish. Examples:
-  - `add-user-auth.md`, `fix-payment-race-condition.md`, `refactor-db-layer.md`
+  - `add-staged-sync.md`, `fix-enclave-build.md`, `refactor-db-layer.md`
 - Format: lowercase, hyphen-separated, concise but specific.
-- Create the project subdirectory if it doesn't exist.
-- Full example: `~/src/workspace/plans/dotfiles/add-webfetch-permissions.md`
+- Create the project and plans subdirectories if they don't exist.
+- Full example: `~/src/workspace/projects/work/multiprover/plans/enclave-oracle-execution.md`
+- NEVER use random/auto-generated names like `iterative-hugging-parnas.md` or `adjective-adjective-noun.md`. These are WRONG.
 
 ## 6. Debugging
 
