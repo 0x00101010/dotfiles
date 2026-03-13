@@ -4,7 +4,6 @@
   // ----------------------------------------------------------------------------
   "workbench.activityBar.orientation": "vertical",
   "workbench.iconTheme": "material-icon-theme",
-  "explorer.sortOrder": "modified",
   "workbench.colorTheme": "Catppuccin Macchiato",
   "editor.fontFamily": "SauceCodePro Nerd Font",
   "editor.fontSize": 13,
