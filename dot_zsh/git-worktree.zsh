@@ -96,7 +96,9 @@ gwrm() {
         cd "$main" || return 1
     fi
 
-    git worktree remove "$dest" && { [[ -d "$dest" ]] && rm -rf "$dest"; cd "$main"; }
+    git worktree remove --force "$dest" 2>/dev/null
+    [[ -d "$dest" ]] && rm -rf "$dest"
+    cd "$main"
 }
 
 # cd to the main/master worktree
