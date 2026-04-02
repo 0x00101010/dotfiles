@@ -143,4 +143,7 @@ alias sshfwr="ssh -p 3333 francis@0x00101010.tplinkdns.com"
 alias home="devbox -p home"
 alias work="devbox -p work"
 
+alias mhome="devbox -m -p home"
+alias mwork="devbox -m -p work"
+
 alias oc='opencode'
