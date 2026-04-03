@@ -146,4 +146,6 @@ alias work="devbox -p work"
 alias mhome="devbox -m -p home"
 alias mwork="devbox -m -p work"
 
-alias oc='opencode'
+alias oc="opencode"
+alias cs="cursor"
+alias vc="code"
