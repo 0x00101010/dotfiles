@@ -65,13 +65,15 @@ Write to `~/src/workspace/journal/<YYYY>/<MM>/<YYYY-MM-DD>.md`.
 
 Create directories if they don't exist.
 
-## Step 5 — Update todos
+## Step 5 — Archive completed todos
 
-If the user confirmed completing items that appear in `todos/work.md` or `todos/personal.md`, offer to mark them as done (checkbox `- [x]`). Ask before modifying.
+If the user confirmed completing items that appear in `todos/work.md` or `todos/personal.md`, offer to archive them. Ask before modifying.
+
+To archive: remove the task line (and its `  > context` lines) from the source file and append to `~/src/workspace/todos/archive.md` with today's date. Format: `- [x] P{n} | description | optional:ref | YYYY-MM-DD`. Append under the current month heading (`## YYYY-MM`), creating the heading if it doesn't exist. Preserve context lines.
 
 ## Key rules
 
 - **Never fabricate entries** — only write what the user said
-- **Never auto-mark todos** — always ask before checking off items
+- **Never auto-archive todos** — always ask before archiving items
 - **Keep it brief** — journal entries should be scannable, not essays
 - **Preserve the user's voice** — paraphrase minimally

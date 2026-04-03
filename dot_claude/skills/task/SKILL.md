@@ -1,6 +1,6 @@
 ---
 name: task
-description: Pick up a task from workspace todos or Linear, set up a worktree, and work on it
+description: Pick up a task from workspace todos, set up a worktree, and work on it
 ---
 
 You are a coding agent picking up a task. Follow these steps in order.
@@ -9,9 +9,11 @@ You are a coding agent picking up a task. Follow these steps in order.
 
 Given: `$ARGUMENTS`
 
-- **Linear issue ID** (e.g. `ENG-123`): fetch via `mcp__linear__get_issue`. Also check `~/src/workspace/todos/work.md` and `personal.md` for a related checkbox entry.
-- **Otherwise**: search all three sources below for matches:
-  1. `~/src/workspace/todos/work.md` and `~/src/workspace/todos/personal.md` — checkbox lines matching the text
+Task format in todo files: `- [ ] P{0-3} | description | optional:SOURCE-REF` with optional `  > context` lines below.
+
+- **Linear issue ID** (e.g. `ENG-123`): fetch via `mcp__linear__get_issue`. Also check `~/src/workspace/todos/work.md` for a task with matching `LINEAR:` source ref.
+- **Otherwise**: search these local sources for matches:
+  1. `~/src/workspace/todos/work.md` and `~/src/workspace/todos/personal.md` — task lines matching the text (search the description field)
   2. `~/src/workspace/projects/` — search recursively for `plans/` subdirectories, list all `.md` files within them, match `$ARGUMENTS` against filenames (slugified, e.g. "extend blockhash" matches `extend-blockhash.md`)
 - If **multiple matches** across todos and plans: show all candidates and let the user pick.
 - If a **plan file** is selected: read its contents and use them as the task specification in Step 5.
@@ -66,7 +68,7 @@ Proceed with the actual work described by `$ARGUMENTS`. You are now in the workt
 **Never auto-complete.** Only act when the user explicitly says the task is done.
 
 When they do:
-- Mark `- [ ]` to `- [x]` in the corresponding `~/src/workspace/todos/{work,personal}.md` file.
+- **Archive the task**: remove the task line (and its `  > context` lines) from the source file (`~/src/workspace/todos/{work,personal}.md`) and append to `~/src/workspace/todos/archive.md` with today's date. Format: `- [x] P{n} | description | optional:ref | YYYY-MM-DD`. Append under the current month heading (`## YYYY-MM`), creating the heading if it doesn't exist. Preserve context lines — move them along with the task.
 - If a corresponding Linear issue exists: update its status via `mcp__linear__save_issue`.
 - If working from a plan file: move it to a `done/` subdirectory next to it (e.g. `projects/work/qmdb/plans/done/<plan-name>.md` — create `done/` if needed).
 - Commit changes in the worktree.

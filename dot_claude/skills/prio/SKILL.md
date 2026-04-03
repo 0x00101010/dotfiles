@@ -74,10 +74,13 @@ Summarize: what was completed, what was missed, brief recommendation.
 #### 3b — Gather tasks
 
 Read these files and collect all unchecked items:
-- `~/src/workspace/todos/work.md` — preserve category headings
-- `~/src/workspace/todos/personal.md`
+- `~/src/workspace/todos/work.md` — tasks use format `- [ ] P{0-3} | description | optional:SOURCE-REF`. Preserve `### Category` headings as project groups. Include `  > context` lines (indented, `>` prefixed) associated with each task.
+- `~/src/workspace/todos/personal.md` — same format
 - `~/src/workspace/todos/recurring.md` — check if any are due today
 - `~/src/workspace/todos/trickle-list.md` — always included
+- `~/src/workspace/inbox.md` — if items exist, note them ("N items pending triage")
+
+De-duplicate: if a task in work.md has a `LINEAR:CHAIN-XXXX` source ref, do NOT also show it from Linear API results.
 
 Fetch Linear issues assigned to the user:
 ```
@@ -89,7 +92,7 @@ Sort Linear results by priority (1=Urgent first).
 
 #### 3c — Prioritize (always ask, never assume)
 
-Present all gathered tasks grouped by source/project with suggested P0-P3 priorities.
+Present all gathered tasks grouped by source/project. Tasks from work.md/personal.md already have priorities — present them as-is. Only suggest re-prioritization if something seems off.
 
 **Linear priority mapping**: P0=Urgent(1), P1=High(2), P2=Medium(3), P3=Low(4).
 
@@ -135,3 +138,4 @@ If the target date's schedule file exists:
 - **Never assume priorities** — always ask at minimum "what's most important [today/tomorrow]?" and "anything blocking?"
 - **Never auto-mark anything done** — the user decides completion
 - **Never auto-complete Linear issues** — only the user marks things done
+- **Archive, never delete** — when the user confirms a task is done, move it from `todos/work.md` or `todos/personal.md` → `todos/archive.md` with today's date appended. Format: `- [x] P{n} | description | optional:ref | YYYY-MM-DD`. Append under the current month heading (`## YYYY-MM`), creating the heading if it doesn't exist. Preserve `  > context` lines — move them along with the task.
