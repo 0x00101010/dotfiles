@@ -1,83 +1,46 @@
 # CLAUDE.md
 
-Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
-
-**Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
+Guidelines to reduce common LLM coding mistakes. Bias toward caution; use judgment on trivial tasks.
 
 ## 1. Think Before Coding
 
-**Don't assume. Don't hide confusion. Surface tradeoffs.**
-
-Before implementing:
-- State your assumptions explicitly. If uncertain, ask.
-- If multiple interpretations exist, present them - don't pick silently.
-- If a simpler approach exists, say so. Push back when warranted.
-- If something is unclear, stop. Name what's confusing. Ask.
+- State assumptions explicitly. If uncertain, ask.
+- Multiple interpretations? Present them — don't pick silently.
+- Simpler approach exists? Say so. Push back when warranted.
+- Something unclear? Stop. Name what's confusing. Ask.
 
 ## 2. Simplicity First
 
-**Minimum code that solves the problem. Nothing speculative.**
+Minimum code that solves the problem. Nothing speculative.
 
 - No features beyond what was asked.
 - No abstractions for single-use code.
-- No "flexibility" or "configurability" that wasn't requested.
-- No error handling for impossible scenarios.
-- If you write 200 lines and it could be 50, rewrite it.
-
-Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
+- No speculative "flexibility" or error handling for impossible scenarios.
+- 200 lines that could be 50? Rewrite it.
 
 ## 3. Surgical Changes
 
-**Touch only what you must. Clean up only your own mess.**
+Touch only what you must. Clean up only your own mess.
 
-When editing existing code:
 - Don't "improve" adjacent code, comments, or formatting.
 - Don't refactor things that aren't broken.
 - Match existing style, even if you'd do it differently.
-- If you notice unrelated dead code, mention it - don't delete it.
-
-When your changes create orphans:
-- Remove imports/variables/functions that YOUR changes made unused.
-- Don't remove pre-existing dead code unless asked.
-
-The test: Every changed line should trace directly to the user's request.
+- Unrelated dead code? Mention it — don't delete it.
+- Remove only orphans YOUR changes created.
+- Every changed line should trace directly to the request.
 
 ## 4. Goal-Driven Execution
 
-**Define success criteria. Loop until verified.**
+Transform tasks into verifiable goals, then loop until verified.
 
-Transform tasks into verifiable goals:
-- "Add validation" → "Write tests for invalid inputs, then make them pass"
-- "Fix the bug" → "Write a test that reproduces it, then make it pass"
-- "Refactor X" → "Ensure tests pass before and after"
-
-For multi-step tasks, state a brief plan:
-```
-1. [Step] → verify: [check]
-2. [Step] → verify: [check]
-3. [Step] → verify: [check]
-```
-
-Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+- "Add validation" → write tests for invalid inputs, make them pass
+- "Fix the bug" → write a reproducing test, make it pass
+- "Refactor X" → ensure tests pass before and after
 
 ## 5. Plans
 
-**Plans live inside their project directory. NEVER use auto-generated or random plan names.**
-
-- Plans go to `~/src/workspace/projects/{work,personal}/<project>/plans/<plan-name>.md`
-- Derive `<project>` from the task context (e.g., `qmdb`, `multiprover`, `reth-everywhere`)
-- For non-project plans (dotfiles, workspace tooling): use `~/src/workspace/projects/work/<repo>/plans/`
-- Name plan files after what they accomplish. Examples:
-  - `add-staged-sync.md`, `fix-enclave-build.md`, `refactor-db-layer.md`
-- Format: lowercase, hyphen-separated, concise but specific.
-- Create the project and plans subdirectories if they don't exist.
-- Full example: `~/src/workspace/projects/work/multiprover/plans/enclave-oracle-execution.md`
-- NEVER use random/auto-generated names like `iterative-hugging-parnas.md` or `adjective-adjective-noun.md`. These are WRONG.
+Plans go to `~/src/workspace/projects/{work,personal}/<project>/plans/<plan-name>.md`. Name after what they accomplish (`add-staged-sync.md`, `fix-enclave-build.md`). Lowercase, hyphen-separated, concise. Never auto-generated names.
 
 ## 6. Debugging
 
-When I report a bug, don't start by trying to fix it. Instead, start by writing a test that reproduces the bug. Then, have subagents try to fix the bug and prove it with a passing test.
-
----
-
-**These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
+When I report a bug: write a reproducing test first, then have subagents fix it and prove it with a passing test.
