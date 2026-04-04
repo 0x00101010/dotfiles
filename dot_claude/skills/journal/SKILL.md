@@ -3,77 +3,46 @@ name: journal
 description: Capture a daily journal entry — what happened, wins, reflections. Closes the plan-execute-reflect loop.
 ---
 
-You are a journaling assistant. Help the user reflect on their day and capture it.
-
 ## Target date
 
-- If `$ARGUMENTS` is empty or missing: **target date = today**
-- If `$ARGUMENTS` is "yesterday": **target date = yesterday**
+`$ARGUMENTS` empty → today. `$ARGUMENTS` = "yesterday" → yesterday.
 
-Compute the target date at the start.
+## 1. Gather context
 
-## Step 1 — Gather context
+Read to understand what was planned:
+- `~/src/workspace/schedules/<target-date>.md` (if exists)
+- Most recent journal entry before target date in `~/src/workspace/journal/`
+- `~/src/workspace/todos/work.md` and `todos/personal.md`
+- If Linear available: `list_issues(assignee: "me", state: "completed", updatedAt: "-P1D")`
 
-Read these files to understand what was planned:
+## 2. Interview
 
-1. `~/src/workspace/schedules/<target-date>.md` — the day's schedule (if it exists)
-2. The most recent journal entry before the target date in `~/src/workspace/journal/` — for continuity
-3. `~/src/workspace/todos/work.md` and `~/src/workspace/todos/personal.md` — current task state
+Summarize what was planned, then ask conversationally (one at a time, skip redundant ones):
+1. What did you get done?
+2. Anything unexpected — blockers, surprises, pivots?
+3. Wins worth noting?
+4. Reflections, ideas, frustrations?
 
-If Linear is available, fetch recently completed issues:
-```
-mcp__linear__list_issues(assignee: "me", state: "completed", updatedAt: "-P1D")
-```
+## 3. Write entry
 
-## Step 2 — Interview the user
-
-Present a brief summary of what was planned, then ask:
-
-1. "What did you actually get done today?"
-2. "Anything unexpected — blockers, surprises, pivots?"
-3. "Any wins worth noting, even small ones?"
-4. "Anything on your mind — reflections, ideas, frustrations?"
-
-Keep it conversational, not a form. Skip questions that feel redundant based on their answers. One question at a time.
-
-## Step 3 — Build the entry
-
-Format:
+File: `~/src/workspace/journal/<YYYY>/<MM>/<YYYY-MM-DD>.md` (create dirs as needed).
 
 ```markdown
 # Journal — DayOfWeek, Month DD, YYYY
-
 ## Done
-- item 1
-- item 2
-
 ## Didn't get to
-- item from schedule that was skipped (if any)
-
 ## Wins
-- win 1
-
 ## Notes
-Free-form reflections, ideas, observations.
 ```
 
-Omit sections that are empty (e.g. if no wins mentioned, skip the section). Keep it concise — the user's words, not your embellishments.
+Omit empty sections. User's words, not embellishments.
 
-## Step 4 — Write the file
+## 4. Archive completed todos
 
-Write to `~/src/workspace/journal/<YYYY>/<MM>/<YYYY-MM-DD>.md`.
+Ask before modifying. Move completed task lines (with `> context` lines) from source file → `~/src/workspace/todos/archive.md`. Format: `- [x] P{n} | description | optional:ref | YYYY-MM-DD` under `## YYYY-MM` heading.
 
-Create directories if they don't exist.
+## Rules
 
-## Step 5 — Archive completed todos
-
-If the user confirmed completing items that appear in `todos/work.md` or `todos/personal.md`, offer to archive them. Ask before modifying.
-
-To archive: remove the task line (and its `  > context` lines) from the source file and append to `~/src/workspace/todos/archive.md` with today's date. Format: `- [x] P{n} | description | optional:ref | YYYY-MM-DD`. Append under the current month heading (`## YYYY-MM`), creating the heading if it doesn't exist. Preserve context lines.
-
-## Key rules
-
-- **Never fabricate entries** — only write what the user said
-- **Never auto-archive todos** — always ask before archiving items
-- **Keep it brief** — journal entries should be scannable, not essays
-- **Preserve the user's voice** — paraphrase minimally
+- Never fabricate entries — only write what the user said
+- Never auto-archive — always ask first
+- Keep it brief and preserve the user's voice

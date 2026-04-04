@@ -3,139 +3,79 @@ name: prio
 description: Check planning horizons, fill gaps top-down, then generate or adjust today's schedule. Accepts optional "tomorrow" argument.
 ---
 
-You are a planning assistant. Auto-determine what needs attention by checking from long-term → short-term, filling gaps, and surfacing alignment.
-
-## Target date
-
-- If `$ARGUMENTS` is empty or missing: **target date = today**
-- If `$ARGUMENTS` is "tomorrow": **target date = tomorrow**
-
-Compute the target date at the start. All schedule generation uses the target date. The horizon cascade always checks against *current* dates (today's year, quarter, week).
+`$ARGUMENTS` empty → target = today. "tomorrow" → target = tomorrow.
 
 ## Flow
 
-1. **Check what's missing or stale** (top-down)
-2. **Fill the highest gap first** — daily priorities depend on weekly, which depends on quarterly, etc.
-3. **If everything's current** — generate/update the target date's schedule with alignment commentary
-4. **If the target date's schedule already exists** — adjust mode
+1. Check horizons top-down for staleness
+2. Fill highest gap first (each level depends on the one above)
+3. Everything current → generate/update target date's schedule
+4. Target schedule exists → adjust mode
 
-## Staleness rules
+## Horizons
+
+All paths relative to `~/src/workspace/`.
 
 | Horizon | File | Stale when |
 |---------|------|------------|
-| 5yr | `~/src/workspace/identity/goals/5-year.md` | Doesn't exist or last modified > 1 year ago |
-| year | `~/src/workspace/identity/goals/<yyyy>.md` | Doesn't exist for current year |
-| quarter | `~/src/workspace/identity/goals/<yyyy>-Q<n>.md` | Doesn't exist for current quarter |
-| week | `~/src/workspace/schedules/<yyyy-mm-dd>-week.md` | No file for current week (use Monday's date) |
-| target date | `~/src/workspace/schedules/<yyyy-mm-dd>.md` | Doesn't exist for target date |
+| 5yr | `identity/goals/5-year.md` | Missing or >1 year old |
+| year | `identity/goals/<yyyy>.md` | Missing for current year |
+| quarter | `identity/goals/<yyyy>-Q<n>.md` | Missing for current quarter |
+| week | `schedules/<yyyy-mm-dd>-week.md` | Missing for current week (Monday date) |
+| target | `schedules/<yyyy-mm-dd>.md` | Missing for target date |
 
-### Step 1 — Check all horizons
+Check all five. Stop at highest gap and guide user through filling it before proceeding.
 
-Determine today's date, the target date (today or tomorrow per arguments), and compute: current year, current quarter, current week's Monday date.
+## Filling gaps
 
-Check each horizon file exists and isn't stale. Report status of all five horizons. The schedule horizon checks against the **target date**.
+Each horizon reads from the one above + its own sources. **Always present draft and get confirmation before writing.**
 
-If any horizon is missing/stale, **stop at the highest gap** and guide the user through creating it before proceeding to lower horizons.
+- **5yr** — Read: `identity/career-strategy.md`, `strategies/ideas.md`, `identity/board-of-directors.md`. Output: vision, life areas, directional bets.
+- **Year** — Read: 5yr, `identity/career-strategy.md`, `strategies/*`, `projects/work/priorities.md`. Output: 3-5 themes, milestones, success criteria.
+- **Quarter** — Read: year plan, `todos/{work,personal}.md`, Linear. Output: 3-5 OKRs.
+- **Week** — Read: quarter plan, all `todos/*`, Linear, trickle list, recent schedules + journals. Output: 2-3 focus areas, deliverables, carryover, "not this week".
 
-### Step 2 — Fill the gap (if any)
+Write file, re-check cascade, fill next gap. Repeat until current.
 
-Each horizon reads from the one above it plus its own input sources:
+## Schedule generation
 
-**5yr vision** — Read: `identity/career-strategy.md`, `strategies/ideas.md`, `identity/board-of-directors.md`
-Output: Vision statement, life areas (career, personal, financial, health), directional bets.
+### Review previous day
 
-**Year** — Read: 5yr plan, `identity/career-strategy.md`, all `strategies/*`, `projects/work/priorities.md`
-Output: 3-5 themes/goals, milestone targets, success criteria.
+Find most recent schedule before target date. Summarize: completed, missed, recommendation.
 
-**Quarter** — Read: year plan, `todos/work.md`, `todos/personal.md`, Linear issues.
-Output: 3-5 objectives with key results (OKR-style).
+### Gather tasks
 
-**Week** — Read: quarter plan, all `todos/*`, Linear, trickle list, recent daily schedules, recent `journal/` entries.
-Output: 2-3 focus areas, key deliverables (checkboxes), carryover, "not this week" section.
+Collect unchecked items from:
+- `todos/work.md` and `todos/personal.md` (format: `- [ ] P{0-3} | description | optional:SOURCE-REF` with `> context` lines)
+- `todos/recurring.md` (if due), `todos/trickle-list.md` (always), `inbox.md` (note count)
+- Linear: fetch started/unstarted/backlog assigned to me, sort by priority
 
-All paths above are relative to `~/src/workspace/`.
+De-duplicate: tasks with `LINEAR:` ref in work.md → skip from Linear results.
 
-**Always ask before assuming priorities at every horizon.** Present your draft and get confirmation before writing.
+### Prioritize
 
-Write the file to its location per the staleness table, then re-run the cascade check. If another gap exists, fill it next. Repeat until all horizons are current.
+Present tasks grouped by source/project. Ask:
+1. "What's most important [today/tomorrow]?"
+2. "Anything blocking or time-sensitive?"
 
-### Step 3 — Generate schedule for the target date
+Linear mapping: P0=Urgent(1), P1=High(2), P2=Medium(3), P3=Low(4). Flag conflicts. Limit top 3 work items.
 
-Once all horizons are current, generate the target date's schedule.
+### Build schedule
 
-#### 3a — Review the previous day
+Format: `# DayOfWeek, Month DD, YYYY` with `- [ ] **P0** - description`. Groups: **Morning**, **Afternoon - Work** (by project), **Evening - Personal**. Trickle list as `## Trickle List (pick 1-2)`. Monday → add "Check plans & strategies".
 
-Find the most recent schedule file before the target date in `~/src/workspace/schedules/` (by filename sort).
-- If target = today → this reviews yesterday
-- If target = tomorrow → this reviews today's schedule
+### Alignment commentary
 
-Summarize: what was completed, what was missed, brief recommendation.
+Compare against week/quarter/year goals. Call out: OKR-advancing items, unconnected items, missing weekly focus coverage.
 
-#### 3b — Gather tasks
+Write to `schedules/<target-date>.md`.
 
-Read these files and collect all unchecked items:
-- `~/src/workspace/todos/work.md` — tasks use format `- [ ] P{0-3} | description | optional:SOURCE-REF`. Preserve `### Category` headings as project groups. Include `  > context` lines (indented, `>` prefixed) associated with each task.
-- `~/src/workspace/todos/personal.md` — same format
-- `~/src/workspace/todos/recurring.md` — check if any are due today
-- `~/src/workspace/todos/trickle-list.md` — always included
-- `~/src/workspace/inbox.md` — if items exist, note them ("N items pending triage")
+## Adjust mode
 
-De-duplicate: if a task in work.md has a `LINEAR:CHAIN-XXXX` source ref, do NOT also show it from Linear API results.
+Schedule exists → show state, ask "What changed?", update in place, re-sort by priority.
 
-Fetch Linear issues assigned to the user:
-```
-mcp__linear__list_issues(assignee: "me", state: "started")
-mcp__linear__list_issues(assignee: "me", state: "unstarted")
-mcp__linear__list_issues(assignee: "me", state: "backlog")
-```
-Sort Linear results by priority (1=Urgent first).
+## Rules
 
-#### 3c — Prioritize (always ask, never assume)
-
-Present all gathered tasks grouped by source/project. Tasks from work.md/personal.md already have priorities — present them as-is. Only suggest re-prioritization if something seems off.
-
-**Linear priority mapping**: P0=Urgent(1), P1=High(2), P2=Medium(3), P3=Low(4).
-
-Ask:
-1. "What's the most important thing to get done [today/tomorrow]?"
-2. "Anything blocking or time-sensitive I should know about?"
-
-Flag conflicts between Linear priority and your local assessment.
-Limit to top 3 work items unless the user asks for more.
-
-#### 3d — Build the schedule
-
-Format:
-- Header: `# DayOfWeek, Month DD, YYYY`
-- Checkboxes: `- [ ] **P0** - description`
-- Groups: **Morning**, **Afternoon - Work**, **Evening - Personal**
-- Work items grouped by project under Afternoon
-- Trickle list as own section: `## Trickle List (pick 1-2)`
-- If the target date is a Monday: include "Check plans & strategies" in Morning
-
-#### 3e — Alignment commentary
-
-After the schedule, add a brief section comparing the target date's work against the current week/quarter/year goals. Call out:
-- Items that directly advance quarterly OKRs
-- Items that don't connect to any higher goal (not necessarily bad, just visible)
-- Missing coverage of weekly focus areas
-
-#### 3f — Write the file
-
-Write to `~/src/workspace/schedules/<target-date-yyyy-mm-dd>.md`.
-
-### Step 4 — Adjust mode (target date's schedule already exists)
-
-If the target date's schedule file exists:
-1. Read it
-2. Show current state — what's checked off, what's remaining
-3. Ask: "What changed? Any new priorities, things to drop, or things to add?"
-4. Update the file in place based on answers
-5. Re-sort by priority within each section if needed
-
-## Key rules
-
-- **Never assume priorities** — always ask at minimum "what's most important [today/tomorrow]?" and "anything blocking?"
-- **Never auto-mark anything done** — the user decides completion
-- **Never auto-complete Linear issues** — only the user marks things done
-- **Archive, never delete** — when the user confirms a task is done, move it from `todos/work.md` or `todos/personal.md` → `todos/archive.md` with today's date appended. Format: `- [x] P{n} | description | optional:ref | YYYY-MM-DD`. Append under the current month heading (`## YYYY-MM`), creating the heading if it doesn't exist. Preserve `  > context` lines — move them along with the task.
+- **Never assume priorities** — always ask
+- **Never auto-mark done or auto-complete Linear issues**
+- **Archive, never delete** — completed tasks move from `todos/{work,personal}.md` → `todos/archive.md` as `- [x] P{n} | description | optional:ref | YYYY-MM-DD` under `## YYYY-MM`. Preserve context lines.
