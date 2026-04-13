@@ -16,7 +16,7 @@ for pkg in{{ range .packages.darwin.brew }} {{ . | quote }}{{ end }}; do
   name="${pkg##*/}"
   if ! brew list --formula "$name" &>/dev/null; then
     echo "[chezmoi] Installing brew formula: $pkg"
-    brew install "$pkg"
+    brew install "$pkg" || echo "[chezmoi] Warning: failed to install formula $name (may already exist outside brew)"
   fi
 done
 {{- end }}
@@ -26,7 +26,7 @@ for cask in{{ range .packages.darwin.casks }} {{ . | quote }}{{ end }}; do
   name="${cask##*/}"
   if ! brew list --cask "$name" &>/dev/null; then
     echo "[chezmoi] Installing brew cask: $cask"
-    brew install --cask "$cask"
+    brew install --cask "$cask" || echo "[chezmoi] Warning: failed to install cask $name (may already exist outside brew)"
   fi
 done
 {{- end }}
