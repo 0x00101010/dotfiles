@@ -1,0 +1,161 @@
+#!/usr/bin/env bash
+# workspace-sync: commit, rebase, push, reindex a workspace repo.
+#
+# Installed by setup-{mac,linux}-knowledge-base.sh.
+# REPO is baked in at install time via sed substitution of @@REPO@@.
+#
+# Behavior:
+#   1. Single-instance via flock (mkdir-lock fallback).
+#   2. Defer if any *.md was edited within QUIET_MINS minutes.
+#   3. fetch + add -A + commit (if dirty) + pull --rebase + push.
+#   4. On rebase conflict: abort, notify, exit 1.
+#   5. Best-effort qmd reindex.
+#   6. Write last-run.json + rotated sync.log.
+
+set -uo pipefail
+
+# ----- config (substituted at install time) -------------------------------
+readonly REPO="@@REPO@@"
+readonly STATE_DIR="$HOME/.local/state/workspace-sync"
+readonly LOG="$STATE_DIR/sync.log"
+readonly STATUS="$STATE_DIR/last-run.json"
+readonly LOCK="/tmp/workspace-sync.lock"
+readonly QUIET_MINS=1                       # defer if any *.md touched in the last N minutes
+readonly LOG_MAX_BYTES=$((1024 * 1024))     # 1 MiB
+readonly HOSTNAME_SHORT="$(hostname -s)"
+
+mkdir -p "$STATE_DIR"
+
+# ----- logging ------------------------------------------------------------
+log() { printf '[%s] %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" >> "$LOG"; }
+
+rotate_log() {
+  if [[ -f "$LOG" ]]; then
+    local size
+    size=$(wc -c < "$LOG" | tr -d ' ')
+    if (( size > LOG_MAX_BYTES )); then mv "$LOG" "$LOG.1"; fi
+  fi
+}
+
+write_status() {
+  local status="$1" msg="$2" commits="${3:-0}"
+  cat > "$STATUS" <<EOF
+{
+  "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+  "host": "$HOSTNAME_SHORT",
+  "status": "$status",
+  "commits": $commits,
+  "message": "$msg"
+}
+EOF
+}
+
+notify_conflict() {
+  local detail="$1"
+  if command -v terminal-notifier >/dev/null 2>&1; then
+    terminal-notifier \
+      -title "workspace-sync conflict" \
+      -subtitle "$REPO" \
+      -message "Manual rebase needed: $detail" \
+      -sound default >/dev/null 2>&1 || true
+  elif command -v notify-send >/dev/null 2>&1; then
+    notify-send -u critical "workspace-sync conflict" "Manual rebase needed in $REPO: $detail" || true
+  fi
+}
+
+# ----- single-instance lock -----------------------------------------------
+if command -v flock >/dev/null 2>&1; then
+  exec 9>"$LOCK"
+  flock -n 9 || { log "another sync already running, exiting"; exit 0; }
+else
+  # mkdir-lock fallback (noclobber-based; safe on macOS without coreutils)
+  set -C
+  if ! : > "$LOCK.pid" 2>/dev/null; then
+    log "lockfile exists, exiting"
+    exit 0
+  fi
+  set +C
+  echo $$ > "$LOCK.pid"
+  trap 'rm -f "$LOCK.pid"' EXIT
+fi
+
+rotate_log
+
+# ----- pre-flight ---------------------------------------------------------
+cd "$REPO" 2>/dev/null || {
+  log "ERROR: repo path missing: $REPO"
+  write_status "error" "repo path missing: $REPO"
+  exit 1
+}
+[[ -d .git ]] || {
+  log "ERROR: $REPO is not a git repo"
+  write_status "error" "not a git repo: $REPO"
+  exit 1
+}
+
+# Quiet window: skip if any *.md was modified in the last QUIET_MINS minutes.
+# `-mmin -N` is portable across BSD (macOS) and GNU find.
+if find . -path ./.git -prune -o -name '*.md' -mmin -$QUIET_MINS -print 2>/dev/null | grep -q .; then
+  log "files edited within ${QUIET_MINS}m, deferring"
+  write_status "deferred" "edits in progress"
+  exit 0
+fi
+
+# ----- sync ---------------------------------------------------------------
+if ! git fetch --quiet origin; then
+  log "fetch failed (offline?), exiting cleanly"
+  write_status "offline" "git fetch failed"
+  exit 0
+fi
+
+git add -A
+
+local_changes=$(git status --porcelain | wc -l | tr -d ' ')
+ahead_behind=$(git rev-list --left-right --count HEAD...origin/main 2>/dev/null || printf '0\t0')
+ahead=$(printf '%s' "$ahead_behind"  | awk '{print $1}')
+behind=$(printf '%s' "$ahead_behind" | awk '{print $2}')
+
+if (( local_changes == 0 )) && (( ahead == 0 )) && (( behind == 0 )); then
+  log "clean: nothing to do"
+  write_status "clean" "nothing to do"
+  exit 0
+fi
+
+commits_made=0
+if (( local_changes > 0 )); then
+  msg="auto-sync: ${local_changes} files [${HOSTNAME_SHORT}] $(date -u +%Y-%m-%dT%H:%M)"
+  if git commit -m "$msg" --quiet; then
+    log "committed: $msg"
+    commits_made=1
+  else
+    log "ERROR: commit failed"
+    write_status "error" "commit failed"
+    exit 1
+  fi
+fi
+
+if ! git pull --rebase --autostash --quiet origin main; then
+  detail=$(git status --porcelain | head -3 | tr '\n' ' ' | sed 's/"/\\"/g')
+  log "CONFLICT during rebase: $detail"
+  git rebase --abort 2>/dev/null || true
+  notify_conflict "$detail"
+  write_status "conflict" "rebase aborted: $detail" "$commits_made"
+  exit 1
+fi
+
+if ! git push --quiet origin main; then
+  log "push failed (will retry next interval)"
+  write_status "push-failed" "push failed; will retry" "$commits_made"
+  exit 0
+fi
+
+if command -v qmd >/dev/null 2>&1; then
+  if qmd update >/dev/null 2>&1; then
+    log "qmd reindex ok"
+  else
+    log "WARN: qmd update failed (non-fatal)"
+  fi
+fi
+
+log "sync ok (commits=$commits_made)"
+write_status "ok" "sync complete" "$commits_made"

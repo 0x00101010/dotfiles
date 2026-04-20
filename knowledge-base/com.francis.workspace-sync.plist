@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.francis.workspace-sync</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>@@HOME@@/.local/bin/workspace-sync</string>
+  </array>
+
+  <key>StartInterval</key>
+  <integer>300</integer>
+
+  <key>WatchPaths</key>
+  <array>
+    <string>@@REPO@@/todos</string>
+    <string>@@REPO@@/journal</string>
+  </array>
+
+  <key>RunAtLoad</key>
+  <false/>
+
+  <key>StandardOutPath</key>
+  <string>@@HOME@@/.local/state/workspace-sync/launchd.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>@@HOME@@/.local/state/workspace-sync/launchd.err.log</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:@@HOME@@/.local/bin</string>
+    <key>HOME</key>
+    <string>@@HOME@@</string>
+  </dict>
+
+  <key>ThrottleInterval</key>
+  <integer>30</integer>
+</dict>
+</plist>
