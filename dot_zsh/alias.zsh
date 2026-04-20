@@ -149,3 +149,8 @@ alias mwork="devbox -m -p work"
 alias oc="opencode"
 alias cs="cursor"
 alias vc="code"
+
+# wt aliases
+alias wts="wt switch"
+alias wtl="wt list"
+alias wtr="wt remove"
