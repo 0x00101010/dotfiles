@@ -13,7 +13,9 @@ Given `$ARGUMENTS`. Task format: `- [ ] P{0-3} | description | optional:SOURCE-R
 
 ## 2. Resolve the repo
 
-`ls ~/src/` to see repos. Infer from task context, or parse `in <repo>` suffix (e.g. `/task extend blockhash in base`). Ambiguous → ask.
+Parse `in <repo>` suffix (e.g. `/task extend blockhash in base`) → use directly.
+
+Otherwise load the `repos` skill and use the registry to map the task topic → repo. Ambiguous after that → ask.
 
 ## 3. Create a worktree
 

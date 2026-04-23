@@ -14,6 +14,8 @@ description: Open-ended investigation of a question, problem, or reference. Rese
 
 Also check `~/src/workspace/todos/work.md` for a `LINEAR:` ref matching the issue ID — it may carry extra context.
 
+If the input mentions a repo by short name/topic (e.g. "the prover work", "qmdb"), load the `repos` skill to resolve it before proceeding — that determines both where to read code and where to write the report.
+
 If the input is genuinely ambiguous (multiple valid interpretations, very different scope), ask **one** clarifying question. Otherwise proceed and note assumptions in the report.
 
 ## 2. Decide the output location
