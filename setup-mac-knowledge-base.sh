@@ -8,8 +8,9 @@
 #   3. ~/Library/LaunchAgents/com.francis.workspace-sync.plist  (5min timer)
 #
 # Idempotent: safe to re-run. Won't re-clone an existing repo, won't duplicate
-# launchd entries. Re-running overwrites the script + plist with the latest
-# templates from this dotfiles checkout.
+# launchd entries. Re-running overwrites the script with the latest template
+# from this dotfiles checkout, and rewrites the plist from the inline content
+# in install_launchd() below.
 #
 # Companion: setup-linux-knowledge-base.sh
 # Plan:      plans/workspace-sync.md
@@ -74,12 +75,8 @@ check_prereqs() {
 
 check_templates() {
   step "Verifying templates"
-  local missing=()
-  for f in workspace-sync "$LABEL.plist"; do
-    [[ -f "$KB_DIR/$f" ]] || missing+=("$f")
-  done
-  if (( ${#missing[@]} > 0 )); then
-    abort "Missing template(s) in $KB_DIR: ${missing[*]}"
+  if [[ ! -f "$KB_DIR/workspace-sync" ]]; then
+    abort "Missing template in $KB_DIR: workspace-sync"
   fi
   c_green "  templates found in $KB_DIR"
 }
@@ -119,12 +116,75 @@ install_script() {
 }
 
 # ----- install launchd ----------------------------------------------------
+# Use StartCalendarInterval (not StartInterval): launchd makes up one missed
+# run on wake from sleep, whereas StartInterval silently drops missed ticks.
+# No WatchPaths: it's scope-limited (only direct children, no recursion) and
+# the 5-min poll already catches edits anywhere in the repo.
 install_launchd() {
   step "Installing LaunchAgent"
   mkdir -p "$(dirname "$PLIST")"
-  sed -e "s|@@HOME@@|$HOME|g" \
-      -e "s|@@REPO@@|$REPO|g" \
-      "$KB_DIR/$LABEL.plist" > "$PLIST"
+
+  cat > "$PLIST" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>$LABEL</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>$SCRIPT_DEST</string>
+  </array>
+
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict><key>Minute</key><integer>0</integer></dict>
+    <dict><key>Minute</key><integer>5</integer></dict>
+    <dict><key>Minute</key><integer>10</integer></dict>
+    <dict><key>Minute</key><integer>15</integer></dict>
+    <dict><key>Minute</key><integer>20</integer></dict>
+    <dict><key>Minute</key><integer>25</integer></dict>
+    <dict><key>Minute</key><integer>30</integer></dict>
+    <dict><key>Minute</key><integer>35</integer></dict>
+    <dict><key>Minute</key><integer>40</integer></dict>
+    <dict><key>Minute</key><integer>45</integer></dict>
+    <dict><key>Minute</key><integer>50</integer></dict>
+    <dict><key>Minute</key><integer>55</integer></dict>
+  </array>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>ThrottleInterval</key>
+  <integer>30</integer>
+
+  <key>ProcessType</key>
+  <string>Background</string>
+
+  <key>LowPriorityIO</key>
+  <true/>
+
+  <key>Nice</key>
+  <integer>5</integer>
+
+  <key>StandardOutPath</key>
+  <string>$STATE_DIR/launchd.out.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>$STATE_DIR/launchd.err.log</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:$HOME/.local/bin</string>
+    <key>HOME</key>
+    <string>$HOME</string>
+  </dict>
+</dict>
+</plist>
+EOF
 
   # Idempotent (re)load.
   launchctl unload "$PLIST" 2>/dev/null || true
@@ -154,7 +214,8 @@ summary() {
   echo "  LaunchAgent: $PLIST"
   echo "  State dir: $STATE_DIR"
   echo
-  echo "Sync runs every 5 minutes plus on edits to todos/ and journal/."
+  echo "Sync runs every 5 minutes (on the :00, :05, :10, ... wall-clock minute)"
+  echo "and once on login/wake."
   echo
   echo "Useful commands:"
   echo "  tail -f $STATE_DIR/sync.log         # watch sync activity"
