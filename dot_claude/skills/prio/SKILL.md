@@ -3,7 +3,9 @@ name: prio
 description: Check planning horizons, fill gaps top-down, then generate or adjust today's schedule. Accepts optional "tomorrow" argument.
 ---
 
-`$ARGUMENTS` empty → target = today. "tomorrow" → target = tomorrow.
+See `_shared/workspace.md` for layout, todo format, archive procedure, Linear conventions.
+
+`$ARGUMENTS` empty → target = today. `"tomorrow"` → tomorrow.
 
 ## Flow
 
@@ -14,8 +16,6 @@ description: Check planning horizons, fill gaps top-down, then generate or adjus
 
 ## Horizons
 
-All paths relative to `~/src/workspace/`.
-
 | Horizon | File | Stale when |
 |---------|------|------------|
 | 5yr | `identity/goals/5-year.md` | Missing or >1 year old |
@@ -24,7 +24,7 @@ All paths relative to `~/src/workspace/`.
 | week | `schedules/<yyyy-mm-dd>-week.md` | Missing for current week (Monday date) |
 | target | `schedules/<yyyy-mm-dd>.md` | Missing for target date |
 
-Check all five. Stop at highest gap and guide user through filling it before proceeding.
+Check all five. Stop at highest gap and guide the user through filling it before proceeding.
 
 ## Filling gaps
 
@@ -46,11 +46,11 @@ Find most recent schedule before target date. Summarize: completed, missed, reco
 ### Gather tasks
 
 Collect unchecked items from:
-- `todos/work.md` and `todos/personal.md` (format: `- [ ] P{0-3} | description | optional:SOURCE-REF` with `> context` lines)
+- `todos/work.md`, `todos/personal.md`
 - `todos/recurring.md` (if due), `todos/trickle-list.md` (always), `inbox.md` (note count)
-- Linear: fetch started/unstarted/backlog assigned to me, sort by priority
+- Linear: started/unstarted/backlog assigned to me, sorted by priority
 
-De-duplicate: tasks with `LINEAR:` ref in work.md → skip from Linear results.
+De-duplicate: skip Linear results that already have a `LINEAR:` ref in work.md.
 
 ### Prioritize
 
@@ -58,7 +58,7 @@ Present tasks grouped by source/project. Ask:
 1. "What's most important [today/tomorrow]?"
 2. "Anything blocking or time-sensitive?"
 
-Linear mapping: P0=Urgent(1), P1=High(2), P2=Medium(3), P3=Low(4). Flag conflicts. Limit top 3 work items.
+Flag priority conflicts (workspace says P0, Linear says P3, etc.). Limit top 3 work items.
 
 ### Build schedule
 
@@ -76,6 +76,5 @@ Schedule exists → show state, ask "What changed?", update in place, re-sort by
 
 ## Rules
 
-- **Never assume priorities** — always ask
-- **Never auto-mark done or auto-complete Linear issues**
-- **Archive, never delete** — completed tasks move from `todos/{work,personal}.md` → `todos/archive.md` as `- [x] P{n} | description | optional:ref | YYYY-MM-DD` under `## YYYY-MM`. Preserve context lines.
+- Never assume priorities — always ask.
+- Archive completed tasks per workspace.md (never delete).

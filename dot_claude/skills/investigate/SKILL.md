@@ -3,20 +3,16 @@ name: investigate
 description: Open-ended investigation of a question, problem, or reference. Researches adaptively (light by default, escalates when hard) and writes a findings report into the workspace, co-located with the originating project when possible.
 ---
 
+See `_shared/workspace.md` for source resolution, repo resolution, layout.
+
 ## 1. Resolve the input
 
 `$ARGUMENTS` may be any of:
 
 - **Freeform question** (e.g. `why does opencode lose tool context after compress?`) → use as the investigation prompt directly.
-- **Workspace path** to a plan/note (e.g. `projects/work/2026/qmdb/plans/some-question.md`) → read the file; treat its contents as the investigation spec. Remember the project root.
-- **Todo reference** → search `~/src/workspace/todos/{work,personal,recurring}.md` for a line whose description matches `$ARGUMENTS`. Multiple matches → show candidates, let user pick.
-- **Linear issue ID** (matches `^[A-Z]+-\d+$`, e.g. `ENG-123`) → fetch via Linear API, use issue title + description as the prompt.
+- **Linear ID / GitHub / plan file / free text** → apply source resolution from workspace.md.
 
-Also check `~/src/workspace/todos/work.md` for a `LINEAR:` ref matching the issue ID — it may carry extra context.
-
-If the input mentions a repo by short name/topic (e.g. "the prover work", "qmdb"), load the `repos` skill to resolve it before proceeding — that determines both where to read code and where to write the report.
-
-If the input is genuinely ambiguous (multiple valid interpretations, very different scope), ask **one** clarifying question. Otherwise proceed and note assumptions in the report.
+If genuinely ambiguous (multiple valid interpretations, very different scope), ask **one** clarifying question. Otherwise proceed and note assumptions in the report.
 
 ## 2. Decide the output location
 
@@ -44,8 +40,8 @@ Fire these in parallel from the start. Continue working while they run; collect 
 **Escalate when:**
 
 - 2+ light passes leave the core question unanswered → consult `oracle` for reasoning.
-- The problem is genuinely hard, multi-system, or requires deep synthesis → spawn `ultrathink` for deep-thinking subagents.
-- The investigation needs structured experimentation in a repo → consider following with the `task` skill instead.
+- The problem is genuinely hard, multi-system, or requires deep synthesis → spawn deep-thinking subagents that share learnings.
+- The investigation needs structured experimentation in a repo → consider following with the `workon` skill instead.
 
 Stop when: the question is answered, sources start repeating, or further search yields no new signal. Do not over-explore.
 
