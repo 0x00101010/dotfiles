@@ -31,7 +31,6 @@ casks = [
     "linear-linear",
     "raycast",
     "spotify",
-    "telegram-desktop",
     "visual-studio-code",
 ]
 
