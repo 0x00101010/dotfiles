@@ -39,15 +39,10 @@ rotate_log() {
 
 write_status() {
   local status="$1" msg="$2" commits="${3:-0}"
-  cat > "$STATUS" <<EOF
-{
-  "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-  "host": "$HOSTNAME_SHORT",
-  "status": "$status",
-  "commits": $commits,
-  "message": "$msg"
-}
-EOF
+  local ts
+  ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  printf '{\n  "timestamp": "%s",\n  "host": "%s",\n  "status": "%s",\n  "commits": %s,\n  "message": "%s"\n}\n' \
+    "$ts" "$HOSTNAME_SHORT" "$status" "$commits" "$msg" > "$STATUS"
 }
 
 notify_conflict() {

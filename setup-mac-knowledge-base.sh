@@ -124,7 +124,8 @@ install_launchd() {
   step "Installing LaunchAgent"
   mkdir -p "$(dirname "$PLIST")"
 
-  cat > "$PLIST" <<EOF
+  local plist_xml
+  IFS= read -r -d '' plist_xml <<EOF || true
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
   "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -186,7 +187,8 @@ install_launchd() {
 </plist>
 EOF
 
-  # Idempotent (re)load.
+  printf '%s' "$plist_xml" > "$PLIST"
+
   launchctl unload "$PLIST" 2>/dev/null || true
   launchctl load -w "$PLIST"
   c_green "  loaded → $LABEL"
