@@ -45,7 +45,6 @@ apt = [
     "git",
     "git-delta",
     "gpg",
-    "jless",
     "libssl-dev",
     "mdadm",
     "mise",
