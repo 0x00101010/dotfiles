@@ -53,8 +53,6 @@ check_prereqs() {
   command -v qmd >/dev/null               || missing+=("qmd")
   command -v terminal-notifier >/dev/null || missing+=("terminal-notifier")
   command -v launchctl >/dev/null         || missing+=("launchctl")
-  command -v flock >/dev/null \
-    || c_yellow "  (optional) flock not found — script will use mkdir-lock fallback"
 
   if (( ${#missing[@]} > 0 )); then
     c_red "Missing required tools: ${missing[*]}"

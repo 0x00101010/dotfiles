@@ -50,7 +50,6 @@ check_prereqs() {
   command -v git         >/dev/null || missing+=("git")
   command -v qmd         >/dev/null || missing+=("qmd")
   command -v crontab     >/dev/null || missing+=("crontab")
-  command -v flock       >/dev/null || missing+=("flock")
   command -v notify-send >/dev/null \
     || c_yellow "  (optional) notify-send not found — conflicts will be log-only"
 
@@ -58,7 +57,7 @@ check_prereqs() {
     c_red "Missing required tools: ${missing[*]}"
     echo
     echo "Install with (Debian/Ubuntu):"
-    echo "  sudo apt install git cron util-linux libnotify-bin"
+    echo "  sudo apt install git cron libnotify-bin"
     echo "qmd: https://github.com/tobi/qmd (manual install — no apt package)"
     abort "Install the above and re-run."
   fi

@@ -5,12 +5,13 @@
 # REPO is baked in at install time via sed substitution of @@REPO@@.
 #
 # Behavior:
-#   1. Single-instance via flock (mkdir-lock fallback).
-#   2. Defer if any *.md was edited within QUIET_MINS minutes.
-#   3. fetch + add -A + commit (if dirty) + pull --rebase + push.
-#   4. On rebase conflict: abort, notify, exit 1.
-#   5. Best-effort qmd reindex.
-#   6. Write last-run.json + rotated sync.log.
+#   1. Single-instance via mkdir-lock with stale-PID detection.
+#   2. Bounded git network calls (SSH ConnectTimeout + keepalive).
+#   3. Defer if any *.md was edited within QUIET_MINS minutes.
+#   4. fetch + add -A + commit (if dirty) + pull --rebase + push.
+#   5. On rebase conflict: abort, notify, exit 1.
+#   6. Best-effort qmd reindex.
+#   7. Write last-run.json + rotated sync.log.
 
 set -uo pipefail
 
@@ -19,10 +20,18 @@ readonly REPO="@@REPO@@"
 readonly STATE_DIR="$HOME/.local/state/workspace-sync"
 readonly LOG="$STATE_DIR/sync.log"
 readonly STATUS="$STATE_DIR/last-run.json"
-readonly LOCK="/tmp/workspace-sync.lock"
+readonly LOCK_DIR="/tmp/workspace-sync.lock.d"
 readonly QUIET_MINS=1                       # defer if any *.md touched in the last N minutes
 readonly LOG_MAX_BYTES=$((1024 * 1024))     # 1 MiB
 readonly HOSTNAME_SHORT="$(hostname -s)"
+
+# Bound every git network call. Without this, a half-open TCP socket (e.g.
+# laptop sleep, flaky wifi) can wedge git fetch/pull/push indefinitely and the
+# stuck process holds the lock forever.
+#   ConnectTimeout      — give up dialing after 10s
+#   ServerAlive*        — drop the connection after ~45s of silence
+#   BatchMode=yes       — never prompt for passwords / host key confirmation
+export GIT_SSH_COMMAND="ssh -o ConnectTimeout=10 -o ServerAliveInterval=15 -o ServerAliveCountMax=3 -o BatchMode=yes"
 
 mkdir -p "$STATE_DIR"
 
@@ -59,19 +68,32 @@ notify_conflict() {
 }
 
 # ----- single-instance lock -----------------------------------------------
-if command -v flock >/dev/null 2>&1; then
-  exec 9>"$LOCK"
-  flock -n 9 || { log "another sync already running, exiting"; exit 0; }
-else
-  # mkdir-lock fallback (noclobber-based; safe on macOS without coreutils)
-  set -C
-  if ! : > "$LOCK.pid" 2>/dev/null; then
-    log "lockfile exists, exiting"
+# mkdir is atomic on every Unix and needs no extra dependencies. We store the
+# owner's PID inside the lock dir so a crashed/killed sync (which never ran
+# its EXIT trap) can be detected and reaped on the next invocation instead of
+# wedging the system forever.
+acquire_lock() {
+  if mkdir "$LOCK_DIR" 2>/dev/null; then
+    echo $$ > "$LOCK_DIR/pid"
+    trap 'rm -rf "$LOCK_DIR"' EXIT
+    return 0
+  fi
+  return 1
+}
+
+if ! acquire_lock; then
+  stale_pid=$(cat "$LOCK_DIR/pid" 2>/dev/null || true)
+  if [[ -n "${stale_pid:-}" ]] && kill -0 "$stale_pid" 2>/dev/null; then
+    log "another sync running (pid $stale_pid), exiting"
     exit 0
   fi
-  set +C
-  echo $$ > "$LOCK.pid"
-  trap 'rm -f "$LOCK.pid"' EXIT
+  log "removing stale lock (owner pid='${stale_pid:-unknown}' is gone)"
+  rm -rf "$LOCK_DIR"
+  if ! acquire_lock; then
+    log "ERROR: could not acquire lock after reaping stale dir"
+    write_status "error" "lock acquire failed"
+    exit 1
+  fi
 fi
 
 rotate_log
