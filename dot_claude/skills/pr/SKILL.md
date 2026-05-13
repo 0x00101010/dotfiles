@@ -7,6 +7,8 @@ description: Set up a worktree, implement the work, ship as a draft PR, then ite
 
 `$ARGUMENTS` describes the work. Plan file path → read as spec. Free text → search `~/src/workspace/projects/**/plans/*.md`. Ambiguous → ask. No plan found → draft one at `~/src/workspace/projects/{work,personal}/<project>/plans/<plan-name>.md`, present it, and wait for explicit confirmation before proceeding.
 
+Plan: succinct. State the goal, the steps, the verification. No jargon, no speculative scope, no filler.
+
 Parse `in <repo>` suffix (e.g. `/pr add cache in base`). Otherwise load `repos` skill. Ambiguous → ask.
 
 ## 2. New worktree (always)
@@ -19,11 +21,13 @@ Branch prefixes: `feat|fix|refactor|chore|docs|perf|test|ci|hotfix|style`. Slug 
 
 Use absolute paths from `$WORKTREE_PATH`. Test and verify with diagnostics/build before committing.
 
+Solution: succinct. Minimum code that solves the problem. No speculative abstractions, no unrelated cleanup, no jargon-heavy comments.
+
 ## 4. Draft PR
 
 Commit. Push. `gh pr create --draft`.
 
-Description: succinct. Title states the change. Body is 1–3 sentences (why + what). No ticket numbers, no external references.
+Description: succinct. Title states the change in plain words. Body is 1–3 sentences (why + what). No jargon, no ticket numbers, no external references, no boilerplate sections.
 
 ## 5. CI green
 
