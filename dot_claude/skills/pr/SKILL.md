@@ -5,7 +5,7 @@ description: Set up a worktree, implement the work, ship as a draft PR, then ite
 
 ## 1. Input + repo
 
-`$ARGUMENTS` describes the work. Plan file path → read as spec. Free text → search `~/src/workspace/projects/**/plans/*.md`. Ambiguous → ask.
+`$ARGUMENTS` describes the work. Plan file path → read as spec. Free text → search `~/src/workspace/projects/**/plans/*.md`. Ambiguous → ask. No plan found → draft one at `~/src/workspace/projects/{work,personal}/<project>/plans/<plan-name>.md`, present it, and wait for explicit confirmation before proceeding.
 
 Parse `in <repo>` suffix (e.g. `/pr add cache in base`). Otherwise load `repos` skill. Ambiguous → ask.
 
