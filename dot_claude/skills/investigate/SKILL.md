@@ -41,7 +41,7 @@ Fire these in parallel from the start. Continue working while they run; collect 
 
 - 2+ light passes leave the core question unanswered → consult `oracle` for reasoning.
 - The problem is genuinely hard, multi-system, or requires deep synthesis → spawn deep-thinking subagents that share learnings.
-- The investigation needs structured experimentation in a repo → consider following with the `workon` skill instead.
+- The investigation needs structured experimentation in a repo → consider following with the `pr` skill instead.
 
 Stop when: the question is answered, sources start repeating, or further search yields no new signal. Do not over-explore.
 

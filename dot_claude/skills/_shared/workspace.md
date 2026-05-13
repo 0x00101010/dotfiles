@@ -1,6 +1,6 @@
 # Workspace conventions
 
-Shared reference for `add`, `journal`, `prio`, `workon`, `investigate`, `repos` skills.
+Shared reference for `add`, `journal`, `prio`, `investigate`, `repos` skills.
 Read on demand — don't inline its contents into individual skills.
 
 ## Layout
@@ -42,7 +42,7 @@ Priority map (Linear): `P0=Urgent(1)`, `P1=High(2)`, `P2=Medium(3)`, `P3=Low(4)`
 
 ## Source resolution
 
-Used by `workon` and `investigate`. Given `$ARGUMENTS`:
+Used by `investigate`. Given `$ARGUMENTS`:
 
 1. **Linear ID** (matches `^[A-Z]+-\d+$`, e.g. `ENG-123`) → fetch via Linear API. Cross-check `todos/work.md` for matching `LINEAR:` ref (may carry extra context lines).
 2. **GitHub issue** (`gh#N`, `owner/repo#N`) → `gh issue view`.
@@ -54,7 +54,7 @@ If input mentions a repo by short name/topic ("the prover work", "qmdb stuff"), 
 
 ## Archive procedure
 
-Used by `journal`, `prio`, `workon` step "done".
+Used by `journal`, `prio`.
 
 Move completed lines (with their `> context` lines) from `todos/{work,personal}.md` → `todos/archive.md`.
 
