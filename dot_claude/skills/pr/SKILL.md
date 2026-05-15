@@ -31,23 +31,15 @@ Solution: succinct. Minimum code that solves the problem. No speculative abstrac
 
 Commit. Push. `gh pr create --draft`.
 
-**Description rules**: title states the change in plain words. Body is 1–3 sentences (why + what). No headers, no tables, no bullet lists, no `## Summary` / `## What` / `## Tests` sections, no ticket numbers, no "PR A of N" metadata, no test-run output, no boilerplate. Reviewers read the diff for details — the body explains the *intent*.
+Each PR stands alone. Even if it came from a multi-PR plan, the title and body MUST NOT reveal that — no `(PR B)`, `[1/3]`, `Part 2 of 4`, "follow-up PRs land next", or any plan/sequencing reference. Reviewers see one self-contained change.
+
+**Title**: plain words describing the change. Conventional-commit prefix optional (`feat(scope):`, `fix(scope):`). Nothing else.
+
+**Body**: 1–3 sentences explaining *why* and *what*. No headers, no tables, no bullet lists, no `## Summary` / `## What` / `## Tests` sections, no ticket numbers, no test-run output, no boilerplate. Reviewers read the diff for details.
 
 **Good example** (entire body):
 
-> Adds 6 `ConductorApi` methods so `basectl` can surface cluster state and control sequencing. No callers yet — wiring lands in follow-up PRs.
-
-**Bad example** (do not do this):
-
-> ## Summary
-> Extends the `ConductorApi` jsonrpsee client trait with the upstream op-conductor methods…
-> This is **PR A of a 4-PR split**…
-> ## What
-> [table of 6 methods]
-> ## Tests
-> `cargo test …` → 55 passed.
-
-The bad version repeats what the diff already shows and buries the intent under structure. The good version states the intent in one breath.
+> Adds a --conductor-rpc bootstrap flag and DiscoveryConfig so basectl can derive the live raft peer list from a single conductor by polling clusterMembership and applying port templates.
 
 ## 5. Iterate until ready (mandatory loop)
 
