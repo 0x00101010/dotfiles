@@ -5,9 +5,13 @@ description: Set up a worktree, implement the work, ship as a draft PR, then ite
 
 ## 1. Input + repo
 
-`$ARGUMENTS` describes the work. Plan file path → read as spec. Free text → search `~/src/workspace/projects/**/plans/*.md`. Ambiguous → ask. No plan found → draft one at `~/src/workspace/projects/{work,personal}/<project>/plans/<plan-name>.md`, present it, and wait for explicit confirmation before proceeding.
+`$ARGUMENTS` describes the work. Accept:
 
-Plan: succinct. State the goal, the steps, the verification. No jargon, no speculative scope, no filler.
+- Free text (e.g. `add cache to base`)
+- Linear identifier or URL (e.g. `ENG-1234`, `https://linear.app/...`) → fetch via Linear MCP for spec
+- GitHub issue URL → fetch via `gh issue view` for spec
+
+Ambiguous → ask ONE clarifying question. Do NOT search for or read local plan files.
 
 Parse `in <repo>` suffix (e.g. `/pr add cache in base`). Otherwise load `repos` skill. Ambiguous → ask.
 
@@ -27,18 +31,44 @@ Solution: succinct. Minimum code that solves the problem. No speculative abstrac
 
 Commit. Push. `gh pr create --draft`.
 
-Description: succinct. Title states the change in plain words. Body is 1–3 sentences (why + what). No jargon, no ticket numbers, no external references, no boilerplate sections.
+**Description rules**: title states the change in plain words. Body is 1–3 sentences (why + what). No headers, no tables, no bullet lists, no `## Summary` / `## What` / `## Tests` sections, no ticket numbers, no "PR A of N" metadata, no test-run output, no boilerplate. Reviewers read the diff for details — the body explains the *intent*.
 
-## 5. CI green
+**Good example** (entire body):
 
-`gh pr checks --watch`. On failure: fix, push, repeat until green.
+> Adds 6 `ConductorApi` methods so `basectl` can surface cluster state and control sequencing. No callers yet — wiring lands in follow-up PRs.
 
-## 6. Iterate on reviews
+**Bad example** (do not do this):
 
-Poll `gh pr view --comments` and `gh api repos/{owner}/{repo}/pulls/{N}/comments`. For each unresolved thread:
+> ## Summary
+> Extends the `ConductorApi` jsonrpsee client trait with the upstream op-conductor methods…
+> This is **PR A of a 4-PR split**…
+> ## What
+> [table of 6 methods]
+> ## Tests
+> `cargo test …` → 55 passed.
 
-- Address with code OR reply with reasoning
-- Push, re-watch CI
-- Resolve thread when handled
+The bad version repeats what the diff already shows and buries the intent under structure. The good version states the intent in one breath.
 
-Loop until all threads resolved AND CI green.
+## 5. Iterate until ready (mandatory loop)
+
+After the draft PR is open, you MUST NOT return control to the user until **both**:
+
+- CI is green
+- Every unresolved review thread has been addressed (code change OR reply with reasoning) AND resolved
+
+Loop:
+
+1. Wait for CI to complete.
+2. If any check failed → diagnose, fix the root cause (no skipping/disabling tests), push, GOTO 1.
+3. Pull all review threads (top-level + inline).
+4. For each unresolved thread: address with code OR reply with concise reasoning, then resolve it.
+5. If anything was pushed in step 2 or 4 → GOTO 1.
+6. When CI is green AND no unresolved threads remain → report PR URL and stop.
+
+Return to the user early ONLY when:
+
+- A reviewer's feedback requires a scope/design decision you cannot make alone.
+- Same CI failure persists after 3 fix attempts → summarize what was tried, ask.
+- A thread asks a question only the user can answer.
+
+Do not return on a green-but-unresolved PR. Do not return on an unresolved-but-green PR. Both must hold.
