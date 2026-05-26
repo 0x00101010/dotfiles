@@ -21,13 +21,42 @@ Bare layout (`.bare/` exists): `cd ~/src/<repo>/main`. Standard: `cd ~/src/<repo
 
 Branch prefixes: `feat|fix|refactor|chore|docs|perf|test|ci|hotfix|style`. Slug ≤40 chars, lowercase, hyphens.
 
-## 3. Implement
+## 3. Delegate deliberately
+
+Classify before coding:
+
+- **Direct**: tiny, obvious, single-module. Main agent may implement alone.
+- **Assisted**: non-trivial, unfamiliar, or touches tests. Delegate discovery/review helpers.
+- **Swarm**: multi-domain, architectural, migration/refactor, risky CI, security/perf/concurrency. Delegate multiple specialists.
+
+For Assisted/Swarm, start read-only helpers before coding:
+
+- Explorer: existing patterns, files to read, tests to mimic, risks.
+- Architect: only when design/API/data/workflow boundaries matter.
+- External research: only when library/framework behavior is uncertain.
+
+Main agent synthesizes findings into the simplest viable plan. Do not let helpers edit the primary worktree unless explicitly assigned an isolated workstream.
+
+## 4. Implement
 
 Use absolute paths from `$WORKTREE_PATH`. Test and verify with diagnostics/build before committing.
 
 Solution: succinct. Minimum code that solves the problem. No speculative abstractions, no unrelated cleanup, no jargon-heavy comments.
 
-## 4. Draft PR
+## 5. Review before PR
+
+For non-trivial PRs, run read-only review specialists before committing/pushing:
+
+- `pr-reviewer`: correctness, regressions, scope creep, maintainability.
+- `pr-architect`: boundaries, design fit, integration risk, overengineering.
+- `idiomatic-code-enforcer`: repo conventions, naming, structure, style, existing patterns.
+- `test-maniac`: missing tests, weak assertions, edge cases, flaky/fragile tests.
+
+Each finding must include severity (`Critical`, `Important`, `Suggestion`), evidence, rationale, proposed fix, and whether it blocks readiness.
+
+Main agent dedupes findings. Fix Critical/Important items or explicitly justify deferral. Suggestions must not derail the PR.
+
+## 6. Draft PR
 
 Commit. Push. `gh pr create --draft`.
 
@@ -41,7 +70,7 @@ Each PR stands alone. Even if it came from a multi-PR plan, the title and body M
 
 > Adds a --conductor-rpc bootstrap flag and DiscoveryConfig so basectl can derive the live raft peer list from a single conductor by polling clusterMembership and applying port templates.
 
-## 5. Iterate until ready (mandatory loop)
+## 7. Iterate until ready (mandatory loop)
 
 After the draft PR is open, you MUST NOT return control to the user until **both**:
 
@@ -51,11 +80,12 @@ After the draft PR is open, you MUST NOT return control to the user until **both
 Loop:
 
 1. Wait for CI to complete.
-2. If any check failed → diagnose, fix the root cause (no skipping/disabling tests), push, GOTO 1.
+2. If any check failed → classify it. Delegate unclear test/build failures to `test-maniac`. Fix the root cause (no skipping/disabling tests), push, GOTO 1.
 3. Pull all review threads (top-level + inline).
-4. For each unresolved thread: address with code OR reply with concise reasoning, then resolve it.
-5. If anything was pushed in step 2 or 4 → GOTO 1.
-6. When CI is green AND no unresolved threads remain → report PR URL and stop.
+4. Route threads by type: architecture → `pr-architect`; style/convention → `idiomatic-code-enforcer`; tests/CI → `test-maniac`; general correctness → `pr-reviewer`.
+5. For each unresolved thread: address with code OR reply with concise reasoning, then resolve it.
+6. If anything was pushed in step 2 or 5 → GOTO 1.
+7. When CI is green AND no unresolved threads remain → report PR URL and stop.
 
 Return to the user early ONLY when:
 
