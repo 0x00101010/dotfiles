@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+{{- if ne .chezmoi.os "darwin" }}
+exit 0
+{{- end }}
+
+source_path="{{ .chezmoi.sourceDir }}/dot_local/share/raycast/toggle-chrome-sidebar.swift"
+binary_dir="$HOME/.local/bin"
+binary_path="$binary_dir/toggle-chrome-sidebar"
+
+if [[ -x "$binary_path" ]]; then
+  echo "[chezmoi] Chrome sidebar toggle already exists: $binary_path"
+  exit 0
+fi
+
+if ! command -v swiftc >/dev/null 2>&1; then
+  echo "[chezmoi] swiftc is required to build $binary_path" >&2
+  exit 1
+fi
+
+mkdir -p "$binary_dir"
+
+echo "[chezmoi] Building Chrome sidebar toggle: $binary_path"
+swiftc -O "$source_path" -o "$binary_path"
+chmod +x "$binary_path"
