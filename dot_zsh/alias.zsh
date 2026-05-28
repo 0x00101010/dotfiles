@@ -124,8 +124,6 @@ alias k='kubectl'
 alias kx='kubectx'
 alias kn='kubens'
 
-alias tar='gtar'
-
 alias cr='cargo run'
 alias ct='cargo test'
 
