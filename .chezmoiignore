@@ -1,4 +1,10 @@
 setup-mac.sh
 setup-linux.sh
+setup-mac-knowledge-base.sh
+setup-linux-knowledge-base.sh
+knowledge-base
+knowledge-base/**
+plans
+plans/**
 LICENSE
 README.md
