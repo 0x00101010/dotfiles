@@ -131,7 +131,18 @@ alias ct='cargo test'
 alias ci="chezmoi"
 alias cia="chezmoi apply -v"
 alias cid="cd ~/src/dotfiles"
-alias cz="chezmoi apply -v && tmux source-file ~/.config/tmux/tmux.conf && exec zsh"
+# chezmoi apply, then reload tmux + shell — but only on success,
+# and never replace the shell while a prompt or subprocess is still active.
+cz() {
+  chezmoi apply -v "$@"
+  local rc=$?
+  if (( rc != 0 )); then
+    print -u2 "cz: chezmoi apply failed (exit $rc); skipping reload"
+    return $rc
+  fi
+  [[ -n "$TMUX" ]] && tmux source-file ~/.config/tmux/tmux.conf
+  exec zsh -l
+}
 
 alias j="just"
 
