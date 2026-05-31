@@ -4,7 +4,7 @@
 
 _set_ghostty_title() {
   [[ -n "$TMUX" ]] && return
-  local host="${HOST%%.*}"
+  local host="${PROMPT_HOST:-${HOST%%.*}}"
   local dir="${PWD/#$HOME/~}"
   # OSC 0: set both window and icon (tab) title.
   printf '\e]0;%s · %s\a' "$host" "$dir"
