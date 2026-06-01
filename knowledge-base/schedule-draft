@@ -1,0 +1,160 @@
+#!/usr/bin/env bash
+# schedule-draft: nightly cron that drafts tomorrow's schedule by invoking
+# `amp -x "Use the prio skill with argument 'tomorrow --auto'"` if the target
+# file is missing. Modelled on ~/.local/bin/workspace-sync.
+#
+# Idempotent: if tomorrow's schedule already exists, exits cleanly.
+#
+# Env overrides (for testing):
+#   DRY_RUN=1        — skip the real amp invocation; write a stub to
+#                      /tmp/schedule-draft-dryrun.md instead.
+#   SCHEDULE_DATE    — override "tomorrow" (YYYY-MM-DD), used for testing.
+
+set -uo pipefail
+
+readonly REPO="${REPO_OVERRIDE:-@@REPO@@}"
+readonly STATE_DIR="$HOME/.local/state/schedule-draft"
+readonly LOG="$STATE_DIR/run.log"
+readonly STATUS="$STATE_DIR/last-run.json"
+readonly LOCK_DIR="/tmp/schedule-draft.lock.d"
+readonly LOG_MAX_BYTES=$((1024 * 1024))
+readonly AMP_TIMEOUT="5m"
+readonly HOSTNAME_SHORT="$(hostname -s)"
+
+# Make sure amp + common bin paths are on PATH (cron's PATH is minimal).
+export PATH="/home/francis/.local/bin:/usr/local/bin:/usr/bin:/bin:${PATH:-}"
+
+mkdir -p "$STATE_DIR"
+
+# ----- logging ------------------------------------------------------------
+log() { printf '[%s] %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" >> "$LOG"; }
+
+rotate_log() {
+  if [[ -f "$LOG" ]]; then
+    local size
+    size=$(wc -c < "$LOG" | tr -d ' ')
+    if (( size > LOG_MAX_BYTES )); then mv "$LOG" "$LOG.1"; fi
+  fi
+}
+
+write_status() {
+  local status="$1" msg="$2" target="${3:-}"
+  local ts
+  ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  # message + target may contain quotes; escape them.
+  local m_esc t_esc
+  m_esc=$(printf '%s' "$msg"    | sed 's/\\/\\\\/g; s/"/\\"/g')
+  t_esc=$(printf '%s' "$target" | sed 's/\\/\\\\/g; s/"/\\"/g')
+  printf '{\n  "timestamp": "%s",\n  "host": "%s",\n  "status": "%s",\n  "target": "%s",\n  "message": "%s"\n}\n' \
+    "$ts" "$HOSTNAME_SHORT" "$status" "$t_esc" "$m_esc" > "$STATUS"
+}
+
+# ----- single-instance lock (workspace-sync pattern) ----------------------
+acquire_lock() {
+  if mkdir "$LOCK_DIR" 2>/dev/null; then
+    echo $$ > "$LOCK_DIR/pid"
+    trap 'rm -rf "$LOCK_DIR"' EXIT
+    return 0
+  fi
+  return 1
+}
+
+if ! acquire_lock; then
+  stale_pid=$(cat "$LOCK_DIR/pid" 2>/dev/null || true)
+  if [[ -n "${stale_pid:-}" ]] && kill -0 "$stale_pid" 2>/dev/null; then
+    log "another schedule-draft running (pid $stale_pid), exiting"
+    exit 0
+  fi
+  log "removing stale lock (owner pid='${stale_pid:-unknown}' is gone)"
+  rm -rf "$LOCK_DIR"
+  if ! acquire_lock; then
+    log "ERROR: could not acquire lock after reaping stale dir"
+    write_status "error" "lock acquire failed"
+    exit 1
+  fi
+fi
+
+rotate_log
+
+# ----- compute target -----------------------------------------------------
+if [[ -n "${SCHEDULE_DATE:-}" ]]; then
+  target_date="$SCHEDULE_DATE"
+else
+  target_date=$(date -d "tomorrow" '+%F')
+fi
+
+target_year="${target_date:0:4}"
+target_file="$REPO/schedules/$target_year/$target_date.md"
+
+log "target: $target_file (dry_run=${DRY_RUN:-0})"
+
+# ----- idempotency check --------------------------------------------------
+if [[ -f "$target_file" ]]; then
+  log "already exists, skipping"
+  write_status "skipped" "schedule for $target_date already exists" "$target_file"
+  exit 0
+fi
+
+# ----- dry-run path -------------------------------------------------------
+if [[ "${DRY_RUN:-0}" == "1" ]]; then
+  dry_target="/tmp/schedule-draft-dryrun.md"
+  {
+    printf '# (DRY RUN) Would invoke amp to draft schedule\n\n'
+    printf 'target_file: %s\n' "$target_file"
+    printf 'target_date: %s\n' "$target_date"
+    printf 'command:     amp -x "Use the prio skill with argument %s"\n' "'tomorrow --auto'"
+    printf 'timeout:     %s\n' "$AMP_TIMEOUT"
+  } > "$dry_target"
+  log "DRY_RUN: wrote stub to $dry_target"
+  write_status "dry-run" "stub written to $dry_target" "$dry_target"
+  exit 0
+fi
+
+# ----- invoke amp ---------------------------------------------------------
+if ! command -v amp >/dev/null 2>&1; then
+  log "ERROR: amp not found on PATH"
+  write_status "error" "amp binary not found on PATH" "$target_file"
+  exit 1
+fi
+
+if ! command -v timeout >/dev/null 2>&1; then
+  log "ERROR: timeout(1) not found on PATH"
+  write_status "error" "timeout binary not found" "$target_file"
+  exit 1
+fi
+
+cd "$REPO" 2>/dev/null || {
+  log "ERROR: repo path missing: $REPO"
+  write_status "error" "repo path missing: $REPO" "$target_file"
+  exit 1
+}
+
+log "invoking: timeout $AMP_TIMEOUT amp -x \"Use the prio skill with argument 'tomorrow --auto'\""
+
+# Run amp non-interactively. stdin from /dev/null so amp can't block on input;
+# stdout/stderr appended to the log.
+amp_exit=0
+timeout "$AMP_TIMEOUT" amp -x "Use the prio skill with argument 'tomorrow --auto'" \
+  < /dev/null >> "$LOG" 2>&1 \
+  || amp_exit=$?
+
+if (( amp_exit == 124 )); then
+  log "ERROR: amp timed out after $AMP_TIMEOUT (killed by timeout(1))"
+  write_status "failed" "amp timed out after $AMP_TIMEOUT" "$target_file"
+  exit 1
+fi
+
+if (( amp_exit != 0 )); then
+  log "WARN: amp exited non-zero ($amp_exit); will still check for target file"
+fi
+
+# ----- verify -------------------------------------------------------------
+if [[ -f "$target_file" ]]; then
+  log "OK: schedule written (amp_exit=$amp_exit)"
+  write_status "ok" "schedule drafted (amp_exit=$amp_exit)" "$target_file"
+  exit 0
+fi
+
+log "ERROR: target file still missing after amp run (amp_exit=$amp_exit)"
+write_status "failed" "target file missing after amp run (amp_exit=$amp_exit)" "$target_file"
+exit 1

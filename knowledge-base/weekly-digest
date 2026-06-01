@@ -1,0 +1,309 @@
+#!/usr/bin/env bash
+# weekly-digest: Sunday cron that aggregates the week's daily journals into a
+# single weekly digest markdown file.
+#
+# Week range: Mon..Sun ending on the run date (which should be Sunday).
+#
+# Reads each daily journal file (journal/<yyyy>/<mm>/<yyyy-mm-dd>.md) and
+# aggregates:
+#   - Completion totals (sum done / sum total from Stats lines).
+#   - Days with non-empty Notes content.
+#   - Top deferrers   = items appearing in `## Open` on >= 3 distinct days.
+#   - Persistent      = items appearing in every day's `Overlooked` line that
+#     overlooked       has any overlooked items (i.e. consistently overlooked
+#                      whenever the system flagged anything).
+#   - Themes          = concatenation of each day's `## Notes` content (capped).
+#
+# Env overrides (for testing):
+#   DRY_RUN=1     — write to /tmp/weekly-digest-dryrun.md instead of real file.
+#   DIGEST_DATE   — override the Sunday reference date (YYYY-MM-DD).
+
+set -uo pipefail
+
+readonly REPO="${REPO_OVERRIDE:-@@REPO@@}"
+readonly STATE_DIR="$HOME/.local/state/weekly-digest"
+readonly LOG="$STATE_DIR/run.log"
+readonly STATUS="$STATE_DIR/last-run.json"
+readonly LOCK_DIR="/tmp/weekly-digest.lock.d"
+readonly LOG_MAX_BYTES=$((1024 * 1024))
+readonly NOTES_TOTAL_CAP=$((16 * 1024))    # truncate concatenated notes at 16 KiB
+readonly DEFERRER_THRESHOLD=3
+readonly HOSTNAME_SHORT="$(hostname -s)"
+
+export PATH="/home/francis/.local/bin:/usr/local/bin:/usr/bin:/bin:${PATH:-}"
+
+mkdir -p "$STATE_DIR"
+
+# ----- logging ------------------------------------------------------------
+log() { printf '[%s] %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" >> "$LOG"; }
+
+rotate_log() {
+  if [[ -f "$LOG" ]]; then
+    local size
+    size=$(wc -c < "$LOG" | tr -d ' ')
+    if (( size > LOG_MAX_BYTES )); then mv "$LOG" "$LOG.1"; fi
+  fi
+}
+
+write_status() {
+  local status="$1" msg="$2" target="${3:-}"
+  local ts m_esc t_esc
+  ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  m_esc=$(printf '%s' "$msg"    | sed 's/\\/\\\\/g; s/"/\\"/g')
+  t_esc=$(printf '%s' "$target" | sed 's/\\/\\\\/g; s/"/\\"/g')
+  printf '{\n  "timestamp": "%s",\n  "host": "%s",\n  "status": "%s",\n  "target": "%s",\n  "message": "%s"\n}\n' \
+    "$ts" "$HOSTNAME_SHORT" "$status" "$t_esc" "$m_esc" > "$STATUS"
+}
+
+# ----- single-instance lock -----------------------------------------------
+acquire_lock() {
+  if mkdir "$LOCK_DIR" 2>/dev/null; then
+    echo $$ > "$LOCK_DIR/pid"
+    trap 'rm -rf "$LOCK_DIR"' EXIT
+    return 0
+  fi
+  return 1
+}
+
+if ! acquire_lock; then
+  stale_pid=$(cat "$LOCK_DIR/pid" 2>/dev/null || true)
+  if [[ -n "${stale_pid:-}" ]] && kill -0 "$stale_pid" 2>/dev/null; then
+    log "another weekly-digest running (pid $stale_pid), exiting"
+    exit 0
+  fi
+  log "removing stale lock (owner pid='${stale_pid:-unknown}' is gone)"
+  rm -rf "$LOCK_DIR"
+  if ! acquire_lock; then
+    log "ERROR: could not acquire lock after reaping stale dir"
+    write_status "error" "lock acquire failed"
+    exit 1
+  fi
+fi
+
+rotate_log
+
+# ----- compute week range -------------------------------------------------
+if [[ -n "${DIGEST_DATE:-}" ]]; then
+  sunday="$DIGEST_DATE"
+else
+  sunday=$(date '+%F')
+fi
+
+dow=$(date -d "$sunday" '+%u')   # 1=Mon .. 7=Sun
+if [[ "$dow" != "7" ]]; then
+  log "NOTE: $sunday is not a Sunday (dow=$dow); proceeding anyway, using it as week-end"
+fi
+
+monday=$(date -d "$sunday -6 day" '+%F')
+log "week range: $monday .. $sunday (dry_run=${DRY_RUN:-0})"
+
+journal_file_for() {
+  local d="$1"
+  printf '%s/journal/%s/%s/%s.md' "$REPO" "${d:0:4}" "${d:5:2}" "$d"
+}
+
+# ----- iterate days, aggregate --------------------------------------------
+total_done=0
+total_total=0
+days_with_notes=0
+days_with_journal=0
+
+# desc -> count of days that desc appeared in ## Open
+declare -A open_day_count=()
+# desc -> count of days that desc appeared in Overlooked
+declare -A overlooked_day_count=()
+days_with_any_overlooked=0
+
+notes_buffer=""
+notes_truncated=0
+
+for i in 0 1 2 3 4 5 6; do
+  d=$(date -d "$monday +$i day" '+%F')
+  jf=$(journal_file_for "$d")
+  [[ -f "$jf" ]] || { log "  $d: no journal"; continue; }
+  days_with_journal=$(( days_with_journal + 1 ))
+
+  # Parse the "## Stats (auto)" first bullet:  "- N/M done (...)"
+  stats_line=$(awk '
+    /^## Stats \(auto\)/ { in_stats=1; next }
+    in_stats && /^- / { print; exit }
+    in_stats && /^## / { exit }
+  ' "$jf")
+  if [[ "$stats_line" =~ ^-\ ([0-9]+)/([0-9]+)\ done ]]; then
+    total_done=$(( total_done + BASH_REMATCH[1] ))
+    total_total=$(( total_total + BASH_REMATCH[2] ))
+  fi
+
+  # Parse the "Deferred out" stats line — we don't aggregate it (we use the
+  # per-day ## Open section instead, which is more accurate).
+
+  # Parse the "Overlooked >Nd: K (a, b, c)" line.
+  ov_line=$(awk '
+    /^## Stats \(auto\)/ { in_stats=1; next }
+    in_stats && /^- Overlooked / { print; exit }
+    in_stats && /^## / { exit }
+  ' "$jf")
+  if [[ -n "$ov_line" ]]; then
+    # Extract count and the list inside parens (if any).
+    if [[ "$ov_line" =~ Overlooked\ \>[0-9]+d:\ ([0-9]+) ]]; then
+      ov_count="${BASH_REMATCH[1]}"
+      if (( ov_count > 0 )); then
+        days_with_any_overlooked=$(( days_with_any_overlooked + 1 ))
+        # Pull text inside the outermost parens.
+        inside=""
+        if [[ "$ov_line" == *"("* ]]; then
+          inside="${ov_line#*(}"
+          inside="${inside%)*}"
+        fi
+        if [[ -n "$inside" ]]; then
+          # Items are comma-separated. Each is "desc (P0)" — keep full token.
+          # Split on ", " by replacing with newlines, but desc itself may
+          # contain commas; this is best-effort.
+          while IFS= read -r item; do
+            item="${item#"${item%%[![:space:]]*}"}"  # ltrim
+            item="${item%"${item##*[![:space:]]}"}"  # rtrim
+            [[ -z "$item" ]] && continue
+            overlooked_day_count["$item"]=$(( ${overlooked_day_count["$item"]:-0} + 1 ))
+          done < <(printf '%s\n' "$inside" | sed 's/, /\n/g')
+        fi
+      fi
+    fi
+  fi
+
+  # Parse the "## Open" section — collect each task line's normalized desc.
+  while IFS= read -r open_line; do
+    # open_line is like "- [ ] P1 | Some desc | optional-ref"
+    [[ "$open_line" =~ ^-\ \[\ \]\ P[0-9]+\ \|\ (.+)$ ]] || continue
+    rest="${BASH_REMATCH[1]}"
+    if [[ "$rest" == *" | "* ]]; then
+      desc="${rest%% | *}"
+    else
+      desc="$rest"
+    fi
+    desc=$(printf '%s' "$desc" | tr -s ' ' | sed 's/^ //; s/ $//')
+    [[ -z "$desc" ]] && continue
+    open_day_count["$desc"]=$(( ${open_day_count["$desc"]:-0} + 1 ))
+  done < <(awk '
+    /^## Open[[:space:]]*$/ { in_open=1; next }
+    in_open && /^## / { in_open=0 }
+    in_open { print }
+  ' "$jf")
+
+  # Notes content for theme extraction.
+  notes_content=$(awk '
+    /^## Notes[[:space:]]*$/ { in_notes=1; next }
+    in_notes && /^## / { in_notes=0 }
+    in_notes { print }
+  ' "$jf")
+
+  # Treat HTML-comment-only / whitespace-only notes as "no notes".
+  stripped=$(printf '%s' "$notes_content" | sed -E 's/<!--[^>]*-->//g' | tr -d '[:space:]')
+  if [[ -n "$stripped" ]]; then
+    days_with_notes=$(( days_with_notes + 1 ))
+    day_label=$(date -d "$d" '+%a %b %-d')
+    chunk="### $day_label"$'\n'"$notes_content"$'\n'
+    if (( ${#notes_buffer} + ${#chunk} > NOTES_TOTAL_CAP )); then
+      notes_truncated=1
+      remaining=$(( NOTES_TOTAL_CAP - ${#notes_buffer} ))
+      if (( remaining > 0 )); then
+        notes_buffer+="${chunk:0:remaining}"
+      fi
+      break
+    fi
+    notes_buffer+="$chunk"
+  fi
+  log "  $d: parsed (notes=$([[ -n $stripped ]] && echo yes || echo no))"
+done
+
+# ----- percent ------------------------------------------------------------
+if (( total_total > 0 )); then
+  pct=$(( total_done * 100 / total_total ))
+else
+  pct=0
+fi
+
+# ----- chronic deferrers --------------------------------------------------
+chronic_lines=()
+# Sort by count desc, then alphabetically.
+while IFS= read -r entry; do
+  [[ -z "$entry" ]] && continue
+  chronic_lines+=("$entry")
+done < <(
+  for k in "${!open_day_count[@]}"; do
+    cnt="${open_day_count[$k]}"
+    if (( cnt >= DEFERRER_THRESHOLD )); then
+      printf '%d\t%s\n' "$cnt" "$k"
+    fi
+  done | sort -k1,1nr -k2,2
+)
+
+# ----- persistent overlooked ----------------------------------------------
+persistent_overlooked=()
+if (( days_with_any_overlooked > 0 )); then
+  while IFS= read -r entry; do
+    [[ -z "$entry" ]] && continue
+    persistent_overlooked+=("$entry")
+  done < <(
+    for k in "${!overlooked_day_count[@]}"; do
+      cnt="${overlooked_day_count[$k]}"
+      if (( cnt >= days_with_any_overlooked )); then
+        printf '%s\n' "$k"
+      fi
+    done | sort
+  )
+fi
+
+# ----- write digest -------------------------------------------------------
+if [[ "${DRY_RUN:-0}" == "1" ]]; then
+  out_file="/tmp/weekly-digest-dryrun.md"
+else
+  out_dir="$REPO/journal/${sunday:0:4}/${sunday:5:2}"
+  mkdir -p "$out_dir"
+  out_file="$out_dir/$sunday-week.md"
+fi
+
+mon_label=$(date -d "$monday" '+%b %-d')
+sun_label=$(date -d "$sunday" '+%b %-d, %Y')
+
+tmp_out=$(mktemp)
+trap 'rm -f "$tmp_out" 2>/dev/null' EXIT
+{
+  printf '# Week of %s – %s\n\n' "$mon_label" "$sun_label"
+  printf '## Aggregate\n'
+  printf -- '- Completion: %d/%d (%d%%)\n' "$total_done" "$total_total" "$pct"
+  printf -- '- Days with journal: %d/7\n' "$days_with_journal"
+  printf -- '- Days with notes: %d/7\n' "$days_with_notes"
+  printf '\n## Chronic deferrers\n'
+  if (( ${#chronic_lines[@]} == 0 )); then
+    printf '_(none — no item appeared in Open on %d+ days)_\n' "$DEFERRER_THRESHOLD"
+  else
+    for entry in "${chronic_lines[@]}"; do
+      cnt="${entry%%$'\t'*}"
+      desc="${entry#*$'\t'}"
+      printf -- '- %s (%s days)\n' "$desc" "$cnt"
+    done
+  fi
+  printf '\n## Persistent overlooked\n'
+  if (( ${#persistent_overlooked[@]} == 0 )); then
+    printf '_(none)_\n'
+  else
+    for desc in "${persistent_overlooked[@]}"; do
+      printf -- '- %s\n' "$desc"
+    done
+  fi
+  printf '\n## Themes (from notes)\n'
+  if [[ -z "$notes_buffer" ]]; then
+    printf '_(no notes captured this week)_\n'
+  else
+    printf '%s' "$notes_buffer"
+    if (( notes_truncated )); then
+      printf '\n\n_(truncated at %d bytes)_\n' "$NOTES_TOTAL_CAP"
+    fi
+  fi
+} > "$tmp_out"
+
+mv "$tmp_out" "$out_file"
+
+log "OK: wrote $out_file (done=$total_done total=$total_total days_with_journal=$days_with_journal)"
+write_status "ok" "digest written (completion=${total_done}/${total_total} days=${days_with_journal}/7)" "$out_file"
+exit 0
