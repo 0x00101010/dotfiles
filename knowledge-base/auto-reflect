@@ -1,0 +1,414 @@
+#!/usr/bin/env bash
+# auto-reflect: nightly cron that writes a mechanical journal entry for today.
+#
+# Computes:
+#   - Done/total counts (overall + per-priority) from today's schedule.
+#   - "Deferred in"  = unchecked items in yesterday's schedule that also appear
+#                      (matched by description) in today's schedule.
+#   - "Deferred out" = today's unchecked items, each with a slip-age count of
+#                      how many consecutive prior days they appeared unchecked.
+#   - "Overlooked"   = P0/P1 items in todos/{work,personal}.md whose description
+#                      has NOT appeared in any schedule in the last 7 days.
+#
+# Preserves any existing `## Notes` content across reruns.
+#
+# Env overrides (for testing):
+#   DRY_RUN=1      — write to /tmp/auto-reflect-dryrun.md instead of the real
+#                    journal file. Reads from real workspace data.
+#   REFLECT_DATE   — override "today" (YYYY-MM-DD) for testing.
+
+set -uo pipefail
+
+readonly REPO="${REPO_OVERRIDE:-@@REPO@@}"
+readonly STATE_DIR="$HOME/.local/state/auto-reflect"
+readonly LOG="$STATE_DIR/run.log"
+readonly STATUS="$STATE_DIR/last-run.json"
+readonly LOCK_DIR="/tmp/auto-reflect.lock.d"
+readonly LOG_MAX_BYTES=$((1024 * 1024))
+readonly QUIET_MINS=5           # defer if today's schedule was touched recently
+readonly SLIP_WALK_MAX_DAYS=30  # safety cap on the slip-age backwards walk
+readonly OVERLOOKED_WINDOW=7    # days
+readonly HOSTNAME_SHORT="$(hostname -s)"
+
+export PATH="/home/francis/.local/bin:/usr/local/bin:/usr/bin:/bin:${PATH:-}"
+
+mkdir -p "$STATE_DIR"
+
+# ----- logging ------------------------------------------------------------
+log() { printf '[%s] %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" >> "$LOG"; }
+
+rotate_log() {
+  if [[ -f "$LOG" ]]; then
+    local size
+    size=$(wc -c < "$LOG" | tr -d ' ')
+    if (( size > LOG_MAX_BYTES )); then mv "$LOG" "$LOG.1"; fi
+  fi
+}
+
+write_status() {
+  local status="$1" msg="$2" target="${3:-}" done="${4:-0}" total="${5:-0}"
+  local ts m_esc t_esc
+  ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  m_esc=$(printf '%s' "$msg"    | sed 's/\\/\\\\/g; s/"/\\"/g')
+  t_esc=$(printf '%s' "$target" | sed 's/\\/\\\\/g; s/"/\\"/g')
+  printf '{\n  "timestamp": "%s",\n  "host": "%s",\n  "status": "%s",\n  "target": "%s",\n  "done": %s,\n  "total": %s,\n  "message": "%s"\n}\n' \
+    "$ts" "$HOSTNAME_SHORT" "$status" "$t_esc" "$done" "$total" "$m_esc" > "$STATUS"
+}
+
+# ----- single-instance lock -----------------------------------------------
+acquire_lock() {
+  if mkdir "$LOCK_DIR" 2>/dev/null; then
+    echo $$ > "$LOCK_DIR/pid"
+    trap 'rm -rf "$LOCK_DIR"' EXIT
+    return 0
+  fi
+  return 1
+}
+
+if ! acquire_lock; then
+  stale_pid=$(cat "$LOCK_DIR/pid" 2>/dev/null || true)
+  if [[ -n "${stale_pid:-}" ]] && kill -0 "$stale_pid" 2>/dev/null; then
+    log "another auto-reflect running (pid $stale_pid), exiting"
+    exit 0
+  fi
+  log "removing stale lock (owner pid='${stale_pid:-unknown}' is gone)"
+  rm -rf "$LOCK_DIR"
+  if ! acquire_lock; then
+    log "ERROR: could not acquire lock after reaping stale dir"
+    write_status "error" "lock acquire failed"
+    exit 1
+  fi
+fi
+
+rotate_log
+
+# ----- date helpers -------------------------------------------------------
+schedule_file_for() {
+  local d="$1"
+  printf '%s/schedules/%s/%s.md' "$REPO" "${d:0:4}" "$d"
+}
+
+# ----- task line parser ---------------------------------------------------
+# parse_task_line "<line>"
+#   sets globals PARSED_OK (0/1), PARSED_STATUS (" "|"x"), PARSED_PRIO ("P1"),
+#   PARSED_DESC (normalized whitespace), PARSED_REF (may be empty).
+# Accepts the canonical new format:
+#   - [ ] P1 | description
+#   - [x] P1 | description | OPTIONAL-REF
+parse_task_line() {
+  local line="$1"
+  PARSED_OK=0
+  PARSED_STATUS=""; PARSED_PRIO=""; PARSED_DESC=""; PARSED_REF=""
+  # Trim trailing CR/whitespace.
+  line="${line%$'\r'}"
+  line="${line%"${line##*[![:space:]]}"}"
+
+  local re='^- \[([ xX])\] (P[0-9]+) \| (.+)$'
+  if [[ "$line" =~ $re ]]; then
+    local s="${BASH_REMATCH[1]}" p="${BASH_REMATCH[2]}" rest="${BASH_REMATCH[3]}"
+    [[ "$s" == "X" ]] && s="x"
+    local desc ref
+    if [[ "$rest" == *" | "* ]]; then
+      desc="${rest%% | *}"
+      ref="${rest#* | }"
+      # If ref also contains " | ", take everything after the first " | " split.
+    else
+      desc="$rest"
+      ref=""
+    fi
+    # Normalize whitespace in desc (collapse runs of spaces, trim).
+    desc=$(printf '%s' "$desc" | tr -s ' ' | sed 's/^ //; s/ $//')
+    PARSED_STATUS="$s"
+    PARSED_PRIO="$p"
+    PARSED_DESC="$desc"
+    PARSED_REF="$ref"
+    PARSED_OK=1
+  fi
+}
+
+# Extract just the descriptions of tasks in a schedule file matching a status.
+# Usage: extract_descs <file> <status: " "|"x"|"any">
+# Prints one description per line.
+extract_descs() {
+  local file="$1" want="$2"
+  [[ -f "$file" ]] || return 0
+  while IFS= read -r line; do
+    parse_task_line "$line"
+    (( PARSED_OK == 1 )) || continue
+    if [[ "$want" == "any" || "$PARSED_STATUS" == "$want" ]]; then
+      printf '%s\n' "$PARSED_DESC"
+    fi
+  done < "$file"
+}
+
+# Print "STATUS<TAB>PRIO<TAB>DESC<TAB>REF" for every task line in a schedule file.
+extract_tasks_tsv() {
+  local file="$1"
+  [[ -f "$file" ]] || return 0
+  while IFS= read -r line; do
+    parse_task_line "$line"
+    (( PARSED_OK == 1 )) || continue
+    printf '%s\t%s\t%s\t%s\n' "$PARSED_STATUS" "$PARSED_PRIO" "$PARSED_DESC" "$PARSED_REF"
+  done < "$file"
+}
+
+# Render a task line with optional ref.
+render_task() {
+  local status="$1" prio="$2" desc="$3" ref="$4"
+  if [[ -n "$ref" ]]; then
+    printf -- '- [%s] %s | %s | %s\n' "$status" "$prio" "$desc" "$ref"
+  else
+    printf -- '- [%s] %s | %s\n' "$status" "$prio" "$desc"
+  fi
+}
+
+# ----- compute today ------------------------------------------------------
+if [[ -n "${REFLECT_DATE:-}" ]]; then
+  today="$REFLECT_DATE"
+else
+  today=$(date '+%F')
+fi
+yesterday=$(date -d "$today -1 day" '+%F')
+
+today_sched=$(schedule_file_for "$today")
+yest_sched=$(schedule_file_for "$yesterday")
+
+log "today=$today yesterday=$yesterday (dry_run=${DRY_RUN:-0})"
+log "today_sched=$today_sched"
+
+# ----- quiet-period guard -------------------------------------------------
+if [[ -f "$today_sched" ]] && [[ "${DRY_RUN:-0}" != "1" ]]; then
+  if find "$today_sched" -mmin -$QUIET_MINS 2>/dev/null | grep -q .; then
+    log "today's schedule edited within ${QUIET_MINS}m, deferring"
+    write_status "deferred" "user still editing today's schedule" "$today_sched"
+    exit 0
+  fi
+fi
+
+# ----- bail-out if no schedule today --------------------------------------
+if [[ ! -f "$today_sched" ]]; then
+  log "no schedule for $today, nothing to reflect on"
+  write_status "skipped" "no schedule file for $today" "$today_sched"
+  exit 0
+fi
+
+# ----- stats (done/total + per-priority) ----------------------------------
+total=0; done_n=0
+declare -A prio_total=() prio_done=()
+
+while IFS=$'\t' read -r st pr desc ref; do
+  [[ -z "${st:-}" ]] && continue
+  total=$(( total + 1 ))
+  prio_total["$pr"]=$(( ${prio_total["$pr"]:-0} + 1 ))
+  if [[ "$st" == "x" ]]; then
+    done_n=$(( done_n + 1 ))
+    prio_done["$pr"]=$(( ${prio_done["$pr"]:-0} + 1 ))
+  fi
+done < <(extract_tasks_tsv "$today_sched")
+
+# Build per-priority summary in sorted order.
+prio_summary=""
+while IFS= read -r pr; do
+  [[ -z "$pr" ]] && continue
+  prio_summary+="${pr}: ${prio_done[$pr]:-0}/${prio_total[$pr]}, "
+done < <(printf '%s\n' "${!prio_total[@]}" | sort)
+prio_summary="${prio_summary%, }"
+
+# ----- deferred in (from yesterday) ---------------------------------------
+deferred_in=0
+if [[ -f "$yest_sched" ]]; then
+  # today's task descriptions (any status) — into a tmp file for grep -F.
+  today_descs_tmp=$(mktemp)
+  trap 'rm -f "$today_descs_tmp" "${dry_target:-}" 2>/dev/null' EXIT
+  extract_descs "$today_sched" "any" > "$today_descs_tmp"
+
+  while IFS= read -r d; do
+    [[ -z "$d" ]] && continue
+    # exact-line match against today's descs
+    if grep -Fxq -- "$d" "$today_descs_tmp"; then
+      deferred_in=$(( deferred_in + 1 ))
+    fi
+  done < <(extract_descs "$yest_sched" " ")
+fi
+
+# ----- deferred out (slip ages for today's unchecked items) ---------------
+# For each unchecked item in today, walk backwards day-by-day; count
+# consecutive days that the same description appears unchecked. Report items
+# with slip age >= 1.
+deferred_out_lines=()  # rendered "desc ↻ Nd"
+
+# Cache "unchecked descs" per day file to avoid rescanning.
+declare -A day_unchecked_cache=()
+unchecked_descs_for() {
+  local f="$1"
+  if [[ -n "${day_unchecked_cache[$f]+x}" ]]; then
+    printf '%s' "${day_unchecked_cache[$f]}"
+    return 0
+  fi
+  local out=""
+  if [[ -f "$f" ]]; then
+    out=$(extract_descs "$f" " ")
+  fi
+  day_unchecked_cache[$f]="$out"
+  printf '%s' "$out"
+}
+
+while IFS= read -r d; do
+  [[ -z "$d" ]] && continue
+  slip=0
+  walk_day="$yesterday"
+  for (( i=0; i<SLIP_WALK_MAX_DAYS; i++ )); do
+    walk_file=$(schedule_file_for "$walk_day")
+    if [[ ! -f "$walk_file" ]]; then
+      # Missing files break the chain (per spec: "stop at first day without a match").
+      break
+    fi
+    if printf '%s\n' "$(unchecked_descs_for "$walk_file")" | grep -Fxq -- "$d"; then
+      slip=$(( slip + 1 ))
+      walk_day=$(date -d "$walk_day -1 day" '+%F')
+    else
+      break
+    fi
+  done
+  if (( slip >= 1 )); then
+    deferred_out_lines+=("$d ↻ ${slip}d")
+  fi
+done < <(extract_descs "$today_sched" " ")
+
+deferred_out_count=${#deferred_out_lines[@]}
+
+# ----- overlooked (>= OVERLOOKED_WINDOW days) -----------------------------
+# Collect P0/P1 descriptions from todos/{work,personal}.md, then check whether
+# each has appeared in any schedule file in the last N days.
+overlooked_lines=()
+declare -A schedule_descs_window=()  # desc -> 1 if seen in any recent schedule
+# Pre-load all schedule descs (any status) within window.
+for (( i=0; i<OVERLOOKED_WINDOW; i++ )); do
+  d=$(date -d "$today -$i day" '+%F')
+  f=$(schedule_file_for "$d")
+  [[ -f "$f" ]] || continue
+  while IFS= read -r desc; do
+    [[ -z "$desc" ]] && continue
+    schedule_descs_window["$desc"]=1
+  done < <(extract_descs "$f" "any")
+done
+
+# Parse a todos file line: `- [ ] P0 | desc...` (also tolerates `- [ ] P0 | desc | ref`).
+# We use the same parser; treat only unchecked items.
+collect_overlooked_from() {
+  local todos_file="$1"
+  [[ -f "$todos_file" ]] || return 0
+  while IFS= read -r line; do
+    parse_task_line "$line"
+    (( PARSED_OK == 1 )) || continue
+    [[ "$PARSED_STATUS" == " " ]] || continue
+    [[ "$PARSED_PRIO" == "P0" || "$PARSED_PRIO" == "P1" ]] || continue
+    if [[ -z "${schedule_descs_window[$PARSED_DESC]+x}" ]]; then
+      overlooked_lines+=("$PARSED_DESC ($PARSED_PRIO)")
+    fi
+  done < "$todos_file"
+}
+collect_overlooked_from "$REPO/todos/work.md"
+collect_overlooked_from "$REPO/todos/personal.md"
+
+overlooked_count=${#overlooked_lines[@]}
+
+# ----- preserve existing ## Notes section ---------------------------------
+journal_dir="$REPO/journal/${today:0:4}/${today:5:2}"
+journal_file="$journal_dir/$today.md"
+
+existing_notes=""
+if [[ -f "$journal_file" ]]; then
+  # Capture everything between "## Notes" line (exclusive) and next "^## "
+  # heading (exclusive) or EOF.
+  existing_notes=$(awk '
+    /^## Notes[[:space:]]*$/ { in_notes=1; next }
+    in_notes && /^## / { in_notes=0 }
+    in_notes { print }
+  ' "$journal_file")
+fi
+
+# Decide what to put in the Notes section.
+notes_body="$existing_notes"
+if [[ -z "${notes_body//[[:space:]]/}" ]]; then
+  # No meaningful existing notes — use the placeholder.
+  notes_body=$'<!-- user-editable; cron preserves this section -->\n'
+else
+  # Ensure trailing newline.
+  [[ "${notes_body: -1}" == $'\n' ]] || notes_body+=$'\n'
+fi
+
+# ----- format journal content ---------------------------------------------
+title_date=$(date -d "$today" '+%a, %b %-d, %Y')
+yest_short=$(date -d "$yesterday" '+%b %-d')
+
+# Done lines (verbatim from today's schedule, in document order).
+done_lines_text=""
+while IFS=$'\t' read -r st pr desc ref; do
+  [[ "$st" == "x" ]] || continue
+  done_lines_text+="$(render_task "x" "$pr" "$desc" "$ref")"$'\n'
+done < <(extract_tasks_tsv "$today_sched")
+[[ -z "$done_lines_text" ]] && done_lines_text="(none)"$'\n'
+
+# Open lines.
+open_lines_text=""
+while IFS=$'\t' read -r st pr desc ref; do
+  [[ "$st" == " " ]] || continue
+  open_lines_text+="$(render_task " " "$pr" "$desc" "$ref")"$'\n'
+done < <(extract_tasks_tsv "$today_sched")
+[[ -z "$open_lines_text" ]] && open_lines_text="(none)"$'\n'
+
+# Build Stats lines.
+stats_summary="- ${done_n}/${total} done"
+if [[ -n "$prio_summary" ]]; then
+  stats_summary+=" (${prio_summary})"
+fi
+
+deferred_in_line="- Deferred in: ${deferred_in} (from ${yest_short})"
+
+if (( deferred_out_count == 0 )); then
+  deferred_out_line="- Deferred out: 0"
+else
+  joined=$(printf '%s, ' "${deferred_out_lines[@]}")
+  joined="${joined%, }"
+  deferred_out_line="- Deferred out: ${deferred_out_count} (${joined})"
+fi
+
+if (( overlooked_count == 0 )); then
+  overlooked_line="- Overlooked >${OVERLOOKED_WINDOW}d: 0"
+else
+  joined=$(printf '%s, ' "${overlooked_lines[@]}")
+  joined="${joined%, }"
+  overlooked_line="- Overlooked >${OVERLOOKED_WINDOW}d: ${overlooked_count} (${joined})"
+fi
+
+# ----- write target -------------------------------------------------------
+if [[ "${DRY_RUN:-0}" == "1" ]]; then
+  out_file="/tmp/auto-reflect-dryrun.md"
+else
+  mkdir -p "$journal_dir"
+  out_file="$journal_file"
+fi
+
+# Use a temp file + atomic rename so a half-written journal never persists.
+tmp_out=$(mktemp)
+{
+  printf '# Journal — %s\n\n' "$title_date"
+  printf '## Stats (auto)\n'
+  printf '%s\n' "$stats_summary"
+  printf '%s\n' "$deferred_in_line"
+  printf '%s\n' "$deferred_out_line"
+  printf '%s\n' "$overlooked_line"
+  printf '\n## Done\n'
+  printf '%s' "$done_lines_text"
+  printf '\n## Open\n'
+  printf '%s' "$open_lines_text"
+  printf '\n## Notes\n'
+  printf '%s' "$notes_body"
+} > "$tmp_out"
+
+mv "$tmp_out" "$out_file"
+
+log "OK: wrote $out_file (done=$done_n total=$total deferred_in=$deferred_in deferred_out=$deferred_out_count overlooked=$overlooked_count)"
+write_status "ok" "journal written (deferred_in=$deferred_in deferred_out=$deferred_out_count overlooked=$overlooked_count)" "$out_file" "$done_n" "$total"
+exit 0
