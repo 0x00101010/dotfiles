@@ -16,9 +16,11 @@ schedules/
   <YYYY-MM-DD>-week.md     ← weekly (Monday date)
 journal/<YYYY>/<MM>/<YYYY-MM-DD>.md
 identity/goals/
-  5-year.md, <yyyy>.md, <yyyy>-Q<n>.md
+  <yyyy>.md, <yyyy>-Q<n>.md
 identity/
-  career-strategy.md, board-of-directors.md
+  5-year-plan.md, career-strategy.md, board-of-directors.md
+  daily-schedule.md
+  health-and-energy.md, marriage-and-family.md, friendships.md, wealth-strategy.md
 strategies/
   ideas.md, *.md
 projects/{work,personal}/<project>/
