@@ -8,7 +8,8 @@
 #   3. ~/.local/bin/schedule-draft   (22:00 daily)
 #   4. ~/.local/bin/auto-reflect     (22:30 daily)
 #   5. ~/.local/bin/weekly-digest    (22:00 Sun)
-#   6. ~/Library/LaunchAgents/com.francis.{workspace-sync,schedule-draft,auto-reflect,weekly-digest}.plist
+#   6. ~/.local/bin/monthly-digest   (06:00 on day 1 of month)
+#   7. ~/Library/LaunchAgents/com.francis.{workspace-sync,schedule-draft,auto-reflect,weekly-digest,monthly-digest}.plist
 #
 # Idempotent: safe to re-run. Won't re-clone an existing repo, won't duplicate
 # launchd entries. Re-running overwrites each script with the latest template
@@ -45,6 +46,11 @@ readonly WEEKLY_DIGEST_LABEL="com.francis.weekly-digest"
 readonly WEEKLY_DIGEST_PLIST="$LAUNCH_AGENTS_DIR/$WEEKLY_DIGEST_LABEL.plist"
 readonly WEEKLY_DIGEST_DEST="$HOME/.local/bin/weekly-digest"
 readonly WEEKLY_DIGEST_STATE_DIR="$HOME/.local/state/weekly-digest"
+
+readonly MONTHLY_DIGEST_LABEL="com.francis.monthly-digest"
+readonly MONTHLY_DIGEST_PLIST="$LAUNCH_AGENTS_DIR/$MONTHLY_DIGEST_LABEL.plist"
+readonly MONTHLY_DIGEST_DEST="$HOME/.local/bin/monthly-digest"
+readonly MONTHLY_DIGEST_STATE_DIR="$HOME/.local/state/monthly-digest"
 
 REPO=""
 
@@ -99,7 +105,7 @@ check_prereqs() {
 check_templates() {
   step "Verifying templates"
   local t
-  for t in workspace-sync schedule-draft auto-reflect weekly-digest; do
+  for t in workspace-sync schedule-draft auto-reflect weekly-digest monthly-digest; do
     [[ -f "$KB_DIR/$t" ]] || abort "Missing template in $KB_DIR: $t"
   done
   c_green "  templates found in $KB_DIR"
@@ -145,7 +151,9 @@ install_scripts() {
   install_one_script "schedule-draft" "$SCHEDULE_DRAFT_DEST"
   install_one_script "auto-reflect"   "$AUTO_REFLECT_DEST"
   install_one_script "weekly-digest"  "$WEEKLY_DIGEST_DEST"
-  mkdir -p "$STATE_DIR" "$SCHEDULE_DRAFT_STATE_DIR" "$AUTO_REFLECT_STATE_DIR" "$WEEKLY_DIGEST_STATE_DIR"
+  install_one_script "monthly-digest" "$MONTHLY_DIGEST_DEST"
+  mkdir -p "$STATE_DIR" "$SCHEDULE_DRAFT_STATE_DIR" "$AUTO_REFLECT_STATE_DIR" \
+           "$WEEKLY_DIGEST_STATE_DIR" "$MONTHLY_DIGEST_STATE_DIR"
 }
 
 # ----- install launchd agents ---------------------------------------------
@@ -380,6 +388,56 @@ EOF
 </plist>
 EOF
   install_one_launchd "$WEEKLY_DIGEST_LABEL" "$WEEKLY_DIGEST_PLIST" "$weekly_digest_xml"
+
+  # ----- monthly-digest: 06:00 on day 1 of each month ---------------------
+  local monthly_digest_xml
+  IFS= read -r -d '' monthly_digest_xml <<EOF || true
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>$MONTHLY_DIGEST_LABEL</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>$MONTHLY_DIGEST_DEST</string>
+  </array>
+
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Day</key><integer>1</integer>
+    <key>Hour</key><integer>6</integer>
+    <key>Minute</key><integer>0</integer>
+  </dict>
+
+  <key>ProcessType</key>
+  <string>Background</string>
+
+  <key>LowPriorityIO</key>
+  <true/>
+
+  <key>Nice</key>
+  <integer>5</integer>
+
+  <key>StandardOutPath</key>
+  <string>$MONTHLY_DIGEST_STATE_DIR/launchd.out.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>$MONTHLY_DIGEST_STATE_DIR/launchd.err.log</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>$env_path</string>
+    <key>HOME</key>
+    <string>$HOME</string>
+  </dict>
+</dict>
+</plist>
+EOF
+  install_one_launchd "$MONTHLY_DIGEST_LABEL" "$MONTHLY_DIGEST_PLIST" "$monthly_digest_xml"
 }
 
 # ----- smoke test ---------------------------------------------------------
@@ -403,6 +461,7 @@ smoke_test() {
   smoke_one "schedule-draft" "$SCHEDULE_DRAFT_DEST" "$SCHEDULE_DRAFT_STATE_DIR" env DRY_RUN=1
   smoke_one "auto-reflect"   "$AUTO_REFLECT_DEST"   "$AUTO_REFLECT_STATE_DIR"   env DRY_RUN=1
   smoke_one "weekly-digest"  "$WEEKLY_DIGEST_DEST"  "$WEEKLY_DIGEST_STATE_DIR"  env DRY_RUN=1
+  smoke_one "monthly-digest" "$MONTHLY_DIGEST_DEST" "$MONTHLY_DIGEST_STATE_DIR" env DRY_RUN=1
 }
 
 # ----- summary ------------------------------------------------------------
@@ -415,17 +474,20 @@ summary() {
   echo "    $SCHEDULE_DRAFT_DEST         (22:00 daily)"
   echo "    $AUTO_REFLECT_DEST           (22:30 daily)"
   echo "    $WEEKLY_DIGEST_DEST          (22:00 Sunday)"
+  echo "    $MONTHLY_DIGEST_DEST         (06:00 on day 1 of each month)"
   echo "  LaunchAgents:"
   echo "    $PLIST"
   echo "    $SCHEDULE_DRAFT_PLIST"
   echo "    $AUTO_REFLECT_PLIST"
   echo "    $WEEKLY_DIGEST_PLIST"
+  echo "    $MONTHLY_DIGEST_PLIST"
   echo
   echo "Useful commands:"
   echo "  tail -f $STATE_DIR/sync.log"
   echo "  tail -f $SCHEDULE_DRAFT_STATE_DIR/run.log"
   echo "  tail -f $AUTO_REFLECT_STATE_DIR/run.log"
   echo "  tail -f $WEEKLY_DIGEST_STATE_DIR/run.log"
+  echo "  tail -f $MONTHLY_DIGEST_STATE_DIR/run.log"
   echo "  launchctl list | grep com.francis      # verify loaded"
   echo "  launchctl unload <plist>               # pause an agent"
 }

@@ -8,7 +8,8 @@
 #   3. ~/.local/bin/schedule-draft   (22:00 daily: draft tomorrow's schedule)
 #   4. ~/.local/bin/auto-reflect     (22:30 daily: write mechanical journal)
 #   5. ~/.local/bin/weekly-digest    (22:00 Sun:  aggregate week journals)
-#   6. User crontab entries for the above
+#   6. ~/.local/bin/monthly-digest   (06:00 day-1: aggregate previous month)
+#   7. User crontab entries for the above
 #
 # Idempotent: safe to re-run. Won't re-clone an existing repo. Re-running
 # overwrites each script with the latest template and replaces (not duplicates)
@@ -39,6 +40,10 @@ readonly AUTO_REFLECT_MARKER="# auto-reflect (managed by setup-linux-knowledge-b
 readonly WEEKLY_DIGEST_DEST="$HOME/.local/bin/weekly-digest"
 readonly WEEKLY_DIGEST_STATE_DIR="$HOME/.local/state/weekly-digest"
 readonly WEEKLY_DIGEST_MARKER="# weekly-digest (managed by setup-linux-knowledge-base.sh)"
+
+readonly MONTHLY_DIGEST_DEST="$HOME/.local/bin/monthly-digest"
+readonly MONTHLY_DIGEST_STATE_DIR="$HOME/.local/state/monthly-digest"
+readonly MONTHLY_DIGEST_MARKER="# monthly-digest (managed by setup-linux-knowledge-base.sh)"
 
 REPO=""
 
@@ -88,7 +93,7 @@ check_prereqs() {
 check_templates() {
   step "Verifying templates"
   local t
-  for t in workspace-sync schedule-draft auto-reflect weekly-digest; do
+  for t in workspace-sync schedule-draft auto-reflect weekly-digest monthly-digest; do
     [[ -f "$KB_DIR/$t" ]] || abort "Missing template: $KB_DIR/$t"
   done
   c_green "  templates found in $KB_DIR"
@@ -134,7 +139,9 @@ install_scripts() {
   install_one_script "schedule-draft" "$SCHEDULE_DRAFT_DEST"
   install_one_script "auto-reflect"   "$AUTO_REFLECT_DEST"
   install_one_script "weekly-digest"  "$WEEKLY_DIGEST_DEST"
-  mkdir -p "$STATE_DIR" "$SCHEDULE_DRAFT_STATE_DIR" "$AUTO_REFLECT_STATE_DIR" "$WEEKLY_DIGEST_STATE_DIR"
+  install_one_script "monthly-digest" "$MONTHLY_DIGEST_DEST"
+  mkdir -p "$STATE_DIR" "$SCHEDULE_DRAFT_STATE_DIR" "$AUTO_REFLECT_STATE_DIR" \
+           "$WEEKLY_DIGEST_STATE_DIR" "$MONTHLY_DIGEST_STATE_DIR"
 }
 
 # ----- install cron entries -----------------------------------------------
@@ -148,8 +155,9 @@ install_cron() {
   local sched_entry="0 22 * * * PATH=$cron_path $SCHEDULE_DRAFT_DEST >>$SCHEDULE_DRAFT_STATE_DIR/cron.log 2>&1 $SCHEDULE_DRAFT_MARKER"
   local reflect_entry="30 22 * * * PATH=$cron_path $AUTO_REFLECT_DEST >>$AUTO_REFLECT_STATE_DIR/cron.log 2>&1 $AUTO_REFLECT_MARKER"
   local digest_entry="0 22 * * 0 PATH=$cron_path $WEEKLY_DIGEST_DEST >>$WEEKLY_DIGEST_STATE_DIR/cron.log 2>&1 $WEEKLY_DIGEST_MARKER"
+  local monthly_entry="0 6 1 * * PATH=$cron_path $MONTHLY_DIGEST_DEST >>$MONTHLY_DIGEST_STATE_DIR/cron.log 2>&1 $MONTHLY_DIGEST_MARKER"
 
-  # Strip ALL four managed marker lines from the existing crontab so re-runs
+  # Strip ALL managed marker lines from the existing crontab so re-runs
   # replace (not duplicate) every entry, independently.
   local current
   current=$(crontab -l 2>/dev/null \
@@ -157,6 +165,7 @@ install_cron() {
     | grep -vF "$SCHEDULE_DRAFT_MARKER" \
     | grep -vF "$AUTO_REFLECT_MARKER" \
     | grep -vF "$WEEKLY_DIGEST_MARKER" \
+    | grep -vF "$MONTHLY_DIGEST_MARKER" \
     || true)
 
   {
@@ -165,6 +174,7 @@ install_cron() {
     printf '%s\n' "$sched_entry"
     printf '%s\n' "$reflect_entry"
     printf '%s\n' "$digest_entry"
+    printf '%s\n' "$monthly_entry"
   } | crontab -
 
   c_green "  cron entries installed"
@@ -172,6 +182,7 @@ install_cron() {
   echo "  $sched_entry"
   echo "  $reflect_entry"
   echo "  $digest_entry"
+  echo "  $monthly_entry"
 }
 
 # ----- smoke test ---------------------------------------------------------
@@ -198,6 +209,7 @@ smoke_test() {
   smoke_one "schedule-draft" "$SCHEDULE_DRAFT_DEST" "$SCHEDULE_DRAFT_STATE_DIR" env DRY_RUN=1
   smoke_one "auto-reflect"   "$AUTO_REFLECT_DEST"   "$AUTO_REFLECT_STATE_DIR"   env DRY_RUN=1
   smoke_one "weekly-digest"  "$WEEKLY_DIGEST_DEST"  "$WEEKLY_DIGEST_STATE_DIR"  env DRY_RUN=1
+  smoke_one "monthly-digest" "$MONTHLY_DIGEST_DEST" "$MONTHLY_DIGEST_STATE_DIR" env DRY_RUN=1
 }
 
 # ----- summary ------------------------------------------------------------
@@ -210,11 +222,13 @@ summary() {
   echo "    $SCHEDULE_DRAFT_DEST         (22:00 daily)"
   echo "    $AUTO_REFLECT_DEST           (22:30 daily)"
   echo "    $WEEKLY_DIGEST_DEST          (22:00 Sun)"
+  echo "    $MONTHLY_DIGEST_DEST         (06:00 on day 1 of each month)"
   echo "  State dirs:"
   echo "    $STATE_DIR"
   echo "    $SCHEDULE_DRAFT_STATE_DIR"
   echo "    $AUTO_REFLECT_STATE_DIR"
   echo "    $WEEKLY_DIGEST_STATE_DIR"
+  echo "    $MONTHLY_DIGEST_STATE_DIR"
   echo
   echo "Useful commands:"
   echo "  crontab -l                                    # view installed entries"
@@ -222,6 +236,7 @@ summary() {
   echo "  tail -f $SCHEDULE_DRAFT_STATE_DIR/run.log"
   echo "  tail -f $AUTO_REFLECT_STATE_DIR/run.log"
   echo "  tail -f $WEEKLY_DIGEST_STATE_DIR/run.log"
+  echo "  tail -f $MONTHLY_DIGEST_STATE_DIR/run.log"
   echo
   echo "To remove all managed cron entries:"
   echo "  crontab -l \\"
@@ -229,6 +244,7 @@ summary() {
   echo "    | grep -vF '$SCHEDULE_DRAFT_MARKER' \\"
   echo "    | grep -vF '$AUTO_REFLECT_MARKER' \\"
   echo "    | grep -vF '$WEEKLY_DIGEST_MARKER' \\"
+  echo "    | grep -vF '$MONTHLY_DIGEST_MARKER' \\"
   echo "    | crontab -"
 }
 
