@@ -21,7 +21,7 @@
 set -euo pipefail
 
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-readonly KB_DIR="$SCRIPT_DIR/knowledge-base"
+readonly KB_DIR="$SCRIPT_DIR"
 readonly DEFAULT_REPO="$HOME/src/workspace"
 readonly REPO_URL="git@github.com:0x00101010/workspace.git"
 

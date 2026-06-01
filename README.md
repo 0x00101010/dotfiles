@@ -34,5 +34,14 @@ works (`curl … | bash`) — it falls back to `/dev/tty` for prompts.
 The OS-specific helpers still exist if you prefer to read or tweak them
 before running anything:
 
-- `./setup-mac.sh`
-- `./setup-linux.sh`
+- `./scripts/setup-mac.sh`
+- `./scripts/setup-linux.sh`
+
+## Repo layout
+
+- `home/` — chezmoi source state (everything that gets applied to `$HOME`).
+  - `home/.chezmoiscripts/` — `run_once_*` bootstrap scripts.
+- `scripts/` — standalone installers run by hand.
+  - `scripts/knowledge-base/` — installer + cron payload for the workspace
+    knowledge-base sync system (`./scripts/knowledge-base/setup-{mac,linux}.sh`).
+- `install.sh` — one-shot bootstrap entry point.
