@@ -162,6 +162,123 @@ render_task() {
   fi
 }
 
+# ----- habits helpers -----------------------------------------------------
+# Habits source: $REPO/todos/habits.md
+# Cadence vocabulary (locked contract):
+#   daily | mon,wed,fri | every-Nd (anchor 2026-01-01) | first-of-month | last-of-month
+
+journal_file_for() {
+  local d="$1"
+  printf '%s/journal/%s/%s/%s.md' "$REPO" "${d:0:4}" "${d:5:2}" "$d"
+}
+
+# parse_habits_file <file>
+# Emits one "name<TAB>cadence" per line for each habit definition.
+parse_habits_file() {
+  local file="$1"
+  [[ -f "$file" ]] || return 0
+  local line name cadence
+  while IFS= read -r line; do
+    line="${line%$'\r'}"
+    # Skip blanks and headings.
+    [[ -z "${line//[[:space:]]/}" ]] && continue
+    [[ "$line" =~ ^[[:space:]]*# ]] && continue
+    # Match "- <name> | <cadence>" (name may contain spaces but not " | ").
+    if [[ "$line" =~ ^-[[:space:]]+(.+)[[:space:]]\|[[:space:]](.+)$ ]]; then
+      name="${BASH_REMATCH[1]}"
+      cadence="${BASH_REMATCH[2]}"
+      # Trim.
+      name="${name#"${name%%[![:space:]]*}"}"; name="${name%"${name##*[![:space:]]}"}"
+      cadence="${cadence#"${cadence%%[![:space:]]*}"}"; cadence="${cadence%"${cadence##*[![:space:]]}"}"
+      [[ -z "$name" || -z "$cadence" ]] && continue
+      printf '%s\t%s\n' "$name" "$cadence"
+    fi
+  done < "$file"
+}
+
+# is_due <YYYY-MM-DD> <cadence> → exit 0 if due, 1 otherwise
+is_due() {
+  local d="$1" cad="$2"
+  case "$cad" in
+    daily)
+      return 0
+      ;;
+    first-of-month)
+      local day=${d:8:2}; day=$((10#$day))
+      (( day == 1 )) && return 0 || return 1
+      ;;
+    last-of-month)
+      local nd
+      nd=$(date -d "$d +1 day" '+%d'); nd=$((10#$nd))
+      (( nd == 1 )) && return 0 || return 1
+      ;;
+    every-*d)
+      local n="${cad#every-}"; n="${n%d}"
+      [[ "$n" =~ ^[0-9]+$ ]] || return 1
+      (( n > 0 )) || return 1
+      local days_since
+      days_since=$(( ($(date -d "$d" +%s) - $(date -d "2026-01-01" +%s)) / 86400 ))
+      (( days_since % n == 0 )) && return 0 || return 1
+      ;;
+    *)
+      # Weekday list, e.g., "mon,wed,fri".
+      local dow_num dow_name token
+      dow_num=$(date -d "$d" +%u)
+      case "$dow_num" in
+        1) dow_name=mon ;; 2) dow_name=tue ;; 3) dow_name=wed ;;
+        4) dow_name=thu ;; 5) dow_name=fri ;; 6) dow_name=sat ;;
+        7) dow_name=sun ;;
+        *) return 1 ;;
+      esac
+      local IFS=','
+      for token in $cad; do
+        token="${token//[[:space:]]/}"
+        [[ "$token" == "$dow_name" ]] && return 0
+      done
+      return 1
+      ;;
+  esac
+}
+
+# habit_values_cache["$date"]=1 (loaded marker)
+# habit_values_cache["$date|$name"]="✓"|"✗"
+declare -gA habit_values_cache=()
+
+load_habits_for_day() {
+  local d="$1"
+  local mk="loaded|$d"
+  [[ -n "${habit_values_cache[$mk]+x}" ]] && return 0
+  habit_values_cache[$mk]=1
+  local file
+  file=$(journal_file_for "$d")
+  [[ -f "$file" ]] || return 0
+  local in_habits=0 line
+  while IFS= read -r line; do
+    if [[ "$line" == "## Habits (auto)" || "$line" =~ ^"## Habits (auto)"[[:space:]]*$ ]]; then
+      in_habits=1; continue
+    fi
+    if (( in_habits )) && [[ "$line" =~ ^"## " ]]; then
+      break
+    fi
+    if (( in_habits )); then
+      # "- <name>: <value>"
+      if [[ "$line" =~ ^-[[:space:]](.+):[[:space:]](.+)$ ]]; then
+        local hn="${BASH_REMATCH[1]}" hv="${BASH_REMATCH[2]}"
+        # trim
+        hn="${hn#"${hn%%[![:space:]]*}"}"; hn="${hn%"${hn##*[![:space:]]}"}"
+        hv="${hv#"${hv%%[![:space:]]*}"}"; hv="${hv%"${hv##*[![:space:]]}"}"
+        habit_values_cache["$d|$hn"]="$hv"
+      fi
+    fi
+  done < "$file"
+}
+
+habit_value_for() {
+  local d="$1" name="$2"
+  load_habits_for_day "$d"
+  printf '%s' "${habit_values_cache["$d|$name"]:-}"
+}
+
 # ----- compute today ------------------------------------------------------
 if [[ -n "${REFLECT_DATE:-}" ]]; then
   today="$REFLECT_DATE"
@@ -313,6 +430,69 @@ collect_overlooked_from "$REPO/todos/personal.md"
 
 overlooked_count=${#overlooked_lines[@]}
 
+# ----- habits -------------------------------------------------------------
+habits_file="$REPO/todos/habits.md"
+habits_section_text=""
+habits_section_present=0
+habits_done=0
+habits_due=0
+habits_paused=0
+habits_broken=0
+declare -a due_habits=()
+declare -A habit_cadence=()
+
+if [[ -s "$habits_file" ]]; then
+  habits_section_present=1
+  while IFS=$'\t' read -r hname hcad; do
+    [[ -z "$hname" ]] && continue
+    habit_cadence["$hname"]="$hcad"
+    if is_due "$today" "$hcad"; then
+      due_habits+=("$hname")
+    fi
+  done < <(parse_habits_file "$habits_file")
+
+  habits_due=${#due_habits[@]}
+
+  # Preload today's existing habit values (Latch may have written some).
+  load_habits_for_day "$today"
+
+  # Build the section: due habits only, Latch's value if present else ✗.
+  for hname in "${due_habits[@]}"; do
+    existing="${habit_values_cache["$today|$hname"]:-}"
+    if [[ "$existing" == "✓" || "$existing" == "✗" ]]; then
+      val="$existing"
+    else
+      val="✗"
+    fi
+    habits_section_text+="- ${hname}: ${val}"$'\n'
+    [[ "$val" == "✓" ]] && habits_done=$((habits_done + 1))
+  done
+
+  # Compute streak-pauses & streak-broken (transition from yesterday → today).
+  # paused  = today's habit is due AND yesterday's recorded value == ✗
+  # broken  = paused AND the most recent due day BEFORE yesterday for this
+  #           habit was also ✗ (i.e., two consecutive ✗ on due days)
+  load_habits_for_day "$yesterday"
+  for hname in "${due_habits[@]}"; do
+    cad="${habit_cadence[$hname]}"
+    yest_val="${habit_values_cache["$yesterday|$hname"]:-}"
+    if [[ "$yest_val" == "✗" ]]; then
+      habits_paused=$((habits_paused + 1))
+      walk_day=$(date -d "$yesterday -1 day" '+%F')
+      for (( w=0; w<60; w++ )); do
+        if is_due "$walk_day" "$cad"; then
+          prev_val=$(habit_value_for "$walk_day" "$hname")
+          if [[ "$prev_val" == "✗" ]]; then
+            habits_broken=$((habits_broken + 1))
+          fi
+          break
+        fi
+        walk_day=$(date -d "$walk_day -1 day" '+%F')
+      done
+    fi
+  done
+fi
+
 # ----- preserve existing ## Notes section ---------------------------------
 journal_dir="$REPO/journal/${today:0:4}/${today:5:2}"
 journal_file="$journal_dir/$today.md"
@@ -382,6 +562,11 @@ else
   overlooked_line="- Overlooked >${OVERLOOKED_WINDOW}d: ${overlooked_count} (${joined})"
 fi
 
+habits_stats_line=""
+if (( habits_due > 0 )); then
+  habits_stats_line="- Habits: ${habits_done}/${habits_due} done (${habits_paused} streak-pauses, ${habits_broken} streak-broken)"
+fi
+
 # ----- write target -------------------------------------------------------
 if [[ "${DRY_RUN:-0}" == "1" ]]; then
   out_file="/tmp/auto-reflect-dryrun.md"
@@ -399,16 +584,21 @@ tmp_out=$(mktemp)
   printf '%s\n' "$deferred_in_line"
   printf '%s\n' "$deferred_out_line"
   printf '%s\n' "$overlooked_line"
+  [[ -n "$habits_stats_line" ]] && printf '%s\n' "$habits_stats_line"
   printf '\n## Done\n'
   printf '%s' "$done_lines_text"
   printf '\n## Open\n'
   printf '%s' "$open_lines_text"
+  if (( habits_section_present )); then
+    printf '\n## Habits (auto)\n'
+    printf '%s' "$habits_section_text"
+  fi
   printf '\n## Notes\n'
   printf '%s' "$notes_body"
 } > "$tmp_out"
 
 mv "$tmp_out" "$out_file"
 
-log "OK: wrote $out_file (done=$done_n total=$total deferred_in=$deferred_in deferred_out=$deferred_out_count overlooked=$overlooked_count)"
-write_status "ok" "journal written (deferred_in=$deferred_in deferred_out=$deferred_out_count overlooked=$overlooked_count)" "$out_file" "$done_n" "$total"
+log "OK: wrote $out_file (done=$done_n total=$total deferred_in=$deferred_in deferred_out=$deferred_out_count overlooked=$overlooked_count habits=$habits_done/$habits_due paused=$habits_paused broken=$habits_broken)"
+write_status "ok" "journal written (deferred_in=$deferred_in deferred_out=$deferred_out_count overlooked=$overlooked_count habits=${habits_done}/${habits_due})" "$out_file" "$done_n" "$total"
 exit 0
