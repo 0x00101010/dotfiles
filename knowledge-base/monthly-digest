@@ -1,0 +1,509 @@
+#!/usr/bin/env bash
+# monthly-digest: first-of-month cron that aggregates the PREVIOUS calendar
+# month's daily journals into a single monthly digest markdown file.
+#
+# Output: $REPO/journal/<YYYY>/<MM>/<YYYY-MM-01>-month.md
+#         (date is the FIRST of the month being summarized).
+#
+# Computes:
+#   - Schedule days: count of $REPO/schedules/<yyyy>/<date>.md present.
+#   - Completion: sum of Stats (auto) "N/M done" lines across the month.
+#   - Top 5 deferrers (longest chain): items appearing in "## Open" on the
+#     most distinct days within the month.
+#   - Habits consistency: per habit — due / done / pct, longest in-month
+#     streak (consecutive due-day ✓), current end-of-month streak.
+#   - Kill candidates: habits whose this-month AND last-month consistency
+#     are both < 30%.
+#   - Themes: concatenation of "## Themes (from notes)" blocks from every
+#     weekly-digest file dated within the month.
+#
+# Env overrides (for testing):
+#   DRY_RUN=1           — write to /tmp/monthly-digest-dryrun.md instead.
+#   MONTH_OVERRIDE=YYYY-MM — override target month (else: previous month).
+
+set -uo pipefail
+
+readonly REPO="${REPO_OVERRIDE:-@@REPO@@}"
+readonly STATE_DIR="$HOME/.local/state/monthly-digest"
+readonly LOG="$STATE_DIR/run.log"
+readonly STATUS="$STATE_DIR/last-run.json"
+readonly LOCK_DIR="/tmp/monthly-digest.lock.d"
+readonly LOG_MAX_BYTES=$((1024 * 1024))
+readonly QUIET_MINS=5
+readonly KILL_THRESHOLD_PCT=30
+readonly NOTES_TOTAL_CAP=$((64 * 1024))
+readonly HOSTNAME_SHORT="$(hostname -s)"
+
+export PATH="/home/francis/.local/bin:/usr/local/bin:/usr/bin:/bin:${PATH:-}"
+
+mkdir -p "$STATE_DIR"
+
+# ----- logging ------------------------------------------------------------
+log() { printf '[%s] %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" >> "$LOG"; }
+
+rotate_log() {
+  if [[ -f "$LOG" ]]; then
+    local size
+    size=$(wc -c < "$LOG" | tr -d ' ')
+    if (( size > LOG_MAX_BYTES )); then mv "$LOG" "$LOG.1"; fi
+  fi
+}
+
+write_status() {
+  local status="$1" msg="$2" target="${3:-}"
+  local ts m_esc t_esc
+  ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  m_esc=$(printf '%s' "$msg"    | sed 's/\\/\\\\/g; s/"/\\"/g')
+  t_esc=$(printf '%s' "$target" | sed 's/\\/\\\\/g; s/"/\\"/g')
+  printf '{\n  "timestamp": "%s",\n  "host": "%s",\n  "status": "%s",\n  "target": "%s",\n  "message": "%s"\n}\n' \
+    "$ts" "$HOSTNAME_SHORT" "$status" "$t_esc" "$m_esc" > "$STATUS"
+}
+
+# ----- single-instance lock -----------------------------------------------
+acquire_lock() {
+  if mkdir "$LOCK_DIR" 2>/dev/null; then
+    echo $$ > "$LOCK_DIR/pid"
+    trap 'rm -rf "$LOCK_DIR"' EXIT
+    return 0
+  fi
+  return 1
+}
+
+if ! acquire_lock; then
+  stale_pid=$(cat "$LOCK_DIR/pid" 2>/dev/null || true)
+  if [[ -n "${stale_pid:-}" ]] && kill -0 "$stale_pid" 2>/dev/null; then
+    log "another monthly-digest running (pid $stale_pid), exiting"
+    exit 0
+  fi
+  log "removing stale lock (owner pid='${stale_pid:-unknown}' is gone)"
+  rm -rf "$LOCK_DIR"
+  if ! acquire_lock; then
+    log "ERROR: could not acquire lock after reaping stale dir"
+    write_status "error" "lock acquire failed"
+    exit 1
+  fi
+fi
+
+rotate_log
+
+# ----- habits helpers (mirror auto-reflect contract) ----------------------
+journal_file_for() {
+  local d="$1"
+  printf '%s/journal/%s/%s/%s.md' "$REPO" "${d:0:4}" "${d:5:2}" "$d"
+}
+
+parse_habits_file() {
+  local file="$1"
+  [[ -f "$file" ]] || return 0
+  local line name cadence
+  while IFS= read -r line; do
+    line="${line%$'\r'}"
+    [[ -z "${line//[[:space:]]/}" ]] && continue
+    [[ "$line" =~ ^[[:space:]]*# ]] && continue
+    if [[ "$line" =~ ^-[[:space:]]+(.+)[[:space:]]\|[[:space:]](.+)$ ]]; then
+      name="${BASH_REMATCH[1]}"
+      cadence="${BASH_REMATCH[2]}"
+      name="${name#"${name%%[![:space:]]*}"}"; name="${name%"${name##*[![:space:]]}"}"
+      cadence="${cadence#"${cadence%%[![:space:]]*}"}"; cadence="${cadence%"${cadence##*[![:space:]]}"}"
+      [[ -z "$name" || -z "$cadence" ]] && continue
+      printf '%s\t%s\n' "$name" "$cadence"
+    fi
+  done < "$file"
+}
+
+is_due() {
+  local d="$1" cad="$2"
+  case "$cad" in
+    daily) return 0 ;;
+    first-of-month)
+      local day=${d:8:2}; day=$((10#$day))
+      (( day == 1 )) && return 0 || return 1 ;;
+    last-of-month)
+      local nd
+      nd=$(date -d "$d +1 day" '+%d'); nd=$((10#$nd))
+      (( nd == 1 )) && return 0 || return 1 ;;
+    every-*d)
+      local n="${cad#every-}"; n="${n%d}"
+      [[ "$n" =~ ^[0-9]+$ ]] || return 1
+      (( n > 0 )) || return 1
+      local days_since
+      days_since=$(( ($(date -d "$d" +%s) - $(date -d "2026-01-01" +%s)) / 86400 ))
+      (( days_since % n == 0 )) && return 0 || return 1 ;;
+    *)
+      local dow_num dow_name token
+      dow_num=$(date -d "$d" +%u)
+      case "$dow_num" in
+        1) dow_name=mon ;; 2) dow_name=tue ;; 3) dow_name=wed ;;
+        4) dow_name=thu ;; 5) dow_name=fri ;; 6) dow_name=sat ;;
+        7) dow_name=sun ;;
+        *) return 1 ;;
+      esac
+      local IFS=','
+      for token in $cad; do
+        token="${token//[[:space:]]/}"
+        [[ "$token" == "$dow_name" ]] && return 0
+      done
+      return 1 ;;
+  esac
+}
+
+declare -gA habit_values_cache=()
+load_habits_for_day() {
+  local d="$1"
+  local mk="loaded|$d"
+  [[ -n "${habit_values_cache[$mk]+x}" ]] && return 0
+  habit_values_cache[$mk]=1
+  local file; file=$(journal_file_for "$d")
+  [[ -f "$file" ]] || return 0
+  local in_habits=0 line
+  while IFS= read -r line; do
+    if [[ "$line" == "## Habits (auto)" || "$line" =~ ^"## Habits (auto)"[[:space:]]*$ ]]; then
+      in_habits=1; continue
+    fi
+    if (( in_habits )) && [[ "$line" =~ ^"## " ]]; then break; fi
+    if (( in_habits )) && [[ "$line" =~ ^-[[:space:]](.+):[[:space:]](.+)$ ]]; then
+      local hn="${BASH_REMATCH[1]}" hv="${BASH_REMATCH[2]}"
+      hn="${hn#"${hn%%[![:space:]]*}"}"; hn="${hn%"${hn##*[![:space:]]}"}"
+      hv="${hv#"${hv%%[![:space:]]*}"}"; hv="${hv%"${hv##*[![:space:]]}"}"
+      habit_values_cache["$d|$hn"]="$hv"
+    fi
+  done < "$file"
+}
+habit_value_for() {
+  local d="$1" name="$2"
+  load_habits_for_day "$d"
+  printf '%s' "${habit_values_cache["$d|$name"]:-}"
+}
+
+compute_streak() {
+  local ref="$1" hname="$2" cad="$3"
+  local streak=0 consec_miss=0 walk_day="$ref" v
+  local cap=400
+  for (( w=0; w<cap; w++ )); do
+    if is_due "$walk_day" "$cad"; then
+      v=$(habit_value_for "$walk_day" "$hname")
+      if [[ "$v" == "✓" ]]; then
+        streak=$((streak + 1)); consec_miss=0
+      elif [[ "$v" == "✗" ]]; then
+        consec_miss=$((consec_miss + 1))
+        (( consec_miss >= 2 )) && break
+      else
+        break
+      fi
+    fi
+    walk_day=$(date -d "$walk_day -1 day" '+%F')
+  done
+  printf '%d' "$streak"
+}
+
+format_streak() {
+  local n="$1"
+  if (( n == 0 )); then printf '0d'; return; fi
+  local emoji
+  if   (( n <= 6   )); then emoji="🌱"
+  elif (( n <= 20  )); then emoji="🔥"
+  elif (( n <= 59  )); then emoji="🔥🔥"
+  elif (( n <= 99  )); then emoji="⚡"
+  elif (( n <= 364 )); then emoji="💎"
+  else                      emoji="👑"
+  fi
+  if (( n >= 7 )); then
+    local wks=$(( n / 7 )) rem=$(( n % 7 ))
+    if (( rem == 0 )); then printf '%s %dw' "$emoji" "$wks"
+    else printf '%s %dw %dd' "$emoji" "$wks" "$rem"
+    fi
+  else
+    printf '%s %dd' "$emoji" "$n"
+  fi
+}
+
+# Format an int day count as "Nd" or "Nw" / "Nw Rd" for ≥7d.
+format_count_days() {
+  local n="$1"
+  if (( n < 7 )); then
+    printf '%dd' "$n"
+  else
+    local wks=$(( n / 7 )) rem=$(( n % 7 ))
+    if (( rem == 0 )); then printf '%dw' "$wks"
+    else printf '%dw %dd' "$wks" "$rem"
+    fi
+  fi
+}
+
+# ----- compute target month ----------------------------------------------
+if [[ -n "${MONTH_OVERRIDE:-}" ]]; then
+  if [[ ! "$MONTH_OVERRIDE" =~ ^[0-9]{4}-[0-9]{2}$ ]]; then
+    log "ERROR: MONTH_OVERRIDE must be YYYY-MM, got '$MONTH_OVERRIDE'"
+    write_status "error" "bad MONTH_OVERRIDE: $MONTH_OVERRIDE"
+    exit 1
+  fi
+  target_ym="$MONTH_OVERRIDE"
+else
+  # Default: previous calendar month relative to today.
+  today=$(date '+%F')
+  first_this="${today:0:7}-01"
+  last_prev=$(date -d "$first_this -1 day" '+%F')
+  target_ym="${last_prev:0:7}"
+fi
+target_year="${target_ym:0:4}"
+target_month="${target_ym:5:2}"
+month_first="$target_ym-01"
+days_in_month=$(date -d "$month_first +1 month -1 day" '+%d')
+days_in_month=$((10#$days_in_month))
+month_last=$(printf '%s-%02d' "$target_ym" "$days_in_month")
+
+# Previous month metadata (for kill-candidates comparison).
+prev_first=$(date -d "$month_first -1 month" '+%F')
+prev_ym="${prev_first:0:7}"
+prev_year="${prev_first:0:4}"
+prev_month="${prev_first:5:2}"
+prev_days_in_month=$(date -d "$prev_first +1 month -1 day" '+%d')
+prev_days_in_month=$((10#$prev_days_in_month))
+
+log "target month: $target_ym ($days_in_month days); prev: $prev_ym (dry_run=${DRY_RUN:-0})"
+
+# ----- quiet-period guard -------------------------------------------------
+month_journal_dir="$REPO/journal/${target_year}/${target_month}"
+if [[ -d "$month_journal_dir" ]] && [[ "${DRY_RUN:-0}" != "1" ]]; then
+  if find "$month_journal_dir" -name '*.md' -mmin -$QUIET_MINS 2>/dev/null | grep -q .; then
+    log "journal files edited within ${QUIET_MINS}m, deferring"
+    write_status "deferred" "user editing journals" "$month_journal_dir"
+    exit 0
+  fi
+fi
+
+# ----- iterate days: task aggregation ------------------------------------
+schedule_days=0
+total_done=0
+total_total=0
+declare -A open_day_count=()
+
+for (( day=1; day<=days_in_month; day++ )); do
+  d=$(printf '%s-%02d' "$target_ym" "$day")
+  jf="$REPO/journal/${target_year}/${target_month}/$d.md"
+  sf="$REPO/schedules/${target_year}/$d.md"
+
+  [[ -f "$sf" ]] && schedule_days=$((schedule_days + 1))
+  [[ -f "$jf" ]] || continue
+
+  # Parse the "## Stats (auto)" "N/M done" line.
+  stats_line=$(awk '
+    /^## Stats \(auto\)/ { in_stats=1; next }
+    in_stats && /^- / { print; exit }
+    in_stats && /^## / { exit }
+  ' "$jf")
+  if [[ "$stats_line" =~ ^-\ ([0-9]+)/([0-9]+)\ done ]]; then
+    total_done=$(( total_done + BASH_REMATCH[1] ))
+    total_total=$(( total_total + BASH_REMATCH[2] ))
+  fi
+
+  # Parse the "## Open" section: each task line's normalized desc.
+  while IFS= read -r open_line; do
+    [[ "$open_line" =~ ^-\ \[\ \]\ P[0-9]+\ \|\ (.+)$ ]] || continue
+    rest="${BASH_REMATCH[1]}"
+    if [[ "$rest" == *" | "* ]]; then desc="${rest%% | *}"
+    else desc="$rest"; fi
+    desc=$(printf '%s' "$desc" | tr -s ' ' | sed 's/^ //; s/ $//')
+    [[ -z "$desc" ]] && continue
+    open_day_count["$desc"]=$(( ${open_day_count["$desc"]:-0} + 1 ))
+  done < <(awk '
+    /^## Open[[:space:]]*$/ { in_open=1; next }
+    in_open && /^## / { in_open=0 }
+    in_open { print }
+  ' "$jf")
+done
+
+if (( total_total > 0 )); then
+  pct=$(( total_done * 100 / total_total ))
+else
+  pct=0
+fi
+
+# Top 5 deferrers (by distinct days seen in Open).
+deferrer_lines=()
+while IFS= read -r entry; do
+  [[ -z "$entry" ]] && continue
+  deferrer_lines+=("$entry")
+done < <(
+  for k in "${!open_day_count[@]}"; do
+    printf '%d\t%s\n' "${open_day_count[$k]}" "$k"
+  done | sort -k1,1nr -k2,2 | head -5
+)
+
+# ----- habits aggregation -------------------------------------------------
+habits_file="$REPO/todos/habits.md"
+declare -a habits_names=()
+declare -A habits_cadence=()
+declare -A this_due=() this_done=() this_longest=() this_current=() this_pct=()
+declare -A prev_pct=()
+
+if [[ -s "$habits_file" ]]; then
+  while IFS=$'\t' read -r hname hcad; do
+    [[ -z "$hname" ]] && continue
+    habits_names+=("$hname")
+    habits_cadence["$hname"]="$hcad"
+  done < <(parse_habits_file "$habits_file")
+fi
+
+# Helper: compute (due, done, longest_in_month_streak) for a habit/month.
+compute_month_stats() {
+  local hname="$1" cad="$2" year="$3" month="$4" ndays="$5"
+  local due=0 done=0 longest=0 cur=0
+  local day d v
+  for (( day=1; day<=ndays; day++ )); do
+    d=$(printf '%s-%02d-%02d' "$year" "$month" "$day")
+    if is_due "$d" "$cad"; then
+      due=$((due + 1))
+      v=$(habit_value_for "$d" "$hname")
+      if [[ "$v" == "✓" ]]; then
+        done=$((done + 1)); cur=$((cur + 1))
+        (( cur > longest )) && longest=$cur
+      else
+        cur=0
+      fi
+    fi
+  done
+  printf '%d\t%d\t%d\n' "$due" "$done" "$longest"
+}
+
+for hname in "${habits_names[@]}"; do
+  cad="${habits_cadence[$hname]}"
+  # This month
+  IFS=$'\t' read -r d done lng < <(compute_month_stats "$hname" "$cad" "$target_year" "$target_month" "$days_in_month")
+  this_due["$hname"]="$d"
+  this_done["$hname"]="$done"
+  this_longest["$hname"]="$lng"
+  if (( d > 0 )); then
+    this_pct["$hname"]=$(( done * 100 / d ))
+  else
+    this_pct["$hname"]=0
+  fi
+  this_current["$hname"]=$(compute_streak "$month_last" "$hname" "$cad")
+
+  # Previous month (for kill-candidates).
+  IFS=$'\t' read -r pd pdone plng < <(compute_month_stats "$hname" "$cad" "$prev_year" "$prev_month" "$prev_days_in_month")
+  if (( pd > 0 )); then
+    prev_pct["$hname"]=$(( pdone * 100 / pd ))
+  else
+    prev_pct["$hname"]=0
+  fi
+done
+
+# Kill candidates: both months < threshold AND at least 1 due day each month.
+kill_lines=()
+for hname in "${habits_names[@]}"; do
+  if (( this_due["$hname"] > 0 )) \
+     && (( prev_pct["$hname"] < KILL_THRESHOLD_PCT )) \
+     && (( this_pct["$hname"] < KILL_THRESHOLD_PCT )); then
+    pmon=$(date -d "$prev_first" '+%b')
+    tmon=$(date -d "$month_first" '+%b')
+    kill_lines+=("- ${hname} — ${pmon}: ${prev_pct[$hname]}%, ${tmon}: ${this_pct[$hname]}%")
+  fi
+done
+
+# ----- themes from weekly-digest files in the month ----------------------
+themes_text=""
+themes_truncated=0
+shopt -s nullglob
+for wf in "$REPO/journal/${target_year}/${target_month}"/*-week.md; do
+  [[ -f "$wf" ]] || continue
+  themes_section=$(awk '
+    /^## Themes \(from notes\)/ { in_t=1; next }
+    in_t && /^## / { in_t=0 }
+    in_t { print }
+  ' "$wf")
+  stripped=$(printf '%s' "$themes_section" | tr -d '[:space:]')
+  [[ -z "$stripped" ]] && continue
+  sun_d=$(basename "$wf" -week.md)
+  mon_d=$(date -d "$sun_d -6 day" '+%b %-d')
+  chunk="### Week of $mon_d"$'\n'"$themes_section"$'\n'
+  if (( ${#themes_text} + ${#chunk} > NOTES_TOTAL_CAP )); then
+    themes_truncated=1
+    break
+  fi
+  themes_text+="$chunk"
+done
+shopt -u nullglob
+
+# ----- write digest -------------------------------------------------------
+if [[ "${DRY_RUN:-0}" == "1" ]]; then
+  out_file="/tmp/monthly-digest-dryrun.md"
+else
+  out_dir="$REPO/journal/${target_year}/${target_month}"
+  mkdir -p "$out_dir"
+  out_file="$out_dir/${month_first}-month.md"
+fi
+
+month_label=$(date -d "$month_first" '+%B %Y')
+
+tmp_out=$(mktemp)
+trap 'rm -f "$tmp_out" 2>/dev/null; rm -rf "$LOCK_DIR"' EXIT
+
+{
+  printf '# Month of %s\n\n' "$month_label"
+
+  printf '## Task completion\n'
+  printf -- '- Schedule days: %d/%d\n' "$schedule_days" "$days_in_month"
+  printf -- '- Completion rate: %d/%d (%d%%)\n' "$total_done" "$total_total" "$pct"
+  if (( ${#deferrer_lines[@]} == 0 )); then
+    printf -- '- Top 5 deferrers (longest chain): _(none)_\n'
+  else
+    printf -- '- Top 5 deferrers (longest chain):\n'
+    for entry in "${deferrer_lines[@]}"; do
+      cnt="${entry%%$'\t'*}"
+      desc="${entry#*$'\t'}"
+      printf -- '  - %s (%d days)\n' "$desc" "$cnt"
+    done
+  fi
+
+  if (( ${#habits_names[@]} > 0 )); then
+    # Column widths.
+    name_col=16
+    for hname in "${habits_names[@]}"; do
+      (( ${#hname} > name_col )) && name_col=${#hname}
+    done
+    name_col=$(( name_col + 2 ))
+
+    printf '\n## Habits — consistency\n\n'
+    # Header.
+    printf '%*s' "$name_col" ""
+    printf 'due  done  pct    longest-streak  current\n'
+
+    for hname in "${habits_names[@]}"; do
+      due="${this_due[$hname]}"
+      dn="${this_done[$hname]}"
+      pc="${this_pct[$hname]}"
+      lng="${this_longest[$hname]}"
+      cur="${this_current[$hname]}"
+      lng_str=$(format_count_days "$lng")
+      cur_str=$(format_streak "$cur")
+      printf '%-*s%3d  %4d  %3d%%   %-14s  %s\n' \
+        "$name_col" "$hname" "$due" "$dn" "$pc" "$lng_str" "$cur_str"
+    done
+
+    printf '\n## Kill candidates (consistency < %d%% for 2 months running)\n\n' "$KILL_THRESHOLD_PCT"
+    if (( ${#kill_lines[@]} == 0 )); then
+      printf '*(none)*\n'
+    else
+      for line in "${kill_lines[@]}"; do
+        printf '%s\n' "$line"
+      done
+    fi
+  fi
+
+  printf '\n## Themes (from notes)\n\n'
+  if [[ -z "$themes_text" ]]; then
+    printf '_(no themes captured this month)_\n'
+  else
+    printf '%s' "$themes_text"
+    if (( themes_truncated )); then
+      printf '\n_(truncated at %d bytes)_\n' "$NOTES_TOTAL_CAP"
+    fi
+  fi
+} > "$tmp_out"
+
+mv "$tmp_out" "$out_file"
+
+log "OK: wrote $out_file (done=$total_done total=$total_total habits=${#habits_names[@]} kill=${#kill_lines[@]})"
+write_status "ok" "monthly digest written (completion=${total_done}/${total_total} habits=${#habits_names[@]} kill=${#kill_lines[@]})" "$out_file"
+exit 0

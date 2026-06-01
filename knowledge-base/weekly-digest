@@ -82,6 +82,141 @@ fi
 
 rotate_log
 
+# ----- habits helpers (mirror auto-reflect contract) ----------------------
+journal_file_for() {
+  local d="$1"
+  printf '%s/journal/%s/%s/%s.md' "$REPO" "${d:0:4}" "${d:5:2}" "$d"
+}
+
+parse_habits_file() {
+  local file="$1"
+  [[ -f "$file" ]] || return 0
+  local line name cadence
+  while IFS= read -r line; do
+    line="${line%$'\r'}"
+    [[ -z "${line//[[:space:]]/}" ]] && continue
+    [[ "$line" =~ ^[[:space:]]*# ]] && continue
+    if [[ "$line" =~ ^-[[:space:]]+(.+)[[:space:]]\|[[:space:]](.+)$ ]]; then
+      name="${BASH_REMATCH[1]}"
+      cadence="${BASH_REMATCH[2]}"
+      name="${name#"${name%%[![:space:]]*}"}"; name="${name%"${name##*[![:space:]]}"}"
+      cadence="${cadence#"${cadence%%[![:space:]]*}"}"; cadence="${cadence%"${cadence##*[![:space:]]}"}"
+      [[ -z "$name" || -z "$cadence" ]] && continue
+      printf '%s\t%s\n' "$name" "$cadence"
+    fi
+  done < "$file"
+}
+
+is_due() {
+  local d="$1" cad="$2"
+  case "$cad" in
+    daily) return 0 ;;
+    first-of-month)
+      local day=${d:8:2}; day=$((10#$day))
+      (( day == 1 )) && return 0 || return 1 ;;
+    last-of-month)
+      local nd
+      nd=$(date -d "$d +1 day" '+%d'); nd=$((10#$nd))
+      (( nd == 1 )) && return 0 || return 1 ;;
+    every-*d)
+      local n="${cad#every-}"; n="${n%d}"
+      [[ "$n" =~ ^[0-9]+$ ]] || return 1
+      (( n > 0 )) || return 1
+      local days_since
+      days_since=$(( ($(date -d "$d" +%s) - $(date -d "2026-01-01" +%s)) / 86400 ))
+      (( days_since % n == 0 )) && return 0 || return 1 ;;
+    *)
+      local dow_num dow_name token
+      dow_num=$(date -d "$d" +%u)
+      case "$dow_num" in
+        1) dow_name=mon ;; 2) dow_name=tue ;; 3) dow_name=wed ;;
+        4) dow_name=thu ;; 5) dow_name=fri ;; 6) dow_name=sat ;;
+        7) dow_name=sun ;;
+        *) return 1 ;;
+      esac
+      local IFS=','
+      for token in $cad; do
+        token="${token//[[:space:]]/}"
+        [[ "$token" == "$dow_name" ]] && return 0
+      done
+      return 1 ;;
+  esac
+}
+
+declare -gA habit_values_cache=()
+load_habits_for_day() {
+  local d="$1"
+  local mk="loaded|$d"
+  [[ -n "${habit_values_cache[$mk]+x}" ]] && return 0
+  habit_values_cache[$mk]=1
+  local file; file=$(journal_file_for "$d")
+  [[ -f "$file" ]] || return 0
+  local in_habits=0 line
+  while IFS= read -r line; do
+    if [[ "$line" == "## Habits (auto)" || "$line" =~ ^"## Habits (auto)"[[:space:]]*$ ]]; then
+      in_habits=1; continue
+    fi
+    if (( in_habits )) && [[ "$line" =~ ^"## " ]]; then break; fi
+    if (( in_habits )) && [[ "$line" =~ ^-[[:space:]](.+):[[:space:]](.+)$ ]]; then
+      local hn="${BASH_REMATCH[1]}" hv="${BASH_REMATCH[2]}"
+      hn="${hn#"${hn%%[![:space:]]*}"}"; hn="${hn%"${hn##*[![:space:]]}"}"
+      hv="${hv#"${hv%%[![:space:]]*}"}"; hv="${hv%"${hv##*[![:space:]]}"}"
+      habit_values_cache["$d|$hn"]="$hv"
+    fi
+  done < "$file"
+}
+habit_value_for() {
+  local d="$1" name="$2"
+  load_habits_for_day "$d"
+  printf '%s' "${habit_values_cache["$d|$name"]:-}"
+}
+
+# compute_streak <ref-date> <name> <cadence>
+# Walks backward through due days; ✓→streak++, single ✗ allowed (pause),
+# two consecutive ✗ on due days stops the walk. Missing entry also stops.
+compute_streak() {
+  local ref="$1" hname="$2" cad="$3"
+  local streak=0 consec_miss=0 walk_day="$ref" v
+  local cap=400
+  for (( w=0; w<cap; w++ )); do
+    if is_due "$walk_day" "$cad"; then
+      v=$(habit_value_for "$walk_day" "$hname")
+      if [[ "$v" == "✓" ]]; then
+        streak=$((streak + 1)); consec_miss=0
+      elif [[ "$v" == "✗" ]]; then
+        consec_miss=$((consec_miss + 1))
+        (( consec_miss >= 2 )) && break
+      else
+        break
+      fi
+    fi
+    walk_day=$(date -d "$walk_day -1 day" '+%F')
+  done
+  printf '%d' "$streak"
+}
+
+# format_streak <int>
+format_streak() {
+  local n="$1"
+  if (( n == 0 )); then printf '0d'; return; fi
+  local emoji
+  if   (( n <= 6   )); then emoji="🌱"
+  elif (( n <= 20  )); then emoji="🔥"
+  elif (( n <= 59  )); then emoji="🔥🔥"
+  elif (( n <= 99  )); then emoji="⚡"
+  elif (( n <= 364 )); then emoji="💎"
+  else                      emoji="👑"
+  fi
+  if (( n >= 7 )); then
+    local wks=$(( n / 7 )) rem=$(( n % 7 ))
+    if (( rem == 0 )); then printf '%s %dw' "$emoji" "$wks"
+    else printf '%s %dw %dd' "$emoji" "$wks" "$rem"
+    fi
+  else
+    printf '%s %dd' "$emoji" "$n"
+  fi
+}
+
 # ----- compute week range -------------------------------------------------
 if [[ -n "${DIGEST_DATE:-}" ]]; then
   sunday="$DIGEST_DATE"
@@ -253,6 +388,106 @@ if (( days_with_any_overlooked > 0 )); then
   )
 fi
 
+# ----- habits grid --------------------------------------------------------
+habits_file="$REPO/todos/habits.md"
+habits_block=""
+
+if [[ -s "$habits_file" ]]; then
+  declare -a habits_names=()
+  declare -A habits_cadence=()
+  while IFS=$'\t' read -r hname hcad; do
+    [[ -z "$hname" ]] && continue
+    habits_names+=("$hname")
+    habits_cadence["$hname"]="$hcad"
+  done < <(parse_habits_file "$habits_file")
+
+  if (( ${#habits_names[@]} > 0 )); then
+    # Column width based on longest habit name (min 16).
+    name_col=16
+    for hname in "${habits_names[@]}"; do
+      (( ${#hname} > name_col )) && name_col=${#hname}
+    done
+    name_col=$(( name_col + 2 ))   # padding before day columns
+
+    # Pre-load all 7 days into the habit value cache.
+    declare -a week_dates=()
+    for i in 0 1 2 3 4 5 6; do
+      d=$(date -d "$monday +$i day" '+%F')
+      week_dates+=("$d")
+      load_habits_for_day "$d"
+    done
+
+    # Build header row.
+    header_line=$(printf '%*s' "$name_col" "")
+    header_line+="Mo Tu We Th Fr Sa Su   streak"
+
+    grid_rows=""
+    for hname in "${habits_names[@]}"; do
+      cad="${habits_cadence[$hname]}"
+      declare -a day_vals=()
+      gap_count=0
+      broken_weekday=""
+      due_count=0
+      done_count=0
+
+      # Seed prev_due_val with the most recent due day before Monday so we
+      # can detect a Monday-✗ that follows a Sunday-✗ (cross-week broken).
+      prev_due_val=""
+      walk_day=$(date -d "$monday -1 day" '+%F')
+      for (( w=0; w<60; w++ )); do
+        if is_due "$walk_day" "$cad"; then
+          prev_due_val=$(habit_value_for "$walk_day" "$hname")
+          break
+        fi
+        walk_day=$(date -d "$walk_day -1 day" '+%F')
+      done
+
+      for i in 0 1 2 3 4 5 6; do
+        d="${week_dates[$i]}"
+        if is_due "$d" "$cad"; then
+          due_count=$((due_count + 1))
+          val=$(habit_value_for "$d" "$hname")
+          [[ "$val" != "✓" && "$val" != "✗" ]] && val="✗"
+          day_vals+=("$val")
+          if [[ "$val" == "✓" ]]; then
+            done_count=$((done_count + 1))
+          else
+            gap_count=$((gap_count + 1))
+            if [[ "$prev_due_val" == "✗" && -z "$broken_weekday" ]]; then
+              broken_weekday=$(date -d "$d" '+%a')
+            fi
+          fi
+          prev_due_val="$val"
+        else
+          day_vals+=("-")
+        fi
+      done
+
+      streak=$(compute_streak "$sunday" "$hname" "$cad")
+      streak_str=$(format_streak "$streak")
+
+      note=""
+      if [[ -n "$broken_weekday" ]]; then
+        note="(broken $broken_weekday)"
+      elif (( gap_count > 0 )); then
+        note="($gap_count gap)"
+      elif (( due_count > 0 && done_count == due_count )); then
+        note="(perfect)"
+      fi
+
+      row=$(printf '%-*s' "$name_col" "$hname")
+      for v in "${day_vals[@]}"; do
+        row+="${v}  "
+      done
+      row+=" ${streak_str}"
+      [[ -n "$note" ]] && row+="  ${note}"
+      grid_rows+="${row}"$'\n'
+    done
+
+    habits_block=$'## Habits this week\n\n'"${header_line}"$'\n'"${grid_rows}"
+  fi
+fi
+
 # ----- write digest -------------------------------------------------------
 if [[ "${DRY_RUN:-0}" == "1" ]]; then
   out_file="/tmp/weekly-digest-dryrun.md"
@@ -290,6 +525,9 @@ trap 'rm -f "$tmp_out" 2>/dev/null' EXIT
     for desc in "${persistent_overlooked[@]}"; do
       printf -- '- %s\n' "$desc"
     done
+  fi
+  if [[ -n "$habits_block" ]]; then
+    printf '\n%s' "$habits_block"
   fi
   printf '\n## Themes (from notes)\n'
   if [[ -z "$notes_buffer" ]]; then
