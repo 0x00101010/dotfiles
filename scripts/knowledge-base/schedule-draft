@@ -5,10 +5,15 @@
 #
 # Idempotent: if tomorrow's schedule already exists, exits cleanly.
 #
+# Catch-up: if TODAY's schedule is also missing (e.g. cron didn't fire last
+# night because the machine was off or the cron entry wasn't installed yet),
+# drafts today first, then proceeds to tomorrow.
+#
 # Env overrides (for testing):
 #   DRY_RUN=1        — skip the real amp invocation; write a stub to
 #                      /tmp/schedule-draft-dryrun.md instead.
-#   SCHEDULE_DATE    — override "tomorrow" (YYYY-MM-DD), used for testing.
+#   SCHEDULE_DATE    — override "tomorrow" (YYYY-MM-DD); also disables the
+#                      today catch-up step. Used for testing.
 
 set -uo pipefail
 
@@ -75,6 +80,37 @@ if ! acquire_lock; then
 fi
 
 rotate_log
+
+# ----- catch-up: draft TODAY if missing -----------------------------------
+# If yesterday's 22:00 cron didn't fire (machine off, cron not yet installed,
+# etc.), today's schedule is missing in addition to tomorrow's. Draft today
+# first, then fall through to the normal tomorrow flow. Skipped under
+# SCHEDULE_DATE override (test mode) so tests stay deterministic.
+if [[ -z "${SCHEDULE_DATE:-}" ]]; then
+  today_date=$(date '+%F')
+  today_file="$REPO/schedules/${today_date:0:4}/$today_date.md"
+  if [[ ! -f "$today_file" ]]; then
+    log "catch-up: today's schedule missing ($today_file)"
+    if [[ "${DRY_RUN:-0}" == "1" ]]; then
+      log "catch-up DRY_RUN: would invoke amp for today ('today --auto')"
+    elif ! command -v amp >/dev/null 2>&1 \
+      || ! command -v timeout >/dev/null 2>&1 \
+      || ! cd "$REPO" 2>/dev/null; then
+      log "catch-up SKIPPED: amp/timeout/repo unavailable (main flow will surface the error)"
+    else
+      log "catch-up: invoking timeout $AMP_TIMEOUT amp -x \"Use the prio skill with argument 'today --auto'\""
+      catch_exit=0
+      timeout "$AMP_TIMEOUT" amp -x "Use the prio skill with argument 'today --auto'" \
+        < /dev/null >> "$LOG" 2>&1 \
+        || catch_exit=$?
+      if [[ -f "$today_file" ]]; then
+        log "catch-up OK: today's schedule written (amp_exit=$catch_exit)"
+      else
+        log "catch-up WARN: today still missing after amp (amp_exit=$catch_exit); proceeding to tomorrow"
+      fi
+    fi
+  fi
+fi
 
 # ----- compute target -----------------------------------------------------
 if [[ -n "${SCHEDULE_DATE:-}" ]]; then
