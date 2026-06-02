@@ -14,3 +14,6 @@ Thumbs.db
 
 # local .claude
 .claude/
+
+# local plans (per ~/.config/amp/AGENTS.md convention)
+plans/
