@@ -14,6 +14,7 @@ REPO_NAME="dotfiles"
 REPO_URL="https://github.com/${REPO_OWNER}/${REPO_NAME}.git"
 SRC_DIR="${HOME}/src/${REPO_NAME}"
 CHEZMOI_DIR="${HOME}/.local/share/chezmoi"
+CHEZMOI_SOURCE_DIR="${SRC_DIR}/home"
 
 log() { printf '\033[1;34m[install]\033[0m %s\n' "$*"; }
 die() { printf '\033[1;31m[install]\033[0m %s\n' "$*" >&2; exit 1; }
@@ -87,13 +88,13 @@ fi
 # Symlink the chezmoi source dir so `chezmoi` picks up the repo.
 mkdir -p "$(dirname "$CHEZMOI_DIR")"
 if [ -L "$CHEZMOI_DIR" ] || [ -d "$CHEZMOI_DIR" ]; then
-  if [ "$(readlink "$CHEZMOI_DIR" 2>/dev/null || true)" != "$SRC_DIR" ]; then
-    log "Replacing existing $CHEZMOI_DIR with symlink to $SRC_DIR"
+  if [ "$(readlink "$CHEZMOI_DIR" 2>/dev/null || true)" != "$CHEZMOI_SOURCE_DIR" ]; then
+    log "Replacing existing $CHEZMOI_DIR with symlink to $CHEZMOI_SOURCE_DIR"
     rm -rf "$CHEZMOI_DIR"
-    ln -s "$SRC_DIR" "$CHEZMOI_DIR"
+    ln -s "$CHEZMOI_SOURCE_DIR" "$CHEZMOI_DIR"
   fi
 else
-  ln -s "$SRC_DIR" "$CHEZMOI_DIR"
+  ln -s "$CHEZMOI_SOURCE_DIR" "$CHEZMOI_DIR"
 fi
 
 # ---------------------------------------------------------------------------

@@ -24,7 +24,8 @@ works (`curl … | bash`) — it falls back to `/dev/tty` for prompts.
    Command Line Tools + Homebrew).
 3. Installs [chezmoi](https://chezmoi.io).
 4. Clones this repo to `~/src/dotfiles` and symlinks
-   `~/.local/share/chezmoi → ~/src/dotfiles`.
+   `~/.local/share/chezmoi → ~/src/dotfiles/home` so bootstrap files such as
+   `install.sh` are not applied into `$HOME`.
 5. Runs `chezmoi init && chezmoi apply -v`, which triggers the
    `run_once_*` bootstrap scripts (Homebrew packages, apt packages, mise,
    tmux/oh-my-zsh plugins, Docker, etc.).

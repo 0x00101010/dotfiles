@@ -11,7 +11,7 @@ sudo sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
 git clone https://github.com/0x00101010/dotfiles.git ~/src/dotfiles
 rm -rf ~/.local/share/chezmoi
 mkdir -p ~/.local/share
-ln -s ~/src/dotfiles ~/.local/share/chezmoi
+ln -s ~/src/dotfiles/home ~/.local/share/chezmoi
 
 chezmoi init
 chezmoi apply -v
