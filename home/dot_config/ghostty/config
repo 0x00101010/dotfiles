@@ -48,7 +48,7 @@ font-family = SauceCodePro Nerd Font
 # # Just for example:
 # resize-overlay-duration = 4s 200ms
 
-keybind = global:cmd+grave_accent=toggle_visibility
+keybind = global:cmd+backquote=toggle_visibility
 keybind = shift+enter=text:\x1b[13;2u
 keybind = super+delete=text:\x15
 copy-on-select = clipboard
