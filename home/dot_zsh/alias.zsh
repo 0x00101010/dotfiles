@@ -131,6 +131,7 @@ alias ct='cargo test'
 alias ci="chezmoi"
 alias cia="chezmoi apply -v"
 alias cid="cd ~/src/dotfiles"
+alias ciw="cd ~/src/workspace"
 # chezmoi apply, then reload tmux + shell — but only on success,
 # and never replace the shell while a prompt or subprocess is still active.
 cz() {
