@@ -1,0 +1,59 @@
+[
+  {
+    "context": "Workspace",
+    "use_key_equivalents": true,
+    "bindings": {
+      "shift-cmd-a": "agent::Toggle",
+      "cmd-l": "go_to_line::Toggle",
+      "cmd-1": "project_panel::ToggleFocus",
+      "ctrl-cmd-1": "project_panel::ToggleFocus",
+      "shift shift": "project_symbols::Toggle",
+      "cmd-j": "terminal_panel::ToggleFocus",
+      "cmd-\\": "pane::SplitRight",
+      "ctrl-cmd-left": "workspace::ActivatePaneLeft",
+      "ctrl-cmd-right": "workspace::ActivatePaneRight"
+    }
+  },
+  {
+    "context": "Pane",
+    "bindings": {
+      "cmd-r": null,
+      "shift-cmd-r": null
+    }
+  },
+  {
+    "context": "Pane",
+    "use_key_equivalents": true,
+    "bindings": {
+      "alt-cmd-left": "pane::ActivatePreviousItem",
+      "alt-cmd-right": "pane::ActivateNextItem",
+      "cmd-r": "buffer_search::DeployReplace",
+      "shift-cmd-r": ["pane::DeploySearch", { "replace_enabled": true }]
+    }
+  },
+  {
+    "context": "Editor",
+    "use_key_equivalents": true,
+    "bindings": {
+      "cmd-[": "pane::GoBack",
+      "cmd-]": "pane::GoForward",
+      "cmd-d": "editor::GoToDefinitionSplit",
+      "shift-cmd-d": "editor::GoToDefinition",
+      "cmd-t": "editor::GoToTypeDefinitionSplit",
+      "shift-cmd-t": "editor::GoToTypeDefinition",
+      "cmd-i": "editor::GoToImplementationSplit",
+      "shift-cmd-i": "editor::GoToImplementation",
+      "cmd-u": "editor::FindAllReferences",
+      "shift-cmd-u": "editor::FindAllReferences",
+      "ctrl-shift-down": "editor::GoToNextSymbol",
+      "ctrl-shift-up": "editor::GoToPreviousSymbol"
+    }
+  },
+  {
+    "context": "Terminal",
+    "use_key_equivalents": true,
+    "bindings": {
+      "shift-enter": ["terminal::SendKeystroke", "enter"]
+    }
+  }
+]
