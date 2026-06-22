@@ -166,3 +166,6 @@ alias vc="code"
 alias wts="wt switch"
 alias wtl="wt list"
 alias wtr="wt remove"
+
+# zed
+alias zed="/Applications/Zed.app/Contents/MacOS/cli"

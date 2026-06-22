@@ -8,8 +8,12 @@ return {
     opts = {
       picker = {
         sources = {
+          files = {
+            ignored = true,
+          },
           explorer = {
             hidden = true,
+            ignored = true,
           },
         },
       },
