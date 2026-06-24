@@ -18,7 +18,16 @@ Minimum code that solves the problem. Nothing speculative.
 - No speculative "flexibility" or error handling for impossible scenarios.
 - 200 lines that could be 50? Rewrite it.
 
-## 3. Surgical Changes
+## 3. Dense Writing
+
+I strive to make my writing unsummarizable, in the sense that it has so little fluff left in it that if you take any words out, as summaries by definition do, you lose a lot of interesting ideas.
+
+- Cut filler, throat-clearing, and repeated framing.
+- Prefer sentences where each clause carries a real idea, constraint, or observation.
+- If a sentence can lose a phrase without losing meaning, tighten it.
+- Don't flatten interesting specifics into generic summaries.
+
+## 4. Surgical Changes
 
 Touch only what you must. Clean up only your own mess.
 
@@ -29,7 +38,7 @@ Touch only what you must. Clean up only your own mess.
 - Remove only orphans YOUR changes created.
 - Every changed line should trace directly to the request.
 
-## 4. Goal-Driven Execution
+## 5. Goal-Driven Execution
 
 Transform tasks into verifiable goals, then loop until verified.
 
@@ -37,10 +46,10 @@ Transform tasks into verifiable goals, then loop until verified.
 - "Fix the bug" → write a reproducing test, make it pass
 - "Refactor X" → ensure tests pass before and after
 
-## 5. Plans
+## 6. Plans
 
 Plans go to `~/src/workspace/projects/{work,personal}/<project>/plans/<plan-name>.md`. Name after what they accomplish (`add-staged-sync.md`, `fix-enclave-build.md`). Lowercase, hyphen-separated, concise. Never auto-generated names.
 
-## 6. Debugging
+## 7. Debugging
 
 When I report a bug: write a reproducing test first, then have subagents fix it and prove it with a passing test.
