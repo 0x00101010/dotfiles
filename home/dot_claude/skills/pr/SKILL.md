@@ -1,6 +1,6 @@
 ---
 name: pr
-description: Set up a worktree, implement the work, ship as a draft PR, then iterate on review and CI until ready.
+description: Implement work, ship it as a draft PR, then iterate on review and CI until ready.
 ---
 
 ## 1. Input + repo
@@ -15,13 +15,7 @@ Ambiguous → ask ONE clarifying question. Do NOT search for or read local plan 
 
 Parse `in <repo>` suffix (e.g. `/pr add cache in base`). Otherwise load `repos` skill. Ambiguous → ask.
 
-## 2. New worktree (always)
-
-Bare layout (`.bare/` exists): `cd ~/src/<repo>/main`. Standard: `cd ~/src/<repo>`. Run `gwa <prefix>/<slug>`. Capture `$WORKTREE_PATH` via `pwd`.
-
-Branch prefixes: `feat|fix|refactor|chore|docs|perf|test|ci|hotfix|style`. Slug ≤40 chars, lowercase, hyphens.
-
-## 3. Delegate deliberately
+## 2. Delegate deliberately
 
 Classify before coding:
 
@@ -35,15 +29,15 @@ For Assisted/Swarm, start read-only helpers before coding:
 - Architect: only when design/API/data/workflow boundaries matter.
 - External research: only when library/framework behavior is uncertain.
 
-Main agent synthesizes findings into the simplest viable plan. Do not let helpers edit the primary worktree unless explicitly assigned an isolated workstream.
+Main agent synthesizes findings into the simplest viable plan. Do not let helpers edit files unless explicitly assigned an isolated workstream.
 
-## 4. Implement
+## 3. Implement
 
-Use absolute paths from `$WORKTREE_PATH`. Test and verify with diagnostics/build before committing.
+Work in the current directory. Test and verify with diagnostics/build before committing.
 
 Solution: succinct. Minimum code that solves the problem. No speculative abstractions, no unrelated cleanup, no jargon-heavy comments.
 
-## 5. Review before PR
+## 4. Review before PR
 
 For non-trivial PRs, run read-only review specialists before committing/pushing:
 
@@ -56,7 +50,7 @@ Each finding must include severity (`Critical`, `Important`, `Suggestion`), evid
 
 Main agent dedupes findings. Fix Critical/Important items or explicitly justify deferral. Suggestions must not derail the PR.
 
-## 6. Draft PR
+## 5. Draft PR
 
 Commit. Push. `gh pr create --draft`.
 
@@ -70,7 +64,7 @@ Each PR stands alone. Even if it came from a multi-PR plan, the title and body M
 
 > Adds a --conductor-rpc bootstrap flag and DiscoveryConfig so basectl can derive the live raft peer list from a single conductor by polling clusterMembership and applying port templates.
 
-## 7. Iterate until ready (mandatory loop)
+## 6. Iterate until ready (mandatory loop)
 
 After the draft PR is open, you MUST NOT return control to the user until **both**:
 
