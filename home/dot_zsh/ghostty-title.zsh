@@ -11,15 +11,19 @@ _set_ghostty_title() {
   [[ -n "$TMUX" ]] && return
   local host dir branch
   host="$(_ghostty_title_host)"
-  dir="${PWD/#$HOME/~}"
+  dir="${PWD:t}"
   branch=$(git symbolic-ref --quiet --short HEAD 2>/dev/null || git rev-parse --short HEAD 2>/dev/null)
   # OSC 0: set both window and icon (tab) title.
   printf '\e]0;%s · %s%s\a' "$host" "$dir" "${branch:+ · $branch}"
 }
 
-_sync_tmux_title_host() {
+_sync_tmux_title() {
   [[ -n "$TMUX" ]] || return
+  local branch
+  branch=$(git symbolic-ref --quiet --short HEAD 2>/dev/null || git rev-parse --short HEAD 2>/dev/null)
   tmux set-option -gq @title_host "$(_ghostty_title_host)"
+  tmux set-option -pq -t "$TMUX_PANE" @title_dir "${PWD:t}"
+  tmux set-option -pq -t "$TMUX_PANE" @title_branch "$branch"
 }
 
 _run_amp_with_title_guard() {
@@ -29,12 +33,12 @@ _run_amp_with_title_guard() {
   if [[ -n "$TMUX" ]]; then
     local passthrough
     passthrough=$(tmux show-options -pv -t "$TMUX_PANE" allow-passthrough 2>/dev/null || print -r -- on)
-    _sync_tmux_title_host
+    _sync_tmux_title
     tmux set-option -pt "$TMUX_PANE" allow-passthrough off
     command "$amp_bin" "$@"
     local status=$?
     tmux set-option -pt "$TMUX_PANE" allow-passthrough "$passthrough" >/dev/null 2>&1
-    _sync_tmux_title_host
+    _sync_tmux_title
     tmux refresh-client -S >/dev/null 2>&1
     return $status
   fi
@@ -61,7 +65,7 @@ amp() {
 }
 
 autoload -Uz add-zsh-hook
-add-zsh-hook precmd _sync_tmux_title_host
+add-zsh-hook precmd _sync_tmux_title
 add-zsh-hook precmd _set_ghostty_title
-_sync_tmux_title_host
+_sync_tmux_title
 _set_ghostty_title
