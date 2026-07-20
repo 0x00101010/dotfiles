@@ -53,6 +53,6 @@ keybind = super+delete=text:\x15
 copy-on-select = clipboard
 
 # Don't let Ghostty's shell integration overwrite the title.
-# We set it ourselves: zsh emits "host · cwd" for plain shells,
-# tmux emits "host · session" via set-titles (see ~/.config/tmux/tmux.conf).
+# We set it ourselves as "host · cwd · branch" in zsh and tmux
+# (see ~/.zsh/ghostty-title.zsh and ~/.config/tmux/tmux.conf).
 shell-integration-features = no-title

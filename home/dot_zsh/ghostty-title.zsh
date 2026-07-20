@@ -3,16 +3,18 @@
 # (configured in ~/.config/tmux/tmux.conf).
 
 _ghostty_title_host() {
-  print -r -- "${PROMPT_HOST:-${HOST%%.*}}"
+  local host="${PROMPT_HOST:-${HOST%%.*}}"
+  print -r -- "${host#\[mosh\] }"
 }
 
 _set_ghostty_title() {
   [[ -n "$TMUX" ]] && return
-  local host dir
+  local host dir branch
   host="$(_ghostty_title_host)"
   dir="${PWD/#$HOME/~}"
+  branch=$(git symbolic-ref --quiet --short HEAD 2>/dev/null || git rev-parse --short HEAD 2>/dev/null)
   # OSC 0: set both window and icon (tab) title.
-  printf '\e]0;%s · %s\a' "$host" "$dir"
+  printf '\e]0;%s · %s%s\a' "$host" "$dir" "${branch:+ · $branch}"
 }
 
 _sync_tmux_title_host() {
