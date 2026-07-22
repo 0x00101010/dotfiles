@@ -63,6 +63,7 @@ alias gfa='git fetch --all'
 
 alias gco='git checkout'
 alias gcob="git checkout -b"
+alias gnb='_git_new_branch'
 alias gp='_git_push_auto_branch' # git push to origin on current branch if no argument specified. Otherwise, git push to specified remote. (from cb-zsh)
 alias gprune="git remote prune origin | grep -o '\[pruned\] origin\/.*$' | sed -e 's/\[pruned\] origin\///' | xargs git branch -D"
 alias gpum='git pull upstream main'

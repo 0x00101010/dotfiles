@@ -19,6 +19,17 @@ _git_push_auto_branch() {
     git push -u $remote $(git symbolic-ref --short -q HEAD) "${rest[@]}"
 }
 
+_git_new_branch() {
+    if (( $# != 1 )); then
+        print -u2 "usage: gnb <branch-name>"
+        return 2
+    fi
+
+    git fetch upstream main || return
+    git switch -c "$1" || return
+    git rebase upstream/main
+}
+
 # show commit diff against upstream/master. Use origin if upstream doesn't exist
 _git_commit_diff() {
     # check if upstream remote repository exists
