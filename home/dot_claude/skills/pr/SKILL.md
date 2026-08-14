@@ -58,11 +58,12 @@ Each PR stands alone. Even if it came from a multi-PR plan, the title and body M
 
 **Title**: plain words describing the change. Conventional-commit prefix optional (`feat(scope):`, `fix(scope):`). Nothing else.
 
-**Body**: 1–3 sentences explaining *why* and *what*. No headers, no tables, no bullet lists, no `## Summary` / `## What` / `## Tests` sections, no ticket numbers, no test-run output, no boilerplate. Reviewers read the diff for details.
+**Body**: 1–3 succinct bullet points explaining *why* and *what*. No paragraphs, headers, tables, ticket numbers, boilerplate, verification/test sections, or lists of commands run. CI reports verification; reviewers read the diff for details.
 
 **Good example** (entire body):
 
-> Adds a --conductor-rpc bootstrap flag and DiscoveryConfig so basectl can derive the live raft peer list from a single conductor by polling clusterMembership and applying port templates.
+> - Add a `--conductor-rpc` bootstrap flag.
+> - Derive the live raft peer list from one conductor via `DiscoveryConfig`.
 
 ## 6. Iterate until ready (mandatory loop)
 
