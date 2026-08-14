@@ -62,9 +62,15 @@ Flag priority conflicts (workspace says P0, Linear says P3, etc.). Limit top 3 w
 
 ### Build schedule
 
-Read `identity/daily-schedule.md` first — it defines the time-block template (based on screentime analysis). Use its block structure rather than generic Morning/Afternoon/Evening.
+**No time blocks.** Output a single flat list ranked by long-term importance — the user schedules their own day. Ranking order:
 
-Format: `# DayOfWeek, Month DD, YYYY` with `- [ ] **P0** - description`. Slot tasks into the blocks from `daily-schedule.md`. Trickle list as `## Trickle List (pick 1-2)`. Monday → add "Check plans & strategies".
+1. Quarter/year OKR-advancing items (long-term first)
+2. Time-sensitive or blocking items — tag with `⏰` and the deadline
+3. Everything else, by priority
+
+Format: `# DayOfWeek, Month DD, YYYY`, then `## Ranked (schedule yourself)` with numbered `- [ ] **P0** - description (why: Q3 O2)` items — cap at ~7. Each item states in one parenthetical why it ranks where it does. Trickle list as `## Trickle List (pick 1-2)`. Monday → add "Check plans & strategies".
+
+**Habits/routine:** do NOT restate daily-schedule.md habits as checkboxes. End the file with one footer line: `Anchors: movement · 2× deep work · 18:00 family stop · 22:30 lights out — see identity/daily-schedule.md`. Habit tracking lives in the journal. Exception: a habit that is an active quarter KR requiring a specific action today gets a ranked-list slot as a real task.
 
 ### Alignment commentary
 
