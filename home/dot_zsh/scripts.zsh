@@ -26,7 +26,7 @@ _git_new_branch() {
     fi
 
     git fetch origin main || return
-    git switch --no-track -c "$1" origin/main
+    git switch --no-track -c "$1" FETCH_HEAD
 }
 
 # show commit diff against upstream/master. Use origin if upstream doesn't exist
