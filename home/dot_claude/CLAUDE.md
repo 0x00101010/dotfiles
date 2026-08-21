@@ -37,6 +37,7 @@ Touch only what you must. Clean up only your own mess.
 - Unrelated dead code? Mention it — don't delete it.
 - Remove only orphans YOUR changes created.
 - Every changed line should trace directly to the request.
+- Work in the existing current worktree. Never create another Git worktree unless I explicitly ask, even if a workflow or skill normally creates one.
 
 ## 5. Goal-Driven Execution
 
