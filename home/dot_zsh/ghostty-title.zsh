@@ -7,11 +7,26 @@ _ghostty_title_host() {
   print -r -- "${host#\[mosh\] }"
 }
 
+# Directory label. In a worktree of a `.bare` repo layout (base/.bare,
+# base/dev3, ...), the worktree root shows as base/dev3 instead of dev3.
+_ghostty_title_dir() {
+  local toplevel common
+  toplevel=$(git rev-parse --show-toplevel 2>/dev/null)
+  if [[ -n "$toplevel" && "${PWD:P}" == "${toplevel:P}" ]]; then
+    common=$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)
+    if [[ "${common:t}" == .bare && "${common:h}" == "${toplevel:h}" ]]; then
+      print -r -- "${toplevel:h:t}/${toplevel:t}"
+      return
+    fi
+  fi
+  print -r -- "${PWD:t}"
+}
+
 _set_ghostty_title() {
   [[ -n "$TMUX" ]] && return
   local host dir branch
   host="$(_ghostty_title_host)"
-  dir="${PWD:t}"
+  dir="$(_ghostty_title_dir)"
   branch=$(git symbolic-ref --quiet --short HEAD 2>/dev/null || git rev-parse --short HEAD 2>/dev/null)
   # OSC 0: set both window and icon (tab) title.
   printf '\e]0;%s · %s%s\a' "$host" "$dir" "${branch:+ · $branch}"
@@ -22,7 +37,7 @@ _sync_tmux_title() {
   local branch
   branch=$(git symbolic-ref --quiet --short HEAD 2>/dev/null || git rev-parse --short HEAD 2>/dev/null)
   tmux set-option -gq @title_host "$(_ghostty_title_host)"
-  tmux set-option -pq -t "$TMUX_PANE" @title_dir "${PWD:t}"
+  tmux set-option -pq -t "$TMUX_PANE" @title_dir "$(_ghostty_title_dir)"
   tmux set-option -pq -t "$TMUX_PANE" @title_branch "$branch"
 }
 
