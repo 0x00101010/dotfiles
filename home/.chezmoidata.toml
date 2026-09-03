@@ -28,10 +28,7 @@ casks = [
     "discord",
     "font-sauce-code-pro-nerd-font",
     # "google-chrome",
-    "iterm2",
-    "linear-linear",
     "raycast",
-    "spotify",
     "visual-studio-code",
 ]
 
