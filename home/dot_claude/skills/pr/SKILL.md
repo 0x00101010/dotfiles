@@ -52,13 +52,26 @@ Main agent dedupes findings. Fix Critical/Important items or explicitly justify 
 
 ## 5. Draft PR
 
+Commit messages must be succinct: an imperative subject of at most 80 characters. Add a body only when the business rationale cannot fit in the subject; omit implementation summaries and test plans.
+
 Commit. Push. `gh pr create --draft`.
 
 Each PR stands alone. Even if it came from a multi-PR plan, the title and body MUST NOT reveal that — no `(PR B)`, `[1/3]`, `Part 2 of 4`, "follow-up PRs land next", or any plan/sequencing reference. Reviewers see one self-contained change.
 
-**Title**: plain words describing the change. Conventional-commit prefix optional (`feat(scope):`, `fix(scope):`). Nothing else.
+**Title**: at most 80 characters, using plain words to describe the change. Conventional-commit prefix optional (`feat(scope):`, `fix(scope):`). Nothing else.
 
-**Body**: 1–3 succinct bullet points explaining *why* and *what*. No paragraphs, headers, tables, ticket numbers, boilerplate, verification/test sections, or lists of commands run. CI reports verification; reviewers read the diff for details.
+**Body**: state the business purpose in at most 3 sentences, then use up to 5 concise bullets for what changed. Omit implementation details, ticket numbers, boilerplate, verification/test sections, and commands run. CI reports verification; reviewers read the diff for details.
+
+For complex changes only, put longer context after the concise body in a collapsed section:
+
+```html
+<details>
+<summary>AI explanation</summary>
+
+Longer context that materially helps reviewers.
+
+</details>
+```
 
 **Good example** (entire body):
 
