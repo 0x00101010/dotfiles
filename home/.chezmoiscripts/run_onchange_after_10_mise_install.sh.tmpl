@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Re-run whenever the mise tool list changes (e.g. gitleaks for the global git hooks).
+# mise config hash: {{ include "dot_config/mise/config.toml" | sha256sum }}
+
+{{- if eq .chezmoi.os "darwin" }}
+eval "$(/opt/homebrew/bin/brew shellenv)"
+{{- end }}
+mise install

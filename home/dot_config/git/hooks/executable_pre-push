@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Global hook (core.hooksPath): block pushes whose outgoing commits contain secrets,
+# including secrets added and later deleted. Bypass with `git push --no-verify`.
+set -euo pipefail
+
+gitleaks=$(command -v gitleaks || mise which gitleaks 2>/dev/null) || {
+  echo "pre-push: gitleaks not found; run 'mise install gitleaks' (or bypass with --no-verify)" >&2
+  exit 1
+}
+
+input=$(cat)
+while read -r _local_ref local_sha _remote_ref remote_sha; do
+  # Skip empty input and branch deletions (all-zero local sha).
+  [[ -z "$local_sha" || "$local_sha" =~ ^0+$ ]] && continue
+  if [[ "$remote_sha" =~ ^0+$ ]] || ! git cat-file -e "$remote_sha^{commit}" 2>/dev/null; then
+    range="$local_sha --not --remotes"  # new branch: commits not on any remote yet
+  else
+    range="$remote_sha..$local_sha"
+  fi
+  "$gitleaks" git --redact --no-banner --log-level warn --verbose --log-opts="$range"
+done <<<"$input"
+
+# core.hooksPath replaces the repo's own hooks dir, so chain to its hook if present.
+local_hook="$(git rev-parse --git-common-dir)/hooks/pre-push"
+if [ -x "$local_hook" ]; then exec "$local_hook" "$@" <<<"$input"; fi

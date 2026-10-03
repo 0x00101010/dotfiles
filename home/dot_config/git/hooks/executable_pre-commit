@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Global hook (core.hooksPath): block commits whose staged changes contain secrets.
+# Bypass a false positive with `git commit --no-verify` or a `gitleaks:allow` comment.
+set -euo pipefail
+
+gitleaks=$(command -v gitleaks || mise which gitleaks 2>/dev/null) || {
+  echo "pre-commit: gitleaks not found; run 'mise install gitleaks' (or bypass with --no-verify)" >&2
+  exit 1
+}
+"$gitleaks" git --pre-commit --staged --redact --no-banner --log-level warn --verbose
+
+# core.hooksPath replaces the repo's own hooks dir, so chain to its hook if present.
+local_hook="$(git rev-parse --git-common-dir)/hooks/pre-commit"
+if [ -x "$local_hook" ]; then exec "$local_hook" "$@"; fi
