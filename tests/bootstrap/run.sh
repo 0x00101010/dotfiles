@@ -59,7 +59,7 @@ check "legacy setup scripts delegate to install.sh" \
 # --- chezmoi config: explicit profile, agents, profile-specific context ----
 init_home() { # <dir> <profile> <agents>
   mkdir -p "$1"
-  HOME="$1" XDG_CONFIG_HOME="$1/.config" chezmoi init --source "$REPO" --no-tty \
+  HOME="$1" XDG_CONFIG_HOME="$1/.config" chezmoi init --source "$REPO" --no-tty --prompt \
     --promptChoice "Machine profile=$2" --promptMultichoice "Coding agents to install=$3" \
     --promptString "What is your email address=t@example.com" \
     --promptString "What is your name=Test" \
@@ -75,6 +75,49 @@ check "re-init preserves profile without prompting" bash -c \
   "HOME='$TMP/work' XDG_CONFIG_HOME='$TMP/work/.config' chezmoi init --source '$REPO' --no-tty >/dev/null 2>&1 && grep -q 'profile = \"work\"' '$(cfg "$TMP/work")'"
 check "init without a profile answer fails instead of guessing" bash -c \
   "mkdir -p '$TMP/none' && ! HOME='$TMP/none' XDG_CONFIG_HOME='$TMP/none/.config' chezmoi init --source '$REPO' --no-tty </dev/null >/dev/null 2>&1"
+
+# Isolate PATH so the real machine's agents cannot affect detection checks.
+chezmoi_bin=$(command -v chezmoi)
+mkdir -p "$TMP/detect-bin" "$TMP/detected" "$TMP/explicit" "$TMP/empty"
+ln -s "$(command -v git)" "$TMP/detect-bin/git"
+detect_init() { # <home> [init flags]
+  local home=$1; shift
+  HOME="$home" XDG_CONFIG_HOME="$home/.config" PATH="$TMP/detect-bin" \
+    "$chezmoi_bin" init --source "$REPO" --no-tty \
+    --promptChoice "Machine profile=work" \
+    --promptString "What is your email address=t@example.com" \
+    --promptString "What is your name=Test" \
+    --promptString "What is your GPG signing key=ABC" "$@" \
+    </dev/null >"$TMP/detect.out" 2>&1
+}
+if ! detect_init "$TMP/detected" && has "$TMP/detect.out" 'Coding agents to install'; then
+  pass "no installed agents still requires a selection"
+else fail "no installed agents still requires a selection"; fi
+if detect_init "$TMP/explicit" --prompt --promptMultichoice 'Coding agents to install=codex/amp' &&
+  has "$(cfg "$TMP/explicit")" 'agents = ["codex", "amp"]'; then
+  pass "fresh-machine agent selection remains multi-select"
+else fail "fresh-machine agent selection remains multi-select"; fi
+for agent in claude codex amp; do printf '#!/bin/sh\nexit 97\n' > "$TMP/detect-bin/$agent"; done
+chmod +x "$TMP/detect-bin/claude" "$TMP/detect-bin/amp"
+if detect_init "$TMP/detected" && has "$(cfg "$TMP/detected")" 'agents = ["claude", "amp"]'; then
+  pass "installed agents selected without prompting or executing; non-executable ignored"
+else cat "$TMP/detect.out"; fail "installed agents selected without prompting or executing; non-executable ignored"; fi
+rm "$TMP/detect-bin/amp"; chmod +x "$TMP/detect-bin/codex"
+if detect_init "$TMP/detected" && has "$(cfg "$TMP/detected")" 'agents = ["claude", "amp"]'; then
+  pass "saved selection survives changed installed agents"
+else fail "saved selection survives changed installed agents"; fi
+mkdir -p "$TMP/empty/.config/chezmoi"
+printf '[data]\nprofile = "work"\nagents = []\n' > "$(cfg "$TMP/empty")"
+if detect_init "$TMP/empty" && has "$(cfg "$TMP/empty")" 'agents = []'; then
+  pass "saved empty selection stays empty despite installed agents"
+else fail "saved empty selection stays empty despite installed agents"; fi
+if ! detect_init "$TMP/detected" --prompt && has "$TMP/detect.out" 'Coding agents to install'; then
+  pass "--prompt still asks despite installed agents and saved selection"
+else fail "--prompt still asks despite installed agents and saved selection"; fi
+if detect_init "$TMP/detected" --prompt --promptMultichoice 'Coding agents to install=codex' &&
+  has "$(cfg "$TMP/detected")" 'agents = ["codex"]'; then
+  pass "manual selection overrides detected and saved agents"
+else fail "manual selection overrides detected and saved agents"; fi
 
 # --- agent install script: only selected, missing agents; context checks ----
 render() { HOME="$1" XDG_CONFIG_HOME="$1/.config" chezmoi execute-template --source "$REPO" < "$2"; }

@@ -8,7 +8,21 @@
 {{- /* Explicit machine profile; never inferred from OS, hostname, or email.
        Asked once, then preserved. To change it: chezmoi init --prompt */}}
 {{- $profile := promptChoiceOnce . "profile" "Machine profile" (list "work" "personal") }}
-{{- $agents := promptMultichoiceOnce . "agents" "Coding agents to install" (list "claude" "codex" "amp") (list "claude" "codex" "amp") }}
+{{- $agentChoices := list "claude" "codex" "amp" }}
+{{- $agentData := . }}
+{{- /* Seed only a missing selection; the native once-prompt still honors --prompt. */}}
+{{- if not (hasKey . "agents") }}
+{{-   $installed := list }}
+{{-   range $agentChoices }}
+{{-     if lookPath . }}
+{{-       $installed = append $installed . }}
+{{-     end }}
+{{-   end }}
+{{-   if $installed }}
+{{-     $agentData = dict "agents" $installed }}
+{{-   end }}
+{{- end }}
+{{- $agents := promptMultichoiceOnce $agentData "agents" "Coding agents to install" $agentChoices $agentChoices }}
 {{- /* Context checkout for this profile. Missing context is reported, never
        replaced with the other profile's checkout. */}}
 {{- $contextRoot := joinPath .chezmoi.homeDir "src/workspace" }}

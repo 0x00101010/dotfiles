@@ -40,8 +40,12 @@ before running anything:
 
 ## Coding agents
 
-`chezmoi init` asks for an explicit `work` or `personal` profile and the selected
-agents (`claude`, `codex`, `amp`). Use `chezmoi init --prompt` to change them.
+`chezmoi init` asks for an explicit `work` or `personal` profile. On first setup,
+it automatically selects supported agents (`claude`, `codex`, `amp`) already on
+`PATH`, without prompting or running their binaries. If none are found, it asks
+with a multi-select prompt. Saved selections, including an empty list, are kept
+on subsequent runs. Use `chezmoi init --prompt` to choose explicitly instead;
+include `--prompt` when supplying a `--promptMultichoice` answer to override detection.
 Agent selection controls binary installation and the wiring below. Authentication
 is separate; cbcode remains unconfigured until its internal setup is verified.
 
