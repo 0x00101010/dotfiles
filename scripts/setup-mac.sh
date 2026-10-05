@@ -1,15 +1,3 @@
-#!/bin/bash
-
-# Install package manager homebrew
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-# # install pre-requisites
-brew update
-brew install chezmoi
-
-# configure CHEZMOI repo
-git clone https://github.com/0x00101010/dotfiles.git
-rm -rf ~/.local/share/chezmoi
-ln -s ~/src/dotfiles/home ~/.local/share/chezmoi
-chezmoi init
-chezmoi apply -v
+#!/bin/sh
+# Legacy entry point. install.sh is the supported bootstrap for macOS and Linux.
+exec sh "$(dirname "$0")/../install.sh" "$@"

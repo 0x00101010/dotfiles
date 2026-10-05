@@ -7,12 +7,12 @@ set -euo pipefail
 {{- end }}
 
 # Detect all NVMe drives excluding nvme0n1 (system partition)
-NVME_DRIVES=($(ls /dev/nvme*n1 2>/dev/null | grep -v nvme0n1))
+NVME_DRIVES=($(ls /dev/nvme*n1 2>/dev/null | grep -v nvme0n1 || true))
 RAID_DEVICE_COUNT=${#NVME_DRIVES[@]}
 
 if [ $RAID_DEVICE_COUNT -eq 0 ]; then
   echo "No additional NVMe drives found (excluding nvme0n1)"
-  exit 1
+  exit 0
 fi
 
 echo "Found $RAID_DEVICE_COUNT NVMe drive(s): ${NVME_DRIVES[@]}"

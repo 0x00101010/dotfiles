@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-{{- if ne .chezmoi.os "linux" }}
-exit 0
+{{- if eq .chezmoi.os "darwin" }}
+eval "$(/opt/homebrew/bin/brew shellenv)"
 {{- end }}
 
 # Install TPM plugins after chezmoi has placed tmux.conf.

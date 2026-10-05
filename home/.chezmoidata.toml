@@ -23,7 +23,8 @@ brew = [
 ]
 casks = [
     # "1password",
-    "claude-code",
+    # Coding agents (Claude Code, Codex, Amp) come from the selected `agents`
+    # list via run_after_20_install_agents, not from this list.
     "cursor",
     "discord",
     "font-sauce-code-pro-nerd-font",

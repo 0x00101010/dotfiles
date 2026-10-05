@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+{{- if not (hasKey . "profile") }}
+echo "[chezmoi] No machine profile configured. Run 'chezmoi init' and choose work or personal." >&2
+exit 1
+{{- else }}
+
+# Installers put binaries in ~/.local/bin. Having it on PATH first stops them
+# from editing chezmoi-managed shell rc files.
+mkdir -p "$HOME/.local/bin"
+export PATH="$HOME/.local/bin:$PATH"
+
+# Install a selected agent with its official installer unless it is already on
+# PATH (however it was installed). Authentication stays a manual first-run step.
+install_agent() {
+  local name=$1 url=$2 shell=$3
+  command -v "$name" >/dev/null 2>&1 && return
+  echo "[chezmoi] Installing $name from $url"
+  curl -fsSL "$url" | "$shell"
+}
+
+for agent in{{ range .agents }} {{ . | quote }}{{ end }}; do
+  case "$agent" in
+    claude) install_agent claude https://claude.ai/install.sh bash ;;
+    codex)  install_agent codex https://chatgpt.com/codex/install.sh sh ;;
+    amp)    install_agent amp https://ampcode.com/install.sh bash ;;
+    *) echo "[chezmoi] Unknown agent in chezmoi data: $agent" >&2; exit 1 ;;
+  esac
+done
+
+{{- if eq .profile "work" }}
+echo "[chezmoi] cbcode: not installed. No verified setup contract yet; see {{ .contextRoot }}/setup/." >&2
+{{- end }}
+
+if [ ! -d {{ .contextRoot | quote }} ]; then
+  echo "[chezmoi] {{ .profile }} context checkout is missing: {{ .contextRoot }}" >&2
+  echo "[chezmoi] Clone it there before using plan/research workflows. Nothing falls back to another context." >&2
+fi
+{{- end }}

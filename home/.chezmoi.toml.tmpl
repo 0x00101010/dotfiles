@@ -5,6 +5,17 @@
 
 # Rendered to ~/.config/chezmoi/chezmoi.toml
 
+{{- /* Explicit machine profile; never inferred from OS, hostname, or email.
+       Asked once, then preserved. To change it: chezmoi init --prompt */}}
+{{- $profile := promptChoiceOnce . "profile" "Machine profile" (list "work" "personal") }}
+{{- $agents := promptMultichoiceOnce . "agents" "Coding agents to install" (list "claude" "codex" "amp") (list "claude" "codex" "amp") }}
+{{- /* Context checkout for this profile. Missing context is reported, never
+       replaced with the other profile's checkout. */}}
+{{- $contextRoot := joinPath .chezmoi.homeDir "src/workspace" }}
+{{- if eq $profile "work" }}
+{{-   $contextRoot = joinPath .chezmoi.homeDir "src/0x00101010/coinbase" }}
+{{- end }}
+
 [source]
   # Default is fine; keep explicit for clarity
   directory = "{{ .chezmoi.sourceDir }}"
@@ -16,6 +27,9 @@
   email = {{ promptStringOnce . "email" "What is your email address" | quote }}
   fullName = {{ promptStringOnce . "fullName" "What is your name" | quote }}
   signingkey = {{ promptStringOnce . "signingkey" "What is your GPG signing key" | quote }}
+  profile = {{ $profile | quote }}
+  agents = {{ $agents | toToml }}
+  contextRoot = {{ $contextRoot | quote }}
 
 [secret]
   # Optional: enable if you use 1Password CLI (op)

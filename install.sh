@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 # One-shot bootstrap for https://github.com/0x00101010/dotfiles
 #
 # Usage (recommended, keeps stdin attached to the terminal for prompts):
@@ -6,8 +6,11 @@
 #
 # Also works (prompts are redirected from /dev/tty):
 #   curl -fsSL https://raw.githubusercontent.com/0x00101010/dotfiles/main/install.sh | bash
+#
+# Keep this file POSIX sh: the recommended form runs it with /bin/sh (dash on
+# Ubuntu), not bash.
 
-set -euo pipefail
+set -eu
 
 REPO_OWNER="0x00101010"
 REPO_NAME="dotfiles"
@@ -22,7 +25,7 @@ die() { printf '\033[1;31m[install]\033[0m %s\n' "$*" >&2; exit 1; }
 # Prefer /dev/tty for interactive prompts when stdin is a pipe (curl | bash).
 if [ -t 0 ]; then
   TTY_IN=/dev/stdin
-elif [ -r /dev/tty ]; then
+elif (: </dev/tty) 2>/dev/null; then
   TTY_IN=/dev/tty
 else
   TTY_IN=""
@@ -38,19 +41,28 @@ esac
 log "Detected platform: $PLATFORM"
 
 # ---------------------------------------------------------------------------
-# 1. Install minimum prerequisites: curl, git (chezmoi needs them; the rest is
-#    handled by run_once_* scripts inside the repo).
+# 1. Install minimum prerequisites: curl and git for chezmoi, plus gpg and jq,
+#    which templates call while chezmoi renders them (dot_gitconfig.tmpl runs
+#    `which gpg`; modify_settings.json runs jq). The rest is handled by
+#    run_once_* scripts inside the repo.
 # ---------------------------------------------------------------------------
 if [ "$PLATFORM" = "linux" ]; then
   log "Installing prerequisites via apt (sudo required)"
   sudo apt update
-  sudo apt install -y curl git ca-certificates
+  sudo apt install -y curl git ca-certificates gpg jq
 elif [ "$PLATFORM" = "darwin" ]; then
   if ! xcode-select -p >/dev/null 2>&1; then
     log "Installing Xcode Command Line Tools (provides git)"
     xcode-select --install || true
     until xcode-select -p >/dev/null 2>&1; do sleep 5; done
   fi
+  if ! command -v brew >/dev/null 2>&1; then
+    log "Installing Homebrew"
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  fi
+  eval "$(/opt/homebrew/bin/brew shellenv 2>/dev/null || /usr/local/bin/brew shellenv)"
+  log "Installing prerequisites via brew"
+  brew install gnupg jq
 fi
 
 # ---------------------------------------------------------------------------
@@ -58,11 +70,6 @@ fi
 # ---------------------------------------------------------------------------
 if ! command -v chezmoi >/dev/null 2>&1; then
   if [ "$PLATFORM" = "darwin" ]; then
-    if ! command -v brew >/dev/null 2>&1; then
-      log "Installing Homebrew"
-      /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-    fi
-    eval "$(/opt/homebrew/bin/brew shellenv 2>/dev/null || /usr/local/bin/brew shellenv)"
     log "Installing chezmoi via brew"
     brew install chezmoi
   else

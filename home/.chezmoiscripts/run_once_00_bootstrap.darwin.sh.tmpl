@@ -8,13 +8,14 @@ if ! command -v brew >/dev/null 2>&1; then
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 fi
 
-echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
+brew_shellenv='eval "$(/opt/homebrew/bin/brew shellenv)"'
+grep -qxF "$brew_shellenv" ~/.zprofile 2>/dev/null || echo "$brew_shellenv" >> ~/.zprofile
 eval "$(/opt/homebrew/bin/brew shellenv)"
 brew update
 
-# Install tmux plugins
+# Install tmux plugin manager (plugins are installed by run_once_after_install_tmux_plugins,
+# after brew has installed tmux and chezmoi has placed tmux.conf)
 git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm || true
-~/.tmux/plugins/tpm/bin/install_plugins
 
 # Install oh-my-zsh
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" || true
@@ -24,12 +25,9 @@ git clone https://github.com/zsh-users/zsh-syntax-highlighting ~/.oh-my-zsh/cust
 # Install fzf-tab
 git clone https://github.com/Aloxaf/fzf-tab ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/fzf-tab || true
 
-# Install programming language environments
-mise install
-
 # Install foundry
 curl -L https://foundry.paradigm.xyz | bash
-foundryup
+"$HOME/.foundry/bin/foundryup"
 
 {{- else }}
 echo "[chezmoi] Skipping Darwin bootstrap, this is {{ .chezmoi.os }}"
