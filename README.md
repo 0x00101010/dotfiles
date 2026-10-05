@@ -43,6 +43,4 @@ before running anything:
 - `home/` — chezmoi source state (everything that gets applied to `$HOME`).
   - `home/.chezmoiscripts/` — `run_once_*` bootstrap scripts.
 - `scripts/` — standalone installers run by hand.
-  - `scripts/knowledge-base/` — installer + cron payload for the workspace
-    knowledge-base sync system (`./scripts/knowledge-base/setup-{mac,linux}.sh`).
 - `install.sh` — one-shot bootstrap entry point.
