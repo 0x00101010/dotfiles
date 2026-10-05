@@ -136,7 +136,7 @@ alias ciw="cd ~/src/workspace"
 # chezmoi apply, then reload tmux + shell — but only on success,
 # and never replace the shell while a prompt or subprocess is still active.
 cz() {
-  chezmoi apply -v "$@"
+  chezmoi apply -v --no-pager "$@"
   local rc=$?
   if (( rc != 0 )); then
     print -u2 "cz: chezmoi apply failed (exit $rc); skipping reload"
