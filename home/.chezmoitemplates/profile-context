@@ -1,0 +1,13 @@
+{{- $projects := includeTemplate "profile-projects" . -}}
+## Profile context
+
+- Machine profile: `{{ .profile }}`.
+- Context root: `{{ .contextRoot }}`.
+- Repo registry: `{{ joinPath .contextRoot "knowledge/references/repos.md" }}`.
+- Plan root: `{{ $projects }}`; write `<project>/plans/<plan-name>.md` below it.
+- Project research: `{{ $projects }}/<project>/research/`.
+- Cross-project research: `{{ joinPath .contextRoot "knowledge/research" }}`.
+
+Read the context repository's guidance before writing there. Preserve existing
+project layouts when they differ from these defaults. If the context checkout or
+repo mapping is missing, report it; never fall back to another profile's context.

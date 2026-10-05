@@ -1,0 +1,22 @@
+{{- $agents := get . "agents" | default list -}}
+{{- if or (not (has "claude" $agents)) (and (env "CLAUDE_CONFIG_DIR") (ne (env "CLAUDE_CONFIG_DIR") (joinPath .chezmoi.homeDir ".claude"))) }}
+.claude
+{{- end }}
+{{- if or (not (has "codex" $agents)) (and (env "CODEX_HOME") (ne (env "CODEX_HOME") (joinPath .chezmoi.homeDir ".codex"))) }}
+.codex
+{{- end }}
+{{- if not (or (has "codex" $agents) (has "amp" $agents)) }}
+.agents/skills/pr
+.agents/skills/plan
+.agents/skills/agent-browser
+.agents/skills/beautiful-mermaid
+{{- end }}
+{{- if not (or (has "claude" $agents) (has "codex" $agents) (has "amp" $agents)) }}
+.agents/skills/_shared
+{{- end }}
+{{- if ne (get . "profile") "personal" }}
+.claude/skills/add
+.claude/skills/journal
+.claude/skills/prio
+.claude/skills/qmd
+{{- end }}

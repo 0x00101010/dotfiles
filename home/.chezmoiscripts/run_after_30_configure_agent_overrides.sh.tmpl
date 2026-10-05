@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+{{- $agents := get . "agents" | default list -}}
+{{- $claude := env "CLAUDE_CONFIG_DIR" | default (joinPath .chezmoi.homeDir ".claude") -}}
+{{- $codex := env "CODEX_HOME" | default (joinPath .chezmoi.homeDir ".codex") -}}
+{{- $claudeOverride := and (has "claude" $agents) (ne $claude (joinPath .chezmoi.homeDir ".claude")) -}}
+{{- $codexOverride := and (has "codex" $agents) (ne $codex (joinPath .chezmoi.homeDir ".codex")) -}}
+{{- if or $claudeOverride $codexOverride }}
+# Chezmoi manages the default destinations directly. Native overrides can be
+# outside its destination tree; update only our individual files there.
+write_file() {
+  local target=$1 tmp
+  case "$target" in /*) ;; *) echo "Agent config paths must be absolute: $target" >&2; return 1 ;; esac
+  mkdir -p "$(dirname "$target")"
+  tmp=$(mktemp "$(dirname "$target")/.dotfiles-XXXXXX")
+  cat > "$tmp"
+  if cmp -s "$tmp" "$target"; then rm "$tmp"; else mv -f "$tmp" "$target"; fi
+}
+
+instructions=$(cat <<'DOTFILES_AGENT_INSTRUCTIONS'
+{{ template "agent-instructions" . }}
+DOTFILES_AGENT_INSTRUCTIONS
+)
+{{- if $claudeOverride }}
+claude_dir={{ $claude | replace "'" "'\\''" | printf "'%s'" }}
+existing='{}'
+if [ -e "$claude_dir/settings.json" ]; then existing=$(cat "$claude_dir/settings.json"); fi
+settings=$(printf '%s' "$existing" | (
+{{ template "claude-settings" . }}
+))
+printf '%s\n' "$instructions" | write_file "$claude_dir/CLAUDE.md"
+printf '%s' "$settings" | write_file "$claude_dir/settings.json"
+cat {{ joinPath .chezmoi.sourceDir "dot_claude/statusline.sh" | replace "'" "'\\''" | printf "'%s'" }} | write_file "$claude_dir/statusline.sh"
+ai_skills={{ joinPath (includeTemplate "ai-root" .) "skills" | replace "'" "'\\''" | printf "'%s'" }}
+for skill in pr plan agent-browser beautiful-mermaid; do
+  while IFS= read -r -d '' source; do
+    target="$claude_dir/skills/${source#"$ai_skills/"}"
+    mkdir -p "$(dirname "$target")"
+    ln -sf "$source" "$target"
+  done < <(find "$ai_skills/$skill" -type f -print0)
+done
+mkdir -p "$claude_dir/skills/_shared"
+ln -sf {{ joinPath .chezmoi.homeDir ".agents/skills/_shared/instructions.md" | replace "'" "'\\''" | printf "'%s'" }} "$claude_dir/skills/_shared/instructions.md"
+{{- if eq .profile "personal" }}
+{{- range list "add/SKILL.md" "journal/SKILL.md" "prio/SKILL.md" "qmd/SKILL.md" }}
+cat {{ joinPath $.chezmoi.sourceDir "dot_claude/skills" . | replace "'" "'\\''" | printf "'%s'" }} | write_file "$claude_dir/skills/{{ . }}"
+{{- end }}
+{{- end }}
+{{- end }}
+{{- if $codexOverride }}
+printf '%s\n' "$instructions" | write_file {{ joinPath $codex "AGENTS.md" | replace "'" "'\\''" | printf "'%s'" }}
+{{- end }}
+{{- end }}

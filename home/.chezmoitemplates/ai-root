@@ -1,0 +1,3 @@
+{{- /* Resolve the source symlink before walking to the sibling ai directory. */ -}}
+{{- $source := output "sh" "-c" "cd \"$1\" && pwd -P" "sh" .chezmoi.sourceDir | trim -}}
+{{- joinPath (dir $source) "ai" -}}

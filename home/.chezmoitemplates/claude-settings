@@ -1,0 +1,136 @@
+#!/bin/bash
+# Defaults for new installations; existing settings win, including permissions.
+# Only the profile's plan destination and the old managed statusline path migrate.
+# Company-managed policy files are never touched.
+
+set -euo pipefail
+
+BASE_CONFIG='
+{
+  "alwaysThinkingEnabled": false,
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:gist.github.com)",
+      "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Fetch",
+      "WebSearch",
+      "Base(cd:*)",
+      "Bash(cd:*)",
+      "Bash(make:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(less:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(more:*)",
+      "Bash(echo:*)",
+      "Bash(ping:*)",
+      "Bash(curl:*)",
+      "Bash(ifconfig:*)",
+      "Bash(ip:*)",
+      "Bash(pwd:*)",
+      "Bash(mkdir:*)",
+      "Bash(tree:*)",
+      "Bash(awk:*)",
+      "Bash(sed:*)",
+      "Bash(wc:*)",
+      "Bash(grep:*)",
+      "Bash(cut:*)",
+      "Bash(sort:*)",
+      "Bash(uniq:*)",
+      "Bash(diff:*)",
+      "Bash(file:*)",
+      "Bash(stat:*)",
+      "Bash(find:*)",
+      "Bash(xargs:*)",
+      "Bash(locate:*)",
+      "Bash(which:*)",
+      "Bash(whereis:*)",
+      "Bash(cargo:*)",
+      "Bash(forge:*)",
+      "Bash(cast:*)",
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git diff:*)",
+      "Bash(git branch:*)",
+      "Bash(git remote:*)",
+      "Bash(git tag:*)",
+      "Bash(git ls-files:*)",
+      "Bash(git ls-tree:*)",
+      "Bash(git ls-remote:*)",
+      "Bash(git reflog:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(git rev-list:*)",
+      "Bash(git describe:*)",
+      "Bash(git cat-file:*)",
+      "Bash(git blame:*)",
+      "Bash(git grep:*)",
+      "Bash(git config --get:*)",
+      "Bash(git config --list:*)",
+      "Bash(git config -l:*)",
+      "Bash(git shortlog:*)",
+      "Bash(git count-objects:*)",
+      "Bash(git fsck:*)",
+      "Bash(git verify-:*)",
+      "Bash(gh project:*)",
+      "Bash(gh issue list:*)",
+      "Bash(gh issue view:*)",
+      "Bash(gh:*)",
+      "Base(just:*)",
+      "Read(//private/tmp/**)",
+      "Read(//tmp/**)",
+      "Read(/home/**/src/**)",
+      "Read(/Users/**/src/**)",
+      "Read(~/src/**)",
+      "Edit(~/src/**)",
+      "Write(~/src/**)",
+      "mcp__linear__*"
+    ],
+    "deny": [
+      "Read(.env*)",
+      "Read(**/secrets/**)",
+      "Read(**/*.key)"
+    ]
+  },
+  "model": "opus[1m]",
+  "enabledPlugins": {
+    "rust-analyzer-lsp@claude-plugins-official": true,
+    "hookify@claude-plugins-official": true,
+    "ralph-loop@claude-plugins-official": true
+  },
+  "sandbox": {
+    "enabled": false
+  },
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "bash ~/.claude/statusline.sh"
+  },
+  "outputStyle": "explanatory"
+}
+'
+
+# Read current target from stdin (may be empty on first run)
+EXISTING=$(cat)
+[ -n "$EXISTING" ] || EXISTING='{}'
+
+# Fail on malformed JSON instead of replacing locally injected settings.
+printf '%s' "$EXISTING" | jq -se --argjson base "$BASE_CONFIG" \
+  --arg plans {{ includeTemplate "profile-projects" . | replace "'" "'\\''" | printf "'%s'" }} \
+  --arg statusline "bash $(printf '%q' "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/statusline.sh")" '
+  if length != 1 or (.[0] | type) != "object" then
+    error("Claude settings must be a single JSON object")
+  else .[0] end |
+  . as $existing |
+  $base * $existing |
+  .permissions.deny = (($base.permissions.deny + ($existing.permissions.deny // [])) | unique) |
+  .plansDirectory = $plans |
+  if .statusLine.command == "bash ~/.claude/statusline.sh" then
+    .statusLine.command = $statusline
+  else . end
+' | perl -pe 'chomp if eof'

@@ -3,7 +3,9 @@ name: prio
 description: Check planning horizons, fill gaps top-down, then generate or adjust today's schedule. Accepts optional "tomorrow" argument.
 ---
 
-See `_shared/workspace.md` for layout, todo format, archive procedure, Linear conventions.
+Read `../_shared/instructions.md` for the active context root, layout, todo format, and archive procedure.
+All paths below are relative to that root. This skill is personal-only;
+do not import company tasks or Linear activity into personal schedules.
 
 `$ARGUMENTS` empty → target = today. `"tomorrow"` → tomorrow.
 
@@ -21,8 +23,8 @@ See `_shared/workspace.md` for layout, todo format, archive procedure, Linear co
 | 5yr | `identity/5-year-plan.md` | Missing or >1 year old |
 | year | `identity/goals/<yyyy>.md` | Missing for current year |
 | quarter | `identity/goals/<yyyy>-Q<n>.md` | Missing for current quarter |
-| week | `schedules/<yyyy-mm-dd>-week.md` | Missing for current week (Monday date) |
-| target | `schedules/<yyyy-mm-dd>.md` | Missing for target date |
+| week | `schedules/<yyyy>/<yyyy-mm-dd>-week.md` | Missing for current week (Monday date) |
+| target | `schedules/<yyyy>/<yyyy-mm-dd>.md` | Missing for target date |
 
 Check all five. Stop at highest gap and guide the user through filling it before proceeding.
 
@@ -31,9 +33,9 @@ Check all five. Stop at highest gap and guide the user through filling it before
 Each horizon reads from the one above + its own sources. **Always present draft and get confirmation before writing.**
 
 - **5yr** — Read: `identity/career-strategy.md`, `identity/wealth-strategy.md`, `identity/health-and-energy.md`, `identity/marriage-and-family.md`, `identity/friendships.md`, `strategies/ideas.md`, `identity/board-of-directors.md`. Output: vision, life areas, directional bets.
-- **Year** — Read: 5yr, all `identity/*.md` life-area docs (career, wealth, health, marriage-and-family, friendships), `strategies/*`, `projects/work/priorities.md`. Output: 3-5 themes spanning life areas, milestones, success criteria.
-- **Quarter** — Read: year plan, life-area docs, `todos/{work,personal}.md`, Linear. Output: 3-5 OKRs covering work + personal life areas.
-- **Week** — Read: quarter plan, life-area docs, all `todos/*`, Linear, trickle list, recent schedules + journals. Output: 2-3 focus areas, deliverables, carryover, "not this week".
+- **Year** — Read: 5yr, all `identity/*.md` life-area docs (career, wealth, health, marriage-and-family, friendships), `strategies/*`, relevant `projects/personal/` plans. Output: 3-5 themes spanning life areas, milestones, success criteria.
+- **Quarter** — Read: year plan, life-area docs, `todos/personal.md`. Output: 3-5 OKRs covering personal life areas.
+- **Week** — Read: quarter plan, life-area docs, personal/recurring/trickle todos, recent schedules + journals. Output: 2-3 focus areas, deliverables, carryover, "not this week".
 
 Write file, re-check cascade, fill next gap. Repeat until current.
 
@@ -46,11 +48,11 @@ Find most recent schedule before target date. Summarize: completed, missed, reco
 ### Gather tasks
 
 Collect unchecked items from:
-- `todos/work.md`, `todos/personal.md`
+- `todos/personal.md`
 - `todos/recurring.md` (if due), `todos/trickle-list.md` (always), `inbox.md` (note count)
-- Linear: started/unstarted/backlog assigned to me, sorted by priority
 
-De-duplicate: skip Linear results that already have a `LINEAR:` ref in work.md.
+If legacy company entries remain in the inbox, flag them for migration; do not
+copy them into personal schedules.
 
 ### Prioritize
 
@@ -58,7 +60,7 @@ Present tasks grouped by source/project. Ask:
 1. "What's most important [today/tomorrow]?"
 2. "Anything blocking or time-sensitive?"
 
-Flag priority conflicts (workspace says P0, Linear says P3, etc.). Limit top 3 work items.
+Flag priority conflicts between tasks and personal goals. Limit top 3 focus items.
 
 ### Build schedule
 
@@ -76,7 +78,7 @@ Format: `# DayOfWeek, Month DD, YYYY`, then `## Ranked (schedule yourself)` with
 
 Compare against week/quarter/year goals **and life-area docs** (health, marriage-and-family, friendships, wealth, career). Call out: OKR-advancing items, unconnected items, missing weekly focus coverage, life areas with zero coverage today.
 
-Write to `schedules/<target-date>.md`.
+Write to `schedules/<YYYY>/<target-date>.md`.
 
 ## Adjust mode
 
@@ -85,4 +87,4 @@ Schedule exists → show state, ask "What changed?", update in place, re-sort by
 ## Rules
 
 - Never assume priorities — always ask.
-- Archive completed tasks per workspace.md (never delete).
+- Archive completed tasks per `../_shared/instructions.md` (never delete).

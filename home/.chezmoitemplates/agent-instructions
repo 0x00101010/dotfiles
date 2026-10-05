@@ -1,0 +1,5 @@
+{{ include (joinPath (includeTemplate "ai-root" .) "instructions/AGENTS.md") }}
+{{ template "profile-context" . }}
+
+For context layout and task conventions, read
+`{{ joinPath .chezmoi.homeDir ".agents/skills/_shared/instructions.md" }}` on demand.

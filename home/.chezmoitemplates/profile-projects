@@ -1,0 +1,9 @@
+{{- if not (hasKey . "profile") -}}
+{{- fail "Run 'chezmoi init' and choose work or personal before configuring agents." -}}
+{{- else if eq .profile "work" -}}
+{{- joinPath .contextRoot "projects" -}}
+{{- else if eq .profile "personal" -}}
+{{- joinPath .contextRoot "projects/personal" -}}
+{{- else -}}
+{{- fail "Machine profile must be work or personal." -}}
+{{- end -}}
