@@ -43,7 +43,7 @@ done
 mkdir -p "$claude_dir/skills/_shared"
 ln -sf {{ joinPath .chezmoi.homeDir ".agents/skills/_shared/instructions.md" | replace "'" "'\\''" | printf "'%s'" }} "$claude_dir/skills/_shared/instructions.md"
 {{- if eq .profile "personal" }}
-{{- range list "add/SKILL.md" "journal/SKILL.md" "prio/SKILL.md" "qmd/SKILL.md" }}
+{{- range list "journal/SKILL.md" "prio/SKILL.md" "qmd/SKILL.md" }}
 cat {{ joinPath $.chezmoi.sourceDir "dot_claude/skills" . | replace "'" "'\\''" | printf "'%s'" }} | write_file "$claude_dir/skills/{{ . }}"
 {{- end }}
 {{- end }}

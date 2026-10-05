@@ -144,8 +144,10 @@ class AgentWiringTest(unittest.TestCase):
         self.skills(self.home / ".agents/skills")
         self.assertTrue((self.home / ".claude/skills/qmd/SKILL.md").exists())
         self.assertTrue((self.home / ".claude/skills/journal/SKILL.md").exists())
+        self.assertFalse((self.home / ".claude/skills/add/SKILL.md").exists())
+        self.assertNotIn(".claude/skills/add/SKILL.md", self.cm("managed").stdout.splitlines())
         self.assertFalse((self.home / "src/0x00101010/coinbase").exists())
-        for name in ("add", "journal", "prio"):
+        for name in ("journal", "prio"):
             skill = self.home / ".claude/skills" / name
             text = (skill / "SKILL.md").read_text()
             self.assertIn("../_shared/instructions.md", text)
@@ -247,6 +249,7 @@ class AgentWiringTest(unittest.TestCase):
         self.apply()
         self.instructions([claude / "CLAUDE.md"], "personal")
         self.skills(claude / "skills")
+        self.assertFalse((claude / "skills/add/SKILL.md").exists())
         for p in ("qmd/SKILL.md", "journal/SKILL.md"):
             self.assertEqual((claude / "skills" / p).read_bytes(),
                              (REPO / "home/dot_claude/skills" / p).read_bytes())

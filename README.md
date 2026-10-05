@@ -81,7 +81,7 @@ depending on retired skills or any particular coding agent's research tools.
 directory). It shares path definitions with the generated agent instructions,
 which link to it for on-demand reading; it is not a discoverable skill by itself.
 Work gets company plans/research/tasks; personal gets personal plans, todos,
-journals, and year-grouped schedules. The personal `add`, `journal`, and `prio`
+journals, and year-grouped schedules. The personal `journal` and `prio`
 skills read this reference and no longer import company tasks or Linear activity.
 
 `CLAUDE_CONFIG_DIR` and `CODEX_HOME` are honored when set during apply.
@@ -119,18 +119,24 @@ and pinning the dependency remains future work.
 Review the diff before applying: changed `run_once` bootstrap scripts can run again.
 Source retirement does **not** delete installed files. During the separately
 reviewed cutover, compare/back up the old owned copies before removing retired
-skills (`investigate`, `repos`, `workon`, and installed-only
+skills (`add`, `investigate`, `repos`, `workon`, and installed-only
 `fix-issue`, `interview`, `security`,
 `swarm`, `task`, `ultrathink`) and the four old Claude review agents.
 Do not delete same-named upstream or customized replacements blindly.
 
-`add`, `journal`, `prio`, and `qmd` remain personal-only sources; an
+`journal`, `prio`, and `qmd` remain personal-only sources; an
 existing work installation needs their old copies reviewed at cutover too.
 The old installed `_shared/workspace.md` is left for that review; only the new
 `instructions.md` is managed, and sibling custom notes are preserved.
 Changing profiles/agent selection does not uninstall ignored files. Check for
 Codex `AGENTS.override.md` and higher-priority skill copies before declaring the
 new sources active. Do not edit vendor-managed caches.
+
+Task capture through `/add` and Latch is retired; no replacement is installed.
+Uninstall the Latch Raycast extension on any machine where it remains installed
+to stop its capture, issue sync, inbox triage, and background reindex commands.
+Removing its source checkout does not uninstall the extension. Preserve existing
+inbox, todo, journal, and schedule files.
 
 ### Checks without applying to your home
 

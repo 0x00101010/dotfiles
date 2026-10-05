@@ -15,7 +15,6 @@
 .agents/skills/_shared
 {{- end }}
 {{- if ne (get . "profile") "personal" }}
-.claude/skills/add
 .claude/skills/journal
 .claude/skills/prio
 .claude/skills/qmd
