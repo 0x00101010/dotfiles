@@ -3,7 +3,7 @@ name: prio
 description: Check planning horizons, fill gaps top-down, then generate or adjust today's schedule. Accepts optional "tomorrow" argument.
 ---
 
-Read `../_shared/instructions.md` for the active context root, layout, todo format, and archive procedure.
+Read `../_shared/instructions.md` for the active context root, layout, and retired-task-list policy.
 All paths below are relative to that root. This skill is personal-only;
 do not import company tasks or Linear activity into personal schedules.
 
@@ -34,8 +34,8 @@ Each horizon reads from the one above + its own sources. **Always present draft 
 
 - **5yr** — Read: `identity/career-strategy.md`, `identity/wealth-strategy.md`, `identity/health-and-energy.md`, `identity/marriage-and-family.md`, `identity/friendships.md`, `strategies/ideas.md`, `identity/board-of-directors.md`. Output: vision, life areas, directional bets.
 - **Year** — Read: 5yr, all `identity/*.md` life-area docs (career, wealth, health, marriage-and-family, friendships), `strategies/*`, relevant `projects/personal/` plans. Output: 3-5 themes spanning life areas, milestones, success criteria.
-- **Quarter** — Read: year plan, life-area docs, `todos/personal.md`. Output: 3-5 OKRs covering personal life areas.
-- **Week** — Read: quarter plan, life-area docs, personal/recurring/trickle todos, recent schedules + journals. Output: 2-3 focus areas, deliverables, carryover, "not this week".
+- **Quarter** — Read: year plan, life-area docs, relevant `projects/personal/` plans. Output: 3-5 OKRs covering personal life areas.
+- **Week** — Read: quarter plan, life-area docs, recent schedules + journals. Output: 2-3 focus areas, deliverables, user-confirmed carryover, "not this week".
 
 Write file, re-check cascade, fill next gap. Repeat until current.
 
@@ -47,12 +47,9 @@ Find most recent schedule before target date. Summarize: completed, missed, reco
 
 ### Gather tasks
 
-Collect unchecked items from:
-- `todos/personal.md`
-- `todos/recurring.md` (if due), `todos/trickle-list.md` (always), `inbox.md` (note count)
-
-If legacy company entries remain in the inbox, flag them for migration; do not
-copy them into personal schedules.
+Ask for current commitments and use the goals and personal plans reviewed above.
+Old todo lists were deleted as stale. Do not reconstruct them from Git history or
+treat unchecked items in old schedules or inbox as current without confirmation.
 
 ### Prioritize
 
@@ -70,7 +67,7 @@ Flag priority conflicts between tasks and personal goals. Limit top 3 focus item
 2. Time-sensitive or blocking items — tag with `⏰` and the deadline
 3. Everything else, by priority
 
-Format: `# DayOfWeek, Month DD, YYYY`, then `## Ranked (schedule yourself)` with numbered `- [ ] **P0** - description (why: Q3 O2)` items — cap at ~7. Each item states in one parenthetical why it ranks where it does. Trickle list as `## Trickle List (pick 1-2)`. Monday → add "Check plans & strategies".
+Format: `# DayOfWeek, Month DD, YYYY`, then `## Ranked (schedule yourself)` with numbered `- [ ] **P0** - description (why: Q3 O2)` items — cap at ~7. Each item states in one parenthetical why it ranks where it does. Monday → add "Check plans & strategies".
 
 **Habits/routine:** do NOT restate daily-schedule.md habits as checkboxes. End the file with one footer line: `Anchors: movement · 2× deep work · 18:00 family stop · 22:30 lights out — see identity/daily-schedule.md`. Habit tracking lives in the journal. Exception: a habit that is an active quarter KR requiring a specific action today gets a ranked-list slot as a real task.
 
@@ -87,4 +84,4 @@ Schedule exists → show state, ask "What changed?", update in place, re-sort by
 ## Rules
 
 - Never assume priorities — always ask.
-- Archive completed tasks per `../_shared/instructions.md` (never delete).
+- Do not create or archive into retired task lists.

@@ -3,7 +3,7 @@ name: journal
 description: Capture a daily journal entry — what happened, wins, reflections. Closes the plan-execute-reflect loop.
 ---
 
-Read `../_shared/instructions.md` for the active context root and archive procedure.
+Read `../_shared/instructions.md` for the active context root and retired-task-list policy.
 All paths below are relative to that root. This skill is personal-only;
 do not import company tasks or Linear activity into the journal.
 
@@ -16,7 +16,9 @@ do not import company tasks or Linear activity into the journal.
 Read to understand what was planned:
 - `schedules/<YYYY>/<target-date>.md`
 - Most recent journal entry before target date in `journal/`
-- `todos/personal.md`
+
+Skip missing context files. Old todo lists were deleted as stale; do not reconstruct
+them from history or create an archive. The journal records the user's account.
 
 ## 2. Interview
 
@@ -40,7 +42,3 @@ File: `journal/<YYYY>/<MM>/<YYYY-MM-DD>.md` (create dirs).
 ```
 
 Omit empty sections. User's words, not embellishments.
-
-## 4. Archive completed todos
-
-Apply archive procedure from `../_shared/instructions.md`. **Always ask first.**

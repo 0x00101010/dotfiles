@@ -80,9 +80,11 @@ depending on retired skills or any particular coding agent's research tools.
 `skills/_shared/instructions.md` links to that file (also under a custom config
 directory). It shares path definitions with the generated agent instructions,
 which link to it for on-demand reading; it is not a discoverable skill by itself.
-Work gets company plans/research/tasks; personal gets personal plans, todos,
+Work gets company plans/research; personal gets personal plans,
 journals, and year-grouped schedules. The personal `journal` and `prio`
 skills read this reference and no longer import company tasks or Linear activity.
+Stale todo lists were removed by request; these skills no longer read or archive
+them, and the shared instructions prohibit reconstructing them from history.
 
 `CLAUDE_CONFIG_DIR` and `CODEX_HOME` are honored when set during apply.
 Default destinations are declarative chezmoi targets; the
@@ -136,7 +138,8 @@ Task capture through `/add` and Latch is retired; no replacement is installed.
 Uninstall the Latch Raycast extension on any machine where it remains installed
 to stop its capture, issue sync, inbox triage, and background reindex commands.
 Removing its source checkout does not uninstall the extension. Preserve existing
-inbox, todo, journal, and schedule files.
+inbox, journal, and schedule files. The user separately authorized removal of all
+stale todo files (including archives and habits) from both context repositories.
 
 ### Checks without applying to your home
 

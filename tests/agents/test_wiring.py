@@ -101,15 +101,16 @@ class AgentWiringTest(unittest.TestCase):
             self.assertNotIn("src/workspace" if profile == "work" else "0x00101010/coinbase", text)
         text = shared.read_text()
         self.assertIn(f"All paths below are relative to `{context}`.", text)
+        self.assertNotIn("todos/", text)
+        self.assertNotIn("## Archive procedure", text)
+        self.assertIn("## Retired task lists", text)
         if profile == "work":
-            self.assertIn("todos/work.md", text)
             self.assertIn("setup/", text)
             self.assertNotIn("identity/", text)
             self.assertNotIn("schedules/", text)
         else:
             self.assertIn("schedules/<YYYY>/", text)
-            self.assertIn("inbox.md\ntodos/", text)
-            self.assertNotIn("todos/work.md", text)
+            self.assertIn("inbox.md\nschedules/", text)
             self.assertNotIn("projects/work", text)
         return projects
 
@@ -152,7 +153,8 @@ class AgentWiringTest(unittest.TestCase):
             text = (skill / "SKILL.md").read_text()
             self.assertIn("../_shared/instructions.md", text)
             self.assertTrue((skill / "../_shared/instructions.md").is_file())
-            for stale in ("workspace.md", "~/src/workspace", "work.md", "projects/work"):
+            for stale in ("workspace.md", "~/src/workspace", "work.md", "projects/work",
+                          "todos/", "archive procedure"):
                 self.assertNotIn(stale, text)
 
     def test_context_changes_with_profile_without_deleting_local_notes(self):
