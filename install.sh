@@ -15,7 +15,7 @@ set -eu
 REPO_OWNER="0x00101010"
 REPO_NAME="dotfiles"
 REPO_URL="https://github.com/${REPO_OWNER}/${REPO_NAME}.git"
-SRC_DIR="${HOME}/src/${REPO_NAME}"
+SRC_DIR="${HOME}/src/${REPO_OWNER}/${REPO_NAME}"
 CHEZMOI_DIR="${HOME}/.local/share/chezmoi"
 CHEZMOI_SOURCE_DIR="${SRC_DIR}/home"
 
@@ -81,7 +81,7 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 3. Clone the repo to ~/src/dotfiles and point chezmoi at it.
+# 3. Clone the repo to ~/src/0x00101010/dotfiles and point chezmoi at it.
 # ---------------------------------------------------------------------------
 mkdir -p "$(dirname "$SRC_DIR")"
 if [ ! -d "$SRC_DIR/.git" ]; then

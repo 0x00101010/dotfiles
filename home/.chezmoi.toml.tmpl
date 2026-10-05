@@ -25,7 +25,7 @@
 {{- $agents := promptMultichoiceOnce $agentData "agents" "Coding agents to install" $agentChoices $agentChoices }}
 {{- /* Context checkout for this profile. Missing context is reported, never
        replaced with the other profile's checkout. */}}
-{{- $contextRoot := joinPath .chezmoi.homeDir "src/workspace" }}
+{{- $contextRoot := joinPath .chezmoi.homeDir "src/0x00101010/workspace" }}
 {{- if eq $profile "work" }}
 {{-   $contextRoot = joinPath .chezmoi.homeDir "src/0x00101010/coinbase" }}
 {{- end }}

@@ -87,7 +87,7 @@ class AgentWiringTest(unittest.TestCase):
             self.assertNotIn(stale, plan)
 
     def instructions(self, paths, profile):
-        context = self.home / ("src/0x00101010/coinbase" if profile == "work" else "src/workspace")
+        context = self.home / ("src/0x00101010/coinbase" if profile == "work" else "src/0x00101010/workspace")
         projects = context / ("projects" if profile == "work" else "projects/personal")
         shared = self.home / ".agents/skills/_shared/instructions.md"
         for path in [*paths, shared]:
@@ -98,7 +98,8 @@ class AgentWiringTest(unittest.TestCase):
             self.assertIn(f"- Machine profile: `{profile}`.", text)
             self.assertIn(f"- Plan root: `{projects}`;", text)
             self.assertIn(f"`{context}/knowledge/references/repos.md`", text)
-            self.assertNotIn("src/workspace" if profile == "work" else "0x00101010/coinbase", text)
+            self.assertNotIn("src/workspace", text)
+            self.assertNotIn("0x00101010/workspace" if profile == "work" else "0x00101010/coinbase", text)
         text = shared.read_text()
         self.assertIn(f"All paths below are relative to `{context}`.", text)
         self.assertNotIn("todos/", text)
@@ -129,6 +130,7 @@ class AgentWiringTest(unittest.TestCase):
         self.assertEqual((self.home / ".claude/skills/_shared/instructions.md").resolve(), shared)
         self.assertFalse((self.home / ".claude/skills/_shared/workspace.md").exists())
         self.assertFalse((self.home / "src/workspace").exists())
+        self.assertFalse((self.home / "src/0x00101010/workspace").exists())
         self.assertFalse((self.home / ".config/amp/AGENTS.md").exists())
         before = [p.read_bytes() for p in [*paths, settings, shared]]
         self.apply()

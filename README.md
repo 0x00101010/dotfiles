@@ -7,7 +7,7 @@ all machines.
 ## Quick install (macOS & Linux)
 
 Run this on a fresh machine — it installs prerequisites, clones the repo to
-`~/src/dotfiles`, and applies everything via chezmoi:
+`~/src/0x00101010/dotfiles`, and applies everything via chezmoi:
 
 ```sh
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/0x00101010/dotfiles/main/install.sh)"
@@ -23,8 +23,8 @@ works (`curl … | bash`) — it falls back to `/dev/tty` for prompts.
 2. Installs the minimum prerequisites (`curl`, `git`, and on macOS the Xcode
    Command Line Tools + Homebrew).
 3. Installs [chezmoi](https://chezmoi.io).
-4. Clones this repo to `~/src/dotfiles` and symlinks
-   `~/.local/share/chezmoi → ~/src/dotfiles/home` so bootstrap files such as
+4. Clones this repo to `~/src/0x00101010/dotfiles` and symlinks
+   `~/.local/share/chezmoi → ~/src/0x00101010/dotfiles/home` so bootstrap files such as
    `install.sh` are not applied into `$HOME`.
 5. Runs `chezmoi init && chezmoi apply -v`, which triggers the
    `run_once_*` bootstrap scripts (Homebrew packages, apt packages, mise,
@@ -52,7 +52,7 @@ is separate; cbcode remains unconfigured until its internal setup is verified.
 `ai/instructions/AGENTS.md` is the common source. Chezmoi adds profile context:
 
 - **Work:** `~/src/0x00101010/coinbase`, with plans below `projects/<project>/plans/`.
-- **Personal:** `~/src/workspace`, with plans below `projects/personal/<project>/plans/`.
+- **Personal:** `~/src/0x00101010/workspace`, with plans below `projects/personal/<project>/plans/`.
 
 The instructions also name the profile's repo registry and research destinations.
 A missing context checkout never selects the other profile's checkout.

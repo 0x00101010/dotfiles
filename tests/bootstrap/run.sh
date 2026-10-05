@@ -30,8 +30,8 @@ install_case() { # <shell> <os> <name>
   stub git '[ "$1" = clone ] && mkdir -p "$3/.git"; exit 0' "$dir/bin"
   # Existing checkout with local work must survive.
   if [ "$3" = existing ]; then
-    mkdir -p "$dir/home/src/dotfiles/.git" "$dir/home/src/dotfiles/home"
-    echo wip > "$dir/home/src/dotfiles/local-change"
+    mkdir -p "$dir/home/src/0x00101010/dotfiles/.git" "$dir/home/src/0x00101010/dotfiles/home"
+    echo wip > "$dir/home/src/0x00101010/dotfiles/local-change"
   fi
   # Same form as the README: sh -c "$(curl …)".
   HOME="$dir/home" PATH="$dir/bin:/usr/bin:/bin" \
@@ -48,11 +48,14 @@ for sh in dash bash; do
     check "install.sh $sh $os applies after init" bash -c "grep -A1 '^chezmoi init' '$log' | grep -q '^chezmoi apply -v'"
     check "install.sh $sh $os clones only dotfiles" bash -c "[ \"\$(grep -c '^git clone' '$log')\" = 1 ] && grep -q '^git clone https://github.com/0x00101010/dotfiles.git' '$log'"
     check "install.sh $sh $os touches no context repo" bash -c "! grep -Eq 'workspace|coinbase' '$log'"
+    check "install.sh $sh $os clones to org/repo" test -d "$TMP/install-$sh-$os-fresh/home/src/0x00101010/dotfiles/.git"
+    check "install.sh $sh $os links chezmoi to org/repo" test \
+      "$(readlink "$TMP/install-$sh-$os-fresh/home/.local/share/chezmoi")" = "$TMP/install-$sh-$os-fresh/home/src/0x00101010/dotfiles/home"
   done
 done
 install_case dash Linux existing || true
 check "install.sh keeps existing checkout and only fast-forwards" \
-  bash -c "[ -f '$TMP/install-dash-Linux-existing/home/src/dotfiles/local-change' ] && grep -q '^git -C .* pull --ff-only' '$TMP/install-dash-Linux-existing/log' && ! grep -q '^git clone' '$TMP/install-dash-Linux-existing/log'"
+  bash -c "[ -f '$TMP/install-dash-Linux-existing/home/src/0x00101010/dotfiles/local-change' ] && grep -q '^git -C .* pull --ff-only' '$TMP/install-dash-Linux-existing/log' && ! grep -q '^git clone' '$TMP/install-dash-Linux-existing/log'"
 check "legacy setup scripts delegate to install.sh" \
   bash -c "grep -q 'exec sh .*install.sh' '$REPO/scripts/setup-mac.sh' && grep -q 'exec sh .*install.sh' '$REPO/scripts/setup-linux.sh'"
 
@@ -70,7 +73,7 @@ cfg() { echo "$1/.config/chezmoi/chezmoi.toml"; }
 init_home "$TMP/work" work claude/amp
 init_home "$TMP/personal" personal claude/codex/amp
 check "work config" bash -c "grep -q 'profile = \"work\"' '$(cfg "$TMP/work")' && grep -q 'agents = \[\"claude\", \"amp\"\]' '$(cfg "$TMP/work")' && grep -q \"contextRoot = \\\"$TMP/work/src/0x00101010/coinbase\\\"\" '$(cfg "$TMP/work")'"
-check "personal config" bash -c "grep -q 'profile = \"personal\"' '$(cfg "$TMP/personal")' && grep -q \"contextRoot = \\\"$TMP/personal/src/workspace\\\"\" '$(cfg "$TMP/personal")'"
+check "personal config" bash -c "grep -q 'profile = \"personal\"' '$(cfg "$TMP/personal")' && grep -q \"contextRoot = \\\"$TMP/personal/src/0x00101010/workspace\\\"\" '$(cfg "$TMP/personal")'"
 check "re-init preserves profile without prompting" bash -c \
   "HOME='$TMP/work' XDG_CONFIG_HOME='$TMP/work/.config' chezmoi init --source '$REPO' --no-tty >/dev/null 2>&1 && grep -q 'profile = \"work\"' '$(cfg "$TMP/work")'"
 check "init without a profile answer fails instead of guessing" bash -c \
@@ -139,7 +142,7 @@ run_agents "$TMP/personal"
 check "personal installs all three selected agents" bash -c \
   "[ \"\$(wc -l < '$TMP/personal/agents.log')\" = 3 ] && grep -q claude.ai '$TMP/personal/agents.log' && grep -q chatgpt.com/codex '$TMP/personal/agents.log' && grep -q ampcode.com '$TMP/personal/agents.log'"
 check "personal never references coinbase or cbcode" bash -c "! grep -Eq 'coinbase|cbcode' '$TMP/personal/agents.out'"
-mkdir -p "$TMP/personal/src/workspace"; run_agents "$TMP/personal"
+mkdir -p "$TMP/personal/src/0x00101010/workspace"; run_agents "$TMP/personal"
 check "no warning once the context checkout exists" lacks "$TMP/personal/agents.out" "missing"
 mkdir -p "$TMP/legacy/.config/chezmoi"; printf '[data]\n  email = "t@example.com"\n' > "$(cfg "$TMP/legacy")"
 render "$TMP/legacy" "$SCRIPTS/run_after_20_install_agents.sh.tmpl" > "$TMP/legacy/agents.sh"
