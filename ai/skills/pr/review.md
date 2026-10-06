@@ -14,6 +14,23 @@ Always run correctness, simplicity, and idiomacy. Add the others when the diff t
 
 Give it the intent (1–3 sentences), the diff command (e.g. `git diff <base>...HEAD`), the repo guidance files, and the **Shared rules** and its lens copied verbatim from this file.
 
+## Pick a model tier
+
+If a `review_with_models` tool is available, call it with the tier below and one task per lens, each prompt being the full brief. It runs every task on two models from different providers. Otherwise skip tiers and use your subagents on their default model.
+
+Use `deep` if any holds; otherwise `light`. Unsure → `deep`: a missed bug costs more than the tokens.
+
+- Security boundary: authn/authz, crypto, secrets, permissions, parsing untrusted input.
+- Funds, consensus, or state that is hard to repair: schemas, migrations, deletion.
+- Concurrency, ordering, retries, cache invalidation.
+- Public API, wire format, or config format that others depend on.
+- New non-trivial logic (state machine, algorithm) rather than wiring.
+- Production infrastructure, deploys, or CI permissions.
+- Roughly 300+ hand-written changed lines, or changes across several modules.
+- Touched code has weak tests.
+
+Typical `light`, when no trigger above applies: docs, test-only changes, mechanical refactors covered by tests, small fixes with a reproducing test, local config, routine dependency bumps.
+
 ## Shared rules
 
 - Review only lines the diff adds or changes. Pre-existing issues are out of scope unless the diff makes them worse.
@@ -59,7 +76,7 @@ Report only with a size and frequency argument: what grows, how often it runs, w
 
 ## Validate and act
 
-1. Verify each finding against the code yourself; discard any you cannot confirm.
+1. Merge duplicates across reviewers. Verify each finding against the code yourself; discard any you cannot confirm, even if two models agree.
 2. Fix blockers and should-fixes. Defer only with a reason worth stating in the PR's Notes.
 3. When findings conflict, simplicity wins unless correctness or security is at stake.
 4. If fixes were substantial, rerun the affected lenses on the new diff. At most 2 rounds.
