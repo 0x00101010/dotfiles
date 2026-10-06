@@ -65,6 +65,8 @@ A missing context checkout never selects the other profile's checkout.
 
 Amp can discover shared and Claude skills without Amp-specific configuration.
 Its binary remains selectable, but no Amp instructions or settings are installed.
+Selecting Amp links `~/.config/amp/plugins/pr-review.ts` to `ai/amp/plugins/`; it adds
+`review_with_models`, which the `pr` skill uses to run reviews on two models.
 Existing Amp configuration is left alone. Skill discovery does not itself provide
 Amp with the profile instructions generated for Claude and Codex on a fresh machine.
 
@@ -160,7 +162,7 @@ path overrides. They do not exercise browser automation or Mermaid rendering.
 
 ## Repo layout
 
-- `ai/` — company-independent coding instructions and skills.
+- `ai/` — company-independent coding instructions, skills, and Amp plugins.
 - `home/` — chezmoi source state (everything that gets applied to `$HOME`).
   - `home/.chezmoiscripts/` — `run_once_*` bootstrap scripts.
 - `scripts/` — standalone installers run by hand.

@@ -11,6 +11,9 @@
 .agents/skills/agent-browser
 .agents/skills/beautiful-mermaid
 {{- end }}
+{{- if not (has "amp" $agents) }}
+.config/amp/plugins/pr-review.ts
+{{- end }}
 {{- if not (or (has "claude" $agents) (has "codex" $agents) (has "amp" $agents)) }}
 .agents/skills/_shared
 {{- end }}

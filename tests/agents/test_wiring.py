@@ -219,11 +219,16 @@ class AgentWiringTest(unittest.TestCase):
         for p in preserved:
             self.assertEqual((self.home / p).read_text(), "untouched")
 
-    def test_amp_only_installs_shared_skill_without_configuration(self):
+    def test_amp_only_installs_shared_skill_and_review_plugin(self):
         self.init(agents="amp")
         self.apply()
         self.assertFalse((self.home / ".config/amp/AGENTS.md").exists())
-        self.assertFalse(any(p.startswith(".config/amp/") for p in self.cm("managed").stdout.splitlines()))
+        managed = [p for p in self.cm("managed", "--include=files,symlinks").stdout.splitlines()
+                   if p.startswith(".config/amp/")]
+        self.assertEqual(managed, [".config/amp/plugins/pr-review.ts"])
+        plugin = self.home / ".config/amp/plugins/pr-review.ts"
+        self.assertTrue(plugin.is_symlink())
+        self.assertEqual(plugin.resolve(), REPO / "ai/amp/plugins/pr-review.ts")
         self.assertFalse((self.home / ".claude").exists())
         self.assertFalse((self.home / ".codex").exists())
         self.skills(self.home / ".agents/skills")
@@ -236,6 +241,7 @@ class AgentWiringTest(unittest.TestCase):
         self.instructions([self.home / ".codex/AGENTS.md"], "work")
         self.assertFalse((self.home / ".claude").exists())
         self.assertFalse((self.home / ".config/amp/AGENTS.md").exists())
+        self.assertFalse((self.home / ".config/amp/plugins/pr-review.ts").exists())
 
     def test_no_agents_preserves_existing_files(self):
         self.init(agents="")
