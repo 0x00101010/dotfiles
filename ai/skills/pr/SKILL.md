@@ -16,6 +16,8 @@ These apply to every step, including fixes made while iterating.
 - No unrelated cleanup, renames, or formatting.
 - When two approaches are both correct, pick the one with fewer new names, files, layers, and tests.
 
+**Size.** A reviewer should finish a PR in one sitting: at most 200 changed lines (additions plus deletions) of hand-written source, and at most 400 including tests. Lockfiles, generated code, snapshots, vendored files, and pure renames or moves do not count. Mechanical changes (codemods, bulk renames, regenerated files) have no cap but get their own PR, never mixed with logic.
+
 **Comments.** Default to none. Comment only what the code cannot say: a non-obvious reason, invariant, constraint, or workaround (with a link). Never narrate what the code does, restate names, record history ("now uses X", "added for Y"), or reference tickets, plans, or the PR. Follow repo conventions for public API docs.
 
 **Writing.** Applies to commits, PR descriptions, code comments, and review replies. Cut until any further cut would lose information. Plain words; no jargon, hype, or filler. Specifics over summaries.
@@ -38,17 +40,19 @@ Read the repo's guidance files first. Work in the current directory, unless it i
 
 Reread the full diff against the base branch as a reviewer seeing it for the first time. For each hunk, ask: can it be deleted, shrunk, or replaced with existing code and stay correct? Apply the cuts, remove comments that break the comment rule, and rerun checks.
 
+Then measure against the size rule with `git diff --numstat -M origin/<base>...`. Over the limit → split into stacked PRs. Prefer, in order: a pure refactor before the behavior change; new code before the change that wires it in, only if the first PR stands alone; one module or layer per PR. Each slice gets its own branch off the previous one, passes checks on its own, and follows the standalone rule. Run steps 4–6 for each slice, bottom of the stack first. No coherent split → keep one PR and say why in your report, not in the PR.
+
 ### 4. Self-review
 
 Follow [review.md](review.md). Skip trivial and docs-only diffs (typo, one-line config, prose).
 
 ### 5. Open a draft PR
 
-Commit, push, `gh pr create --draft` (with `--base <branch>` when given a base other than the default), using the formats below. Before writing the body, load every installed `*-pr-conventions` skill and follow those whose scope matches this repo.
+Commit, push, `gh pr create --draft` (with `--base <branch>` when given a base other than the default or when stacked on a parent slice), using the formats below. Before writing the body, load every installed `*-pr-conventions` skill and follow those whose scope matches this repo.
 
 ### 6. Iterate until ready (mandatory)
 
-Do NOT return control until CI is green AND every review thread is fixed and resolved, or answered. After the PR is open, push new commits; never amend, rebase, or force-push, except when `execute-plan` rebases a stacked PR after its parent merges.
+Do NOT return control until CI is green AND every review thread is fixed and resolved, or answered. After the PR is open, push new commits; never amend, rebase, or force-push, except to rebase a stacked PR after its parent merges.
 
 1. Wait for CI: `gh pr checks --watch`.
 2. Check failed → unrelated to the diff (flaky): rerun once with `gh run rerun <run-id> --failed`. Also fails on the base branch: report it instead of fixing it. Otherwise fix the root cause (never skip or disable tests), push, GOTO 1.

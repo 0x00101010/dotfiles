@@ -5,3 +5,4 @@ local.zsh
 TODO.md
 plans/
 cb.zsh
+__pycache__/

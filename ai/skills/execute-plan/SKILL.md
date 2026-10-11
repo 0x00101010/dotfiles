@@ -37,8 +37,8 @@ Base: `<default>`, or for a `(stacked)` dependency, that phase's branch. Branch:
 
 Subagents cannot run the multi-model review, so you review between two subagents. Give each one: the absolute workspace path, the branch, the base branch when stacked (for `gh pr create --base`), the phase text verbatim (objective, actions, verification, exit criteria), and the instruction to follow the `pr` skill and work only in that directory.
 
-1. **Implement.** The first subagent follows `pr` steps 1–3, commits locally, and stops without pushing. Its final message: what it built, the checks it ran, anything left undone.
-2. **Review.** Run `pr` step 4 ([review.md](../pr/review.md)) yourself on `git -C <path> diff origin/<base>...HEAD`, including validating each finding.
+1. **Implement.** The first subagent follows `pr` steps 1–3, commits locally, and stops without pushing. It does not split an oversized diff. Its final message: what it built, the checks it ran, the diff size with a proposed split if over the limit, anything left undone.
+2. **Review.** Diff over the `pr` size rule → do not ship; mark the phase blocked with the size and proposed split. Otherwise run `pr` step 4 ([review.md](../pr/review.md)) yourself on `git -C <path> diff origin/<base>...HEAD`, including validating each finding.
 3. **Ship.** The second subagent gets the verified findings, fixes them, reruns checks, then follows `pr` steps 5–6. Its final message: the PR URL, the checks it ran, anything left undone.
 4. **Re-review.** If step 2 found blockers, rerun those lenses on the final diff once; new blockers → another ship subagent with them, which pushes new commits.
 

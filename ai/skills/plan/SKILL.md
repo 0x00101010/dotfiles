@@ -83,7 +83,7 @@ Only when the whole needs a check no single phase covers.
 `**Depends on:**` is the only ordering signal; phases with no dependency path between them run in parallel.
 
 - `(merged)`, the default: the phase starts after the dependency's PR merges.
-- `(stacked)`: the phase branches off the dependency's unmerged branch and targets it. Use it only when waiting for review would stall the work; at most one stacked dependency per phase.
+- `(stacked)`: the phase branches off the dependency's unmerged branch and targets it. Use it when waiting for review would stall the work, such as a change split only to fit the size limit; at most one stacked dependency per phase.
 - Add a dependency whenever two phases touch the same files, one uses an API or type the other defines, or an unresolved product/design decision sits between them.
 
 ## 6. PR compatibility
@@ -91,6 +91,7 @@ Only when the whole needs a check no single phase covers.
 - Each PR-ready slice must stand alone.
 - Reviewer-facing PR titles/bodies must not mention sequencing: no `(PR B)`, `[1/3]`, `Part 2`, “follow-up PR,” etc.
 - Prefer small focused slices, minimum implementation, no speculative abstractions, no unrelated cleanup.
+- Size each slice to the `pr` size rule: at most 200 changed lines of hand-written source, 400 including tests. Estimate from the actions; a slice likely over the limit becomes several phases, split as `pr` step 3 describes.
 - Each slice needs its own verification.
 
 ## 7. Link back
