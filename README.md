@@ -103,7 +103,7 @@ Existing Amp settings are left alone.
 
 On Linux, selecting Amp also installs and enables `amp-runner.service` (systemd
 user unit, lingering on, so it survives logout and reboot). It runs
-`amp --no-tui --runner-id <hostname> --discover-dirs=~/src --discover-depth 3`,
+`amp --no-tui --runner-id <hostname> --no-serve-cwd --discover-dirs=~/src --discover-depth 3`,
 serving every Git checkout and worktree under `~/src` (including `dev<N>` slots),
 so `create_thread` and ampcode.com can start threads on this machine in parallel.
 Threads inherit the unit's environment, not your shell's; add tools to its

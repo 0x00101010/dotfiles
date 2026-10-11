@@ -4,7 +4,7 @@ After=network-online.target
 Wants=network-online.target
 
 [Service]
-ExecStart=%h/.local/bin/amp --no-tui --runner-id %H --discover-dirs=%h/src --discover-depth 3
+ExecStart=%h/.local/bin/amp --no-tui --runner-id %H --no-serve-cwd --discover-dirs=%h/src --discover-depth 3
 # Threads on the runner inherit this environment, not the login shell's.
 Environment=PATH=%h/.local/bin:%h/.local/share/mise/shims:%h/.cargo/bin:%h/.bun/bin:%h/.config/.foundry/bin:/usr/local/bin:/usr/bin:/bin
 Restart=always
