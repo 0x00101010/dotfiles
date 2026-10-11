@@ -2,7 +2,7 @@
 gitleaks = "latest"
 go = "prefix:1.24"
 golangci-lint = "latest"
-hunk = "latest"
+"npm:hunkdiff" = "latest"
 jj = "latest"
 just = "latest"
 k9s = "latest"
