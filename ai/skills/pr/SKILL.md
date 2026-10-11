@@ -40,7 +40,7 @@ Reread the full diff against the base branch as a reviewer seeing it for the fir
 
 ### 4. Self-review
 
-Follow [review.md](review.md). Skip only trivial diffs (typo, one-line config).
+Follow [review.md](review.md). Skip trivial and docs-only diffs (typo, one-line config, prose).
 
 ### 5. Open a draft PR
 

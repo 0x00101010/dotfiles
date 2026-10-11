@@ -97,7 +97,7 @@ A missing context checkout never selects the other profile's checkout.
 
 Selecting Amp renders the same instructions to `~/.config/amp/AGENTS.md` and links
 `~/.config/amp/plugins/pr-review.ts` to `ai/amp/plugins/`; it adds
-`review_with_models`, which the `pr` skill uses to run reviews on two models.
+`review_with_models`, which the `pr` skill uses to run reviews on two models (deep tier) or one (light).
 Existing Amp settings are left alone.
 
 Selecting any agent links `~/.local/bin/devslot` to `ai/bin/devslot`. The `pr`

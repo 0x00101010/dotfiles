@@ -4,7 +4,7 @@ Run each lens as an independent read-only reviewer: parallel subagents when avai
 
 ## Choose lenses
 
-Always run correctness, simplicity, and idiomacy. Add the others when the diff touches:
+Always run correctness and fit. Add the others when the diff touches:
 
 - **Architecture:** new modules, public APIs, data models, persistence, cross-module flows, concurrency model.
 - **Security:** untrusted input, authn/authz, secrets, crypto, shell/SQL/templates, network, file paths, dependencies, CI workflows.
@@ -16,7 +16,7 @@ Give it the intent (1–3 sentences), the diff command (e.g. `git diff <base>...
 
 ## Pick a model tier
 
-If a `review_with_models` tool is available, call it with the tier below and one task per lens, each prompt being the full brief. It runs every task on two models from different providers. Otherwise skip tiers and use your subagents on their default model.
+If a `review_with_models` tool is available, call it with the tier below and one task per lens, each prompt being the full brief. `deep` runs every task on two models from different providers; `light` on one. Otherwise skip tiers and use your subagents on their default model.
 
 Use `deep` if any holds; otherwise `light`. Unsure → `deep`: a missed bug costs more than the tokens.
 
@@ -54,13 +54,11 @@ Blocker: wrong behavior, data loss, security hole, broken build or tests. Should
 
 Requirements met; edge, boundary, and error cases; errors swallowed or masked by fallbacks/defaults; ordering and concurrency; backward compatibility. Tests: bug fixes have a reproducing test; new behavior has a test that fails when the behavior breaks; assertions check behavior, not implementation.
 
-### Simplicity
+### Fit
 
-Code that can be deleted, inlined, or replaced by existing helpers or the standard library; single-use abstractions; unused flexibility, options, or defensive checks for impossible states; unrelated changes; comments that narrate code, restate names, or reference history, tickets, or plans. A proposed fix must reduce total complexity, not move it.
+Simplicity: code that can be deleted, inlined, or replaced by existing helpers or the standard library; single-use abstractions; unused flexibility, options, or defensive checks for impossible states; unrelated changes; comments that narrate code, restate names, or reference history, tickets, or plans. A proposed fix must reduce total complexity, not move it.
 
-### Idiomacy
-
-Before flagging, compare against 2–5 existing examples in the repo. File placement, naming, error handling, logging, test style, language and framework idioms. The repo's convention beats general preference.
+Idiom: before flagging, compare against 2–5 existing examples in the repo. File placement, naming, error handling, logging, test style, language and framework idioms. The repo's convention beats general preference.
 
 ### Architecture
 
@@ -79,4 +77,4 @@ Report only with a size and frequency argument: what grows, how often it runs, w
 1. Merge duplicates across reviewers. Verify each finding against the code yourself; discard any you cannot confirm, even if two models agree.
 2. Fix blockers and should-fixes. Defer only with a reason worth stating in the PR's Notes.
 3. When findings conflict, simplicity wins unless correctness or security is at stake.
-4. If fixes were substantial, rerun the affected lenses on the new diff. At most 2 rounds.
+4. If you fixed blockers, rerun only the lenses that found them, on the new diff. At most one extra round.

@@ -1,17 +1,14 @@
 import type { PluginAPI } from '@ampcode/plugin'
 
 export const description =
-	'Adds review_with_models: runs read-only PR reviewer briefs in parallel on two models from different providers, at a deep or light cost tier.'
+	'Adds review_with_models: runs read-only PR reviewer briefs in parallel, on two models from different providers (deep) or one model (light).'
 
 const TIERS = {
 	deep: [
 		{ model: 'anthropic/claude-fable-5-1', reasoningEffort: 'high' },
 		{ model: 'openai/gpt-6-astra', reasoningEffort: 'high' },
 	],
-	light: [
-		{ model: 'anthropic/claude-opus-5-5', reasoningEffort: 'medium' },
-		{ model: 'openai/gpt-6.1-sol', reasoningEffort: 'medium' },
-	],
+	light: [{ model: 'anthropic/claude-opus-5-5', reasoningEffort: 'medium' }],
 } as const
 
 type Tier = keyof typeof TIERS
@@ -41,7 +38,7 @@ export default function (amp: PluginAPI) {
 		name: 'review_with_models',
 		title: 'Multi-model review',
 		transcriptGroup: { active: 'Reviewing', complete: 'Reviewed' },
-		description: `Run read-only reviewers in parallel. Each task runs once on each of the tier's two models, from different providers. deep: ${describeTier('deep')}. light: ${describeTier('light')}. Returns every reviewer's output, labeled by task and model.`,
+		description: `Run read-only reviewers in parallel. Each task runs once on each of the tier's models. deep: ${describeTier('deep')}. light: ${describeTier('light')}. Returns every reviewer's output, labeled by task and model.`,
 		inputSchema: {
 			type: 'object',
 			properties: {
