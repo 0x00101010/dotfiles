@@ -1,0 +1,53 @@
+---
+name: execute-plan
+description: Execute an existing implementation plan phase by phase. Use for "execute the plan", "run the plan", "implement <plan>", or when handed a plan path. Resolves each phase's repo and workspace, runs each PR-ready slice through the pr skill, and records progress in the plan file.
+---
+
+Read `~/.agents/skills/_shared/instructions.md` for the plan root, repo registry, and checkout layout. Refer to `plan` for the plan format and `pr` for how each slice is shipped. Invoking this skill authorizes creating branches, pushing them, and opening draft PRs for the plan's slices — nothing else.
+
+## 1. Resolve the plan
+
+`$ARGUMENTS` is a plan path or a name under the plan root (`<plan-root>/*/plans/<name>.md`). Read it in full.
+
+- No `## Phase` headings → run `plan` first and confirm before executing.
+- `## Open questions` lists a blocker → stop and ask; do not guess.
+- A phase already marked `**Status:** done` → skip it.
+- The user names a phase → run only that phase.
+
+## 2. Build the waves
+
+Order comes from `## Implementation order`; phases on the same line, or marked `**Parallelizable:** Yes` with distinct workstreams, form one wave. Each phase is one slice unless its `**PR boundary:**` says `Not a PR boundary`, in which case merge it into the next phase's slice.
+
+Within a wave, start every slice at once. Slot repos limit themselves (`devslot claim` waits when no slot is free). Repos without slots run one slice at a time per repo, because one checkout holds one branch.
+
+## 3. Workspace per slice
+
+Resolve `**Repo:**` through the registry (fall back to `in <repo>` text or the current repo; ambiguous → ask). Then:
+
+- Slot repo (`dev<N>` beside the default worktree): `path=$(devslot claim <branch> <repo-root> --note "<plan>:<phase>")`.
+- Otherwise: in the default checkout, require a clean tree, then `git fetch origin && git switch -c <branch> origin/<default>`.
+
+Branch: `<prefix>/<slug>` from `## Handoff to PR skill`; default prefix is the user's usual one in that repo (`git log --author`), slug from the phase name.
+
+## 4. Run the slice
+
+Hand the slice to a subagent with the available subagent tool. Give it: the absolute workspace path, the branch, the phase text verbatim (objective, actions, verification, exit criteria), and the instruction to follow the `pr` skill and work only in that directory. Require its final message to contain the PR URL, the checks it ran, and anything left undone.
+
+When it returns:
+
+- Slot repo → `devslot release <path>` (it refuses dirty or unpushed trees; resolve that first, do not force).
+- Otherwise → `git switch <default>` in that checkout.
+- Append under the phase heading: `**Status:** done — <PR URL>`, or `**Status:** blocked — <one line>` and stop the dependent waves.
+
+Only these status lines may be written into the plan; leave every other line as is.
+
+## 5. Report
+
+After the last wave: list each phase with its PR URL or blocker, slots released, and anything the user must decide. Do not merge, transition issues, or force-push.
+
+## Rules
+
+- Never fabricate PR URLs or check results; quote the subagent's evidence.
+- One slice per branch; never reuse a workspace for two slices at once.
+- Do not edit plan prose, reorder phases, or start phases the plan marks blocked.
+- Stop and ask when a wave fails rather than retrying with a different design.

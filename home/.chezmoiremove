@@ -1,0 +1,13 @@
+{{- /* Retired Claude-only skills; their replacements live in ai/skills or nowhere. */ -}}
+{{- $agents := get . "agents" | default list -}}
+{{- if and (has "claude" $agents) (or (not (env "CLAUDE_CONFIG_DIR")) (eq (env "CLAUDE_CONFIG_DIR") (joinPath .chezmoi.homeDir ".claude"))) }}
+.claude/skills/_shared/workspace.md
+.claude/skills/add
+.claude/skills/immunefi-review
+.claude/skills/investigate
+.claude/skills/journal
+.claude/skills/prio
+.claude/skills/qmd
+.claude/skills/repos
+.claude/skills/workon
+{{- end }}

@@ -37,7 +37,7 @@ Touch only what you must. Clean up only your own mess.
 - Unrelated dead code? Mention it — don't delete it.
 - Remove only orphans YOUR changes created.
 - Every changed line should trace directly to the request.
-- Work in the existing current worktree. Never create another Git worktree unless I explicitly ask, even if a workflow or skill normally creates one.
+- Work in the current checkout. Repos with `dev<N>` worktrees beside the default one are the exception: `devslot claim <branch>` takes a free one so its build is reused; `devslot release` once the PR is open. Create no other worktrees.
 
 ## 5. Goal-Driven Execution
 

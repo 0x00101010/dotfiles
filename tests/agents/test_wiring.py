@@ -10,14 +10,14 @@ import unittest
 
 REPO = Path(__file__).resolve().parents[2]
 OVERRIDES = REPO / "home/.chezmoiscripts/run_after_30_configure_agent_overrides.sh.tmpl"
-SKILLS = ("agent-browser", "beautiful-mermaid", "plan", "pr")
+SKILLS = ("agent-browser", "beautiful-mermaid", "execute-plan", "plan", "pr")
 
 
 class AgentWiringTest(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        self.root = Path(self.tmp.name)
+        self.root = Path(self.tmp.name).resolve()  # macOS: /var -> /private/var
         self.home = self.root / "home with 'quotes' and $dollars"
         self.home.mkdir()
         # Deliberately use the install.sh symlink layout, not only --source REPO.
@@ -52,9 +52,9 @@ class AgentWiringTest(unittest.TestCase):
                 "--promptString", "What is your GPG signing key=TEST")
 
     def apply(self):
-        paths = self.cm("managed", "--include=files,symlinks").stdout.splitlines()
+        paths = self.cm("managed", "--include=files,symlinks,remove").stdout.splitlines()
         targets = [str(self.home / p) for p in paths if p.startswith(
-            (".claude/", ".codex/", ".config/amp/", ".agents/skills/")
+            (".claude/", ".codex/", ".config/amp/", ".agents/skills/", ".local/bin/")
         )]
         # No targets must never turn into a whole-home apply.
         if targets:
@@ -118,8 +118,9 @@ class AgentWiringTest(unittest.TestCase):
     def test_fresh_work_and_repeat(self):
         self.init()
         self.apply()
-        paths = [self.home / p for p in (".claude/CLAUDE.md", ".codex/AGENTS.md")]
+        paths = [self.home / p for p in (".claude/CLAUDE.md", ".codex/AGENTS.md", ".config/amp/AGENTS.md")]
         projects = self.instructions(paths, "work")
+        self.assertEqual(len({p.read_bytes() for p in paths}), 1)
         settings = self.home / ".claude/settings.json"
         self.assertEqual(json.loads(settings.read_text())["plansDirectory"], str(projects))
         self.skills(self.home / ".claude/skills")
@@ -131,7 +132,7 @@ class AgentWiringTest(unittest.TestCase):
         self.assertFalse((self.home / ".claude/skills/_shared/workspace.md").exists())
         self.assertFalse((self.home / "src/workspace").exists())
         self.assertFalse((self.home / "src/0x00101010/workspace").exists())
-        self.assertFalse((self.home / ".config/amp/AGENTS.md").exists())
+        self.assertEqual((self.home / ".local/bin/devslot").resolve(), REPO / "ai/bin/devslot")
         before = [p.read_bytes() for p in [*paths, settings, shared]]
         self.apply()
         self.assertEqual(before, [p.read_bytes() for p in [*paths, settings, shared]])
@@ -145,24 +146,17 @@ class AgentWiringTest(unittest.TestCase):
         self.instructions([self.home / ".claude/CLAUDE.md"], "personal")
         self.skills(self.home / ".claude/skills")
         self.skills(self.home / ".agents/skills")
-        self.assertTrue((self.home / ".claude/skills/qmd/SKILL.md").exists())
-        self.assertTrue((self.home / ".claude/skills/journal/SKILL.md").exists())
-        self.assertFalse((self.home / ".claude/skills/add/SKILL.md").exists())
+        self.assertEqual(sorted(p.name for p in (self.home / ".claude/skills").iterdir()),
+                         ["_shared", *SKILLS])
         self.assertNotIn(".claude/skills/add/SKILL.md", self.cm("managed").stdout.splitlines())
         self.assertFalse((self.home / "src/0x00101010/coinbase").exists())
-        for name in ("journal", "prio"):
-            skill = self.home / ".claude/skills" / name
-            text = (skill / "SKILL.md").read_text()
-            self.assertIn("../_shared/instructions.md", text)
-            self.assertTrue((skill / "../_shared/instructions.md").is_file())
-            for stale in ("workspace.md", "~/src/workspace", "work.md", "projects/work",
-                          "todos/", "archive procedure"):
-                self.assertNotIn(stale, text)
 
     def test_context_changes_with_profile_without_deleting_local_notes(self):
         self.init()
         self.write(self.home / ".claude/skills/_shared/local.md", "local notes")
-        self.write(self.home / ".claude/skills/_shared/workspace.md", "legacy copy for review")
+        self.write(self.home / ".claude/skills/company/SKILL.md", "company skill")
+        for retired in ("_shared/workspace.md", "repos/SKILL.md", "qmd/SKILL.md"):
+            self.write(self.home / ".claude/skills" / retired, "retired copy")
         for profile in ("work", "personal", "work"):
             self.init(profile)
             self.apply()
@@ -170,8 +164,9 @@ class AgentWiringTest(unittest.TestCase):
             self.assertEqual((self.home / ".claude/skills/_shared/instructions.md").read_bytes(),
                              (self.home / ".agents/skills/_shared/instructions.md").read_bytes())
         self.assertEqual((self.home / ".claude/skills/_shared/local.md").read_text(), "local notes")
-        self.assertEqual((self.home / ".claude/skills/_shared/workspace.md").read_text(),
-                         "legacy copy for review")
+        self.assertEqual((self.home / ".claude/skills/company/SKILL.md").read_text(), "company skill")
+        for retired in ("_shared/workspace.md", "repos", "qmd"):
+            self.assertFalse((self.home / ".claude/skills" / retired).exists())
 
     def test_existing_settings_and_stale_managed_files(self):
         self.init()
@@ -212,8 +207,9 @@ class AgentWiringTest(unittest.TestCase):
                          {"Bash(curl:*)", "Read(.env*)", "Read(**/secrets/**)", "Read(**/*.key)"})
         self.assertFalse(result["enabledPlugins"]["hookify@claude-plugins-official"])
         self.assertTrue(result["enabledPlugins"]["company-plugin"])
-        self.assertTrue((self.home / ".config/amp/AGENTS.md").is_symlink())
-        self.assertEqual((self.home / ".config/amp/AGENTS.md").readlink(), self.home / ".claude/CLAUDE.md")
+        self.assertFalse((self.home / ".config/amp/AGENTS.md").is_symlink())
+        self.assertEqual((self.home / ".config/amp/AGENTS.md").read_bytes(),
+                         (self.home / ".claude/CLAUDE.md").read_bytes())
         self.skills(self.home / ".claude/skills")
         self.skills(self.home / ".agents/skills")
         for p in preserved:
@@ -222,10 +218,11 @@ class AgentWiringTest(unittest.TestCase):
     def test_amp_only_installs_shared_skill_and_review_plugin(self):
         self.init(agents="amp")
         self.apply()
-        self.assertFalse((self.home / ".config/amp/AGENTS.md").exists())
+        self.instructions([self.home / ".config/amp/AGENTS.md"], "work")
         managed = [p for p in self.cm("managed", "--include=files,symlinks").stdout.splitlines()
                    if p.startswith(".config/amp/")]
-        self.assertEqual(managed, [".config/amp/plugins/pr-review.ts"])
+        self.assertEqual(managed, [".config/amp/AGENTS.md", ".config/amp/plugins/pr-review.ts"])
+        self.assertEqual((self.home / ".local/bin/devslot").resolve(), REPO / "ai/bin/devslot")
         plugin = self.home / ".config/amp/plugins/pr-review.ts"
         self.assertTrue(plugin.is_symlink())
         self.assertEqual(plugin.resolve(), REPO / "ai/amp/plugins/pr-review.ts")
@@ -251,6 +248,7 @@ class AgentWiringTest(unittest.TestCase):
         for name in SKILLS:
             self.assertFalse((self.home / ".agents/skills" / name).exists())
         self.assertFalse((self.home / ".agents/skills/_shared/instructions.md").exists())
+        self.assertFalse((self.home / ".local/bin/devslot").exists())
 
     def test_personal_claude_override(self):
         claude = self.root / "Claude's $custom config"
@@ -260,9 +258,6 @@ class AgentWiringTest(unittest.TestCase):
         self.instructions([claude / "CLAUDE.md"], "personal")
         self.skills(claude / "skills")
         self.assertFalse((claude / "skills/add/SKILL.md").exists())
-        for p in ("qmd/SKILL.md", "journal/SKILL.md"):
-            self.assertEqual((claude / "skills" / p).read_bytes(),
-                             (REPO / "home/dot_claude/skills" / p).read_bytes())
         self.assertEqual((claude / "skills/_shared/instructions.md").resolve(),
                          self.home / ".agents/skills/_shared/instructions.md")
         for name in SKILLS:
@@ -279,12 +274,12 @@ class AgentWiringTest(unittest.TestCase):
         self.write(claude / "skills/beautiful-mermaid/scripts/render.ts", "old renderer")
         self.write(claude / "skills/beautiful-mermaid/scripts/local.ts", "local script")
         self.apply()
-        paths = [claude / "CLAUDE.md", Path(self.env["CODEX_HOME"]) / "AGENTS.md"]
+        paths = [claude / "CLAUDE.md", Path(self.env["CODEX_HOME"]) / "AGENTS.md",
+                 self.home / ".config/amp/AGENTS.md"]
         self.instructions(paths, "work")
         self.assertEqual(amp_instructions.read_text(), "unmanaged Amp instructions")
         self.assertFalse((self.home / ".claude/CLAUDE.md").exists())
         self.assertFalse((self.home / ".codex/AGENTS.md").exists())
-        self.assertFalse((self.home / ".config/amp/AGENTS.md").exists())
         self.skills(claude / "skills")
         self.skills(self.home / ".agents/skills")
         self.assertEqual((claude / "skills/_shared/instructions.md").resolve(),

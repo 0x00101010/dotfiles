@@ -8,17 +8,15 @@
 {{- if not (or (has "codex" $agents) (has "amp" $agents)) }}
 .agents/skills/pr
 .agents/skills/plan
+.agents/skills/execute-plan
 .agents/skills/agent-browser
 .agents/skills/beautiful-mermaid
 {{- end }}
 {{- if not (has "amp" $agents) }}
+.config/amp/AGENTS.md
 .config/amp/plugins/pr-review.ts
 {{- end }}
 {{- if not (or (has "claude" $agents) (has "codex" $agents) (has "amp" $agents)) }}
 .agents/skills/_shared
-{{- end }}
-{{- if ne (get . "profile") "personal" }}
-.claude/skills/journal
-.claude/skills/prio
-.claude/skills/qmd
+.local/bin/devslot
 {{- end }}

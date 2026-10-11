@@ -1,0 +1,150 @@
+#!/usr/bin/env bash
+# devslot: claim and release dev<N> worktrees so agents reuse warm builds.
+set -euo pipefail
+
+STALE_SECS=$((12 * 3600))
+POLL_SECS=30
+
+usage() {
+  cat >&2 <<'EOF'
+usage: devslot list [repo-root]
+       devslot claim <branch> [repo-root] [--note <text>] [--no-wait]
+       devslot release [slot-path]
+
+A slot is a worktree named dev<N> beside the repo's default worktree.
+The lock lives in the slot's git dir, outside the working tree.
+A lock is stale after 12h when the slot is clean and fully pushed; claim reuses it.
+release refuses dirty or unpushed slots.
+EOF
+  exit 2
+}
+
+die() { echo "devslot: $*" >&2; exit 1; }
+
+repo_root() {
+  local common
+  common=$(git -C "${1:-.}" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) \
+    || die "${1:-.} is not inside a git repository"
+  dirname "$common"
+}
+
+default_branch() {
+  local ref
+  ref=$(git -C "$1" symbolic-ref -q refs/remotes/origin/HEAD 2>/dev/null) && { echo "${ref#refs/remotes/origin/}"; return; }
+  git -C "$1" show-ref -q --verify refs/remotes/origin/main && { echo main; return; }
+  echo master
+}
+
+slots() {
+  local s
+  for s in "$1"/dev[0-9]*; do
+    [ -d "$s" ] && git -C "$s" rev-parse --is-inside-work-tree >/dev/null 2>&1 && echo "$s"
+  done | sort -V
+}
+
+fetch() { git -C "$1" fetch -q --prune origin || echo "devslot: fetch failed; using cached origin refs" >&2; }
+
+lock_path() { echo "$(git -C "$1" rev-parse --path-format=absolute --git-dir)/devslot.lock"; }
+
+lock_field() { sed -n "s/^$2=//p" "$1"; }
+
+clean() {
+  [ -z "$(git -C "$1" status --porcelain)" ] \
+    && [ -z "$(git -C "$1" log -1 --oneline HEAD --not --remotes 2>/dev/null)" ]
+}
+
+state() {
+  local lock
+  lock=$(lock_path "$1")
+  [ -e "$lock" ] || { echo free; return; }
+  local age=$(( $(date +%s) - $(lock_field "$lock" started) ))
+  if (( age > STALE_SECS )) && clean "$1"; then echo stale; else echo claimed; fi
+}
+
+age() {
+  local secs=$(( $(date +%s) - $(lock_field "$1" started) ))
+  printf '%dh%02dm' $((secs / 3600)) $((secs % 3600 / 60))
+}
+
+cmd_list() {
+  local root s lock
+  root=$(repo_root "${1:-.}")
+  for s in $(slots "$root"); do
+    lock=$(lock_path "$s")
+    if [ -e "$lock" ]; then
+      printf '%s\t%s\t%s\t%s\t%s\n' "$(basename "$s")" "$(state "$s")" \
+        "$(lock_field "$lock" branch)" "$(age "$lock")" "$(lock_field "$lock" note)"
+    else
+      printf '%s\tfree\n' "$(basename "$s")"
+    fi
+  done
+}
+
+try_claim() {  # slot branch note -> 0 if claimed
+  local s=$1 lock
+  lock=$(lock_path "$s")
+  [ "$(state "$s")" = stale ] && rm -f "$lock"
+  ( set -o noclobber; printf 'branch=%s\nstarted=%s\nnote=%s\n' "$2" "$(date +%s)" "$3" > "$lock" ) 2>/dev/null || return 1
+  local base
+  base=$(default_branch "$s")
+  fetch "$s"
+  if git -C "$s" show-ref -q --verify "refs/heads/$2"; then
+    git -C "$s" switch -q "$2"
+  else
+    git -C "$s" switch -q --no-track -c "$2" "origin/$base"
+  fi || { rm -f "$lock"; die "could not check out $2 in $s"; }
+  echo "$s"
+}
+
+cmd_claim() {
+  local branch=${1:-} root=. note="" wait=1 s
+  [ -n "$branch" ] || usage
+  shift
+  while [ $# -gt 0 ]; do
+    case $1 in
+      --note) note=$2; shift 2 ;;
+      --no-wait) wait=0; shift ;;
+      --*) usage ;;
+      *) root=$1; shift ;;
+    esac
+  done
+  root=$(repo_root "$root")
+  [ -n "$(slots "$root")" ] || die "no dev<N> worktrees under $root"
+  while :; do
+    for s in $(slots "$root"); do
+      [ "$(state "$s")" = free ] && try_claim "$s" "$branch" "$note" && return
+    done
+    for s in $(slots "$root"); do
+      [ "$(state "$s")" = stale ] && try_claim "$s" "$branch" "$note" && return
+    done
+    (( wait )) || { echo "devslot: no free slot under $root" >&2; exit 3; }
+    echo "devslot: all slots busy, retrying every ${POLL_SECS}s" >&2
+    sleep "$POLL_SECS"
+  done
+}
+
+cmd_release() {
+  local s=${1:-} lock
+  [ -n "$s" ] || s=$(git rev-parse --show-toplevel 2>/dev/null) || die "not inside a worktree"
+  s=$(cd "$s" && pwd -P)
+  [[ $(basename "$s") =~ ^dev[0-9]+$ ]] || die "$s is not a dev<N> slot"
+  lock=$(lock_path "$s")
+  [ -e "$lock" ] || die "$s is not claimed"
+  if ! clean "$s"; then
+    echo "devslot: $s has uncommitted or unpushed work; commit and push first:" >&2
+    git -C "$s" status --short >&2
+    git -C "$s" log --oneline HEAD --not --remotes >&2
+    exit 1
+  fi
+  fetch "$s"
+  git -C "$s" switch -q --detach "origin/$(default_branch "$s")"
+  rm -f "$lock"
+  echo "released $s"
+}
+
+case ${1:-} in
+  list) shift; cmd_list "$@" ;;
+  claim) shift; cmd_claim "$@" ;;
+  release) shift; cmd_release "$@" ;;
+  *) usage ;;
+esac

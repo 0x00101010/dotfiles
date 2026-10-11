@@ -61,16 +61,21 @@ A missing context checkout never selects the other profile's checkout.
 | --- | --- | --- |
 | Claude | `~/.claude/CLAUDE.md` | `~/.claude/skills/` |
 | Codex | `~/.codex/AGENTS.md` | `~/.agents/skills/` |
-| Amp | Not managed for now | Shared with Codex; no additional Amp copy |
+| Amp | `~/.config/amp/AGENTS.md` | Shared with Codex; Amp also reads `~/.claude/skills/` |
 
-Amp can discover shared and Claude skills without Amp-specific configuration.
-Its binary remains selectable, but no Amp instructions or settings are installed.
-Selecting Amp links `~/.config/amp/plugins/pr-review.ts` to `ai/amp/plugins/`; it adds
+Selecting Amp renders the same instructions to `~/.config/amp/AGENTS.md` and links
+`~/.config/amp/plugins/pr-review.ts` to `ai/amp/plugins/`; it adds
 `review_with_models`, which the `pr` skill uses to run reviews on two models.
-Existing Amp configuration is left alone. Skill discovery does not itself provide
-Amp with the profile instructions generated for Claude and Codex on a fresh machine.
+Existing Amp settings are left alone.
 
-Both profiles install `pr`, `plan`, `agent-browser`, and `beautiful-mermaid` for
+Selecting any agent links `~/.local/bin/devslot` to `ai/bin/devslot`. The
+instructions tell agents to work in the current checkout, except in repos that
+keep `dev<N>` worktrees beside the default one: `devslot claim <branch>` takes a
+free slot (lock in the slot's git dir, branch off `origin/<default>`, build cache
+intact) and `devslot release` returns it once the PR is open. Locks older than 12h
+on clean, fully pushed slots are reclaimed automatically; parallelism is the slot count.
+
+Both profiles install `pr`, `plan`, `execute-plan`, `agent-browser`, and `beautiful-mermaid` for
 the selected agents. Each file links to its source under `ai/skills/`, including
 bundled scripts, templates, and references. Individual links preserve sibling
 custom files, including notes within resource directories. The source checkout
@@ -80,6 +85,10 @@ locating `ai/`.
 The `plan` skill reads the shared profile context below for its destination and
 repo registry. It preserves the phased-plan and PR-handoff format without
 depending on retired skills or any particular coding agent's research tools.
+`execute-plan` runs a written plan: each phase's `**Repo:**` resolves through the
+registry, slot repos are claimed with `devslot`, other repos get a branch in their
+default checkout, each slice goes through `pr` in a subagent, and a `**Status:**`
+line is appended under the phase.
 
 `_shared/workspace.md` is now a profile-aware reference, installed as
 `~/.agents/skills/_shared/instructions.md` for any selected agent. Claude's
@@ -87,10 +96,8 @@ depending on retired skills or any particular coding agent's research tools.
 directory). It shares path definitions with the generated agent instructions,
 which link to it for on-demand reading; it is not a discoverable skill by itself.
 Work gets company plans/research; personal gets personal plans,
-journals, and year-grouped schedules. The personal `journal` and `prio`
-skills read this reference and no longer import company tasks or Linear activity.
-Stale todo lists were removed by request; these skills no longer read or archive
-them, and the shared instructions prohibit reconstructing them from history.
+journals, and year-grouped schedules. Stale todo lists were removed by request,
+and the shared instructions prohibit reconstructing them from history.
 
 `CLAUDE_CONFIG_DIR` and `CODEX_HOME` are honored when set during apply.
 Default destinations are declarative chezmoi targets; the
@@ -125,17 +132,13 @@ and pinning the dependency remains future work.
 ### Existing-machine cutover
 
 Review the diff before applying: changed `run_once` bootstrap scripts can run again.
-Source retirement does **not** delete installed files. During the separately
-reviewed cutover, compare/back up the old owned copies before removing retired
-skills (`add`, `investigate`, `repos`, `workon`, and installed-only
-`fix-issue`, `interview`, `security`,
-`swarm`, `task`, `ultrathink`) and the four old Claude review agents.
-Do not delete same-named upstream or customized replacements blindly.
-
-`journal`, `prio`, and `qmd` remain personal-only sources; an
-existing work installation needs their old copies reviewed at cutover too.
-The old installed `_shared/workspace.md` is left for that review; only the new
-`instructions.md` is managed, and sibling custom notes are preserved.
+`home/.chezmoiremove` deletes the retired Claude-only skills (`add`,
+`immunefi-review`, `investigate`, `journal`, `prio`, `qmd`, `repos`, `workon`) and
+the old `_shared/workspace.md` from the default `~/.claude` on apply; check
+`chezmoi status` for the `D` lines first. Installed-only skills from older setups
+(`fix-issue`, `interview`, `security`, `swarm`, `task`, `ultrathink`) and the four
+old Claude review agents are not touched; remove them by hand after review.
+Sibling custom notes beside managed files are preserved.
 Changing profiles/agent selection does not uninstall ignored files. Check for
 Codex `AGENTS.override.md` and higher-priority skill copies before declaring the
 new sources active. Do not edit vendor-managed caches.
@@ -152,17 +155,21 @@ stale todo files (including archives and habits) from both context repositories.
 ```sh
 tests/bootstrap/run.sh
 python3 tests/agents/test_wiring.py
+tests/devslot/run.sh
 ```
 
 The wiring tests apply only agent targets in disposable homes and run only the
 override hook, never machine bootstrap or network installers. They cover both
 profiles, profile switching, repeated application, existing settings/skills,
-complete skill-bundle links, executable modes, shared-reference links, and native
-path overrides. They do not exercise browser automation or Mermaid rendering.
+complete skill-bundle links, executable modes, shared-reference links, retired
+skill removal, and native path overrides. They do not exercise browser automation
+or Mermaid rendering. The devslot test builds a throwaway bare repo with `dev1`
+and `dev2` worktrees and exercises claim, release, stale reclaim, and refusals.
 
 ## Repo layout
 
-- `ai/` — company-independent coding instructions, skills, and Amp plugins.
+- `ai/` — company-independent coding instructions, skills, Amp plugins, and
+  `bin/devslot`.
 - `home/` — chezmoi source state (everything that gets applied to `$HOME`).
   - `home/.chezmoiscripts/` — `run_once_*` bootstrap scripts.
 - `scripts/` — standalone installers run by hand.

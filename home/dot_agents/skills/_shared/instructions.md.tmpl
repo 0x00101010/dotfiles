@@ -73,7 +73,17 @@ and schedules are historical context, not automatically current task queues.
 
 Read the repo registry named in the installed profile context.
 
-Bare-repo layout (has `.bare/`): work in `~/src/<repo>/main`. Standard repos: `~/src/<repo>`.
+Checkout layout under `~/src/`:
+
+- `~/src/<org>/<repo>`: org parents are `base/` (github.com/base), `protocols/` and
+  `coinbase/` (Coinbase GHE), `0x00101010/` (own GitHub: `dotfiles`, the context
+  repository named above, own tools), and upstream orgs (`ethereum-optimism/`,
+  `paradigmxyz/`, `commonware/`, ...). Parents are not repos; always use the sub-path.
+  Top-level `~/src/<repo>` dirs are older clones that predate this convention.
+- Bare layout (`.bare/` plus a `.git` file): worktrees are sibling dirs. Work in
+  `<repo>/main` or `<repo>/master`, never in the parent. `dev<N>` siblings mark a slot
+  repo: `devslot claim <branch>` / `devslot release`.
+- Standard layout: ordinary `.git/`; work in the checkout itself.
 
 Don't guess silently — ambiguous topic → list candidates and ask.
 

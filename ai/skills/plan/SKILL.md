@@ -5,7 +5,7 @@ description: Create concise, phase-by-phase implementation plans before coding. 
 
 Read `~/.agents/skills/_shared/instructions.md` for the active profile, context root, plan root, and repo registry. Claude also exposes it as `../_shared/instructions.md` beside the installed skill. If the reference or context checkout is missing, report it and ask for the destination; never infer a profile or fall back to another context repository.
 
-Refer to `pr` for downstream PR conventions. This skill plans only: no implementation, worktrees, commits, branches, PRs, or issue status changes.
+Refer to `pr` for downstream PR conventions and `execute-plan` for how a finished plan is run. This skill plans only: no implementation, worktrees, commits, branches, PRs, or issue status changes.
 
 ## 1. Resolve input
 
@@ -60,6 +60,7 @@ Scope exclusions.
 
 ## Phase 1: <name>
 **Objective:** ...
+**Repo:** <registry name, or `current`>
 **Actions:**
 1. ...
 **Verification:** ...
