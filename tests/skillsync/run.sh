@@ -32,14 +32,20 @@ skill "$TMP/src/loose" direct
 
 check "missing sources file is an error" bash -c "! '$SKILLSYNC' 2>/dev/null"
 
+: > "$SOURCES"
+"$SKILLSYNC" >/dev/null && "$SKILLSYNC" >/dev/null
+check "empty sources twice leaves other skills alone" [ -f "$HOME/.agents/skills/plan/SKILL.md" ]
+
 cat > "$SOURCES" <<EOF
 # comment line
 ~/../src/meridian
 $TMP/src/factory as fac only test,plain
 $TMP/src/loose
+$TMP/src/not-cloned
 EOF
-out=$("$SKILLSYNC")
+out=$("$SKILLSYNC" 2>&1)
 check "summary names count and skills" grep -q "4 skill(s) from 3 source(s)" <<< "$out"
+check "missing repo is skipped with a warning" grep -q "skipping $TMP/src/not-cloned (not found)" <<< "$out"
 check "repo prefix from dir name" [ -f "$HOME/.agents/skills/meridian-planning/SKILL.md" ]
 check "frontmatter name rewritten" grep -qx "name: meridian-planning" "$HOME/.agents/skills/meridian-planning/SKILL.md"
 check "body and support files copied" bash -c "grep -q 'Body of planning' '$HOME/.agents/skills/meridian-planning/SKILL.md' && [ -f '$HOME/.agents/skills/meridian-planning/scripts/run.sh' ]"

@@ -261,7 +261,7 @@ class AgentWiringTest(unittest.TestCase):
         self.assertIn(f"list repos in {sources}", self.apply())
         self.write(self.home / "src/meridian/.agents/skills/planning/SKILL.md",
                    "---\nname: planning\ndescription: d\n---\nbody\n")
-        self.write(sources, "~/src/meridian\n")
+        self.write(sources, "~/src/meridian\n~/src/not-cloned\n")
         out = self.apply()
         self.assertIn("skillsync: 1 skill(s) from 1 source(s)", out)
         copy = self.home / ".agents/skills/meridian-planning/SKILL.md"

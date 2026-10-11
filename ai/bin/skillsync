@@ -50,7 +50,7 @@ rename_frontmatter() {  # file name
 }
 
 installed=()
-[ -f "$STATE" ] && while IFS= read -r n; do installed+=("$n"); done < "$STATE"
+[ -f "$STATE" ] && while IFS= read -r n; do [ -n "$n" ] && installed+=("$n"); done < "$STATE"
 wanted=()
 sources=0
 
@@ -68,7 +68,7 @@ while IFS= read -r line || [ -n "$line" ]; do
       *) die "bad token '${tok[$i]}' in: $line" ;;
     esac
   done
-  [ -d "$path" ] || die "missing source $path"
+  [ -d "$path" ] || { echo "skillsync: skipping $path (not found)" >&2; continue; }
   sources=$((sources + 1))
   found=0
   while IFS= read -r src; do
@@ -81,6 +81,7 @@ while IFS= read -r line || [ -n "$line" ]; do
       die "$DEST/$name exists and was not installed by skillsync; pick another prefix with 'as'"
     fi
     wanted+=("$name")
+    run mkdir -p "$DEST"
     run rm -rf "$DEST/$name"
     run cp -R "$src" "$DEST/$name"
     run rename_frontmatter "$DEST/$name/SKILL.md" "$name"
@@ -90,12 +91,14 @@ while IFS= read -r line || [ -n "$line" ]; do
 done < "$SOURCES"
 
 for name in "${installed[@]+"${installed[@]}"}"; do
+  [ -n "$name" ] || continue
   printf '%s\n' "${wanted[@]+"${wanted[@]}"}" | grep -qx "$name" && continue
   run rm -rf "$DEST/$name" "$CLAUDE/$name"
 done
 
 if (( ! dry )); then
   mkdir -p "$(dirname "$STATE")"
-  printf '%s\n' "${wanted[@]+"${wanted[@]}"}" > "$STATE"
+  : > "$STATE"
+  for name in "${wanted[@]+"${wanted[@]}"}"; do echo "$name" >> "$STATE"; done
 fi
 echo "skillsync: ${#wanted[@]} skill(s) from $sources source(s) in $SOURCES${wanted[0]+: ${wanted[*]}}"

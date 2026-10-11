@@ -83,7 +83,8 @@ contributes `.agents/skills/*` and `.claude/skills/*`; each skill is copied to
 its frontmatter `name` rewritten, so agents see `meridian-planning` rather than a
 second `planning`. Claude gets `~/.claude/skills/<prefix>-<skill>` links to the
 copies. The copies are not chezmoi-managed; `chezmoi apply` reruns `skillsync`
-when the sources file exists and otherwise prints where to create it. Skills
+when the sources file exists and otherwise prints where to create it. Repos
+listed but not cloned are skipped with a warning. Skills
 dropped from the list are removed again; a name that already exists and was not
 installed by skillsync is refused.
 
