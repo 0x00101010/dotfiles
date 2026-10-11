@@ -48,7 +48,7 @@ Commit, push, `gh pr create --draft` (with `--base <branch>` when given a base o
 
 ### 6. Iterate until ready (mandatory)
 
-Do NOT return control until CI is green AND every review thread is fixed and resolved, or answered. After the PR is open, push new commits; never amend, rebase, or force-push.
+Do NOT return control until CI is green AND every review thread is fixed and resolved, or answered. After the PR is open, push new commits; never amend, rebase, or force-push, except when `execute-plan` rebases a stacked PR after its parent merges.
 
 1. Wait for CI: `gh pr checks --watch`.
 2. Check failed → unrelated to the diff (flaky): rerun once with `gh run rerun <run-id> --failed`. Also fails on the base branch: report it instead of fixing it. Otherwise fix the root cause (never skip or disable tests), push, GOTO 1.
