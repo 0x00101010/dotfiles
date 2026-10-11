@@ -15,6 +15,10 @@
 {{- if not (has "amp" $agents) }}
 .config/amp/AGENTS.md
 .config/amp/plugins/pr-review.ts
+.config/systemd/user/amp-runner.service
+{{- end }}
+{{- if ne .chezmoi.os "linux" }}
+.config/systemd
 {{- end }}
 {{- if not (or (has "claude" $agents) (has "codex" $agents) (has "amp" $agents)) }}
 .agents/skills/_shared

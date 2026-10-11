@@ -31,6 +31,15 @@ sync:
 sync-log:
     tail -n 40 ~/.local/state/reposync/log
 
+# Amp runner status and the directories it serves
+runner:
+    systemctl --user status amp-runner --no-pager
+    amp runner list
+
+# Recent Amp runner log
+runner-log:
+    journalctl --user -u amp-runner -n 40 --no-pager
+
 # Copy skills from the repos in ~/.config/dotfiles/skill-sources
 skills:
     ai/bin/skillsync
