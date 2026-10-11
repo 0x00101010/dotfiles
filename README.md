@@ -100,11 +100,11 @@ Selecting Amp renders the same instructions to `~/.config/amp/AGENTS.md` and lin
 `review_with_models`, which the `pr` skill uses to run reviews on two models.
 Existing Amp settings are left alone.
 
-Selecting any agent links `~/.local/bin/devslot` to `ai/bin/devslot`. The
-instructions tell agents to work in the current checkout, except in repos that
+Selecting any agent links `~/.local/bin/devslot` to `ai/bin/devslot`. The `pr`
+skill tells agents to work in the current checkout, except in repos that
 keep `dev<N>` worktrees beside the default one: `devslot claim <branch>` takes a
 free slot (lock in the slot's git dir, branch off `origin/<default>`, build cache
-intact) and `devslot release` returns it once the PR is open. Locks older than 12h
+intact) and `devslot release` returns it once the PR is ready. Locks older than 12h
 on clean, fully pushed slots are reclaimed automatically; parallelism is the slot count.
 
 Skills kept in other repos (company or personal, not committed here) come in

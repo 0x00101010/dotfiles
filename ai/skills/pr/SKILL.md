@@ -32,7 +32,7 @@ Parse an `in <repo>` suffix (e.g. `/pr add cache in base`). Otherwise use the cu
 
 ### 2. Implement
 
-Read the repo's guidance files first. Work in the current directory. Bug fix → write a reproducing test first. Run the repo's tests, lint, and typecheck/build.
+Read the repo's guidance files first. Work in the current directory, unless it is a repo's default worktree with `dev<N>` worktrees beside it: then `cd "$(devslot claim <branch>)"` to reuse a warm build, and `devslot release` after step 6. Create no other worktrees. Bug fix → write a reproducing test first. Run the repo's tests, lint, and typecheck/build.
 
 ### 3. Simplify
 

@@ -37,20 +37,22 @@ Touch only what you must. Clean up only your own mess.
 - Unrelated dead code? Mention it — don't delete it.
 - Remove only orphans YOUR changes created.
 - Every changed line should trace directly to the request.
-- Work in the current checkout. Repos with `dev<N>` worktrees beside the default one are the exception: `devslot claim <branch>` takes a free one so its build is reused; `devslot release` once the PR is open. Create no other worktrees.
 
 ## 5. Goal-Driven Execution
 
 Transform tasks into verifiable goals, then loop until verified.
 
-- "Add validation" → write tests for invalid inputs, make them pass
-- "Fix the bug" → write a reproducing test, make it pass
+- "Fix the bug" → reproduce it first: a failing test where one fits, otherwise a command or capture that shows it. Fix, then show the same check passing.
 - "Refactor X" → ensure tests pass before and after
+- Keep a test only if it checks behavior through the public interface and would catch a plausible regression.
+- Can't verify something? Say so, and name what went unchecked.
 
 ## 6. Plans
 
 Plans go to the plan root named in the profile context, as `<project>/plans/<plan-name>.md`. Name after what they accomplish (`add-staged-sync.md`, `fix-enclave-build.md`). Lowercase, hyphen-separated, concise. Never auto-generated names.
 
-## 7. Debugging
+## 7. Safety
 
-When I report a bug: write a reproducing test first, then have subagents fix it and prove it with a passing test.
+- Never fabricate results, sources, or test outcomes.
+- Confirm before destructive or irreversible writes.
+- Don't push, force-push, post comments, or change shared state unless asked or a skill you were asked to run does it.
