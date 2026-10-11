@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+# reposync: commit local changes, rebase onto upstream, and push (never force)
+# for every repo listed in the config. Cron runs it every 5 minutes.
+set -uo pipefail
+
+CONFIG=${REPOSYNC_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/reposync}
+STATE=${XDG_STATE_HOME:-$HOME/.local/state}/reposync
+LOG=$STATE/log
+LOCK=$STATE/lock
+
+# Cron starts with a bare PATH; hooks need gitleaks (mise) and gpg.
+export PATH="$HOME/.local/bin:$HOME/.local/share/mise/shims:/opt/homebrew/bin:/usr/local/bin:$PATH"
+# Never prompt, and never let a half-open connection hold the lock forever.
+export GIT_TERMINAL_PROMPT=0
+export GIT_SSH_COMMAND="ssh -o BatchMode=yes -o ConnectTimeout=10 -o ServerAliveInterval=15 -o ServerAliveCountMax=3"
+
+mkdir -p "$STATE"
+if [ ! -t 1 ]; then
+  [ "$(cat "$LOG" 2>/dev/null | wc -c)" -gt 1048576 ] && mv "$LOG" "$LOG.1"
+  exec >> "$LOG" 2>&1
+fi
+
+say() { printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*"; }
+
+if [ ! -f "$CONFIG" ]; then
+  [ -t 1 ] && echo "reposync: no config at $CONFIG; list repo paths there, one per line"
+  exit 0
+fi
+
+if ! mkdir "$LOCK" 2>/dev/null; then
+  pid=$(cat "$LOCK/pid" 2>/dev/null)
+  if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then exit 0; fi
+  rm -rf "$LOCK"; mkdir "$LOCK" || exit 1
+fi
+echo $$ > "$LOCK/pid"
+trap 'rm -rf "$LOCK"' EXIT
+
+sync_repo() {  # repo -> 0 when in sync
+  local repo=$1 gitdir f branch remote merge upstream n
+  cd "$repo" 2>/dev/null && cd "$(git rev-parse --show-toplevel 2>/dev/null)" 2>/dev/null \
+    || { say "$repo: not a git checkout"; return 1; }
+  gitdir=$(git rev-parse --absolute-git-dir)
+  for f in rebase-merge rebase-apply MERGE_HEAD CHERRY_PICK_HEAD REVERT_HEAD index.lock; do
+    [ -e "$gitdir/$f" ] && { say "$repo: skipped, $f present"; return 1; }
+  done
+  branch=$(git symbolic-ref -q --short HEAD) || { say "$repo: skipped, detached HEAD"; return 1; }
+  remote=$(git config "branch.$branch.remote") && merge=$(git config "branch.$branch.merge") \
+    || { say "$repo: skipped, $branch has no upstream"; return 1; }
+
+  # Leave files alone while someone is still writing them.
+  if [ -n "$(git ls-files -z -m -o --exclude-standard | xargs -0 -I{} find ./{} -maxdepth 0 -mmin -1 2>/dev/null | head -1)" ]; then
+    say "$repo: deferred, files edited in the last minute"; return 0
+  fi
+
+  n=$(git status --porcelain | wc -l | tr -d ' ')
+  if [ "$n" -gt 0 ]; then
+    git add -A
+    if ! git commit -q -m "auto-sync: $n files [$(hostname -s)] $(date -u +%Y-%m-%dT%H:%M)"; then
+      say "$repo: commit failed; changes left uncommitted"; return 1
+    fi
+    say "$repo: committed $n files"
+  fi
+
+  git fetch -q "$remote" || { say "$repo: fetch failed"; return 1; }
+  upstream=$(git rev-parse --abbrev-ref '@{u}') || { say "$repo: upstream ref missing"; return 1; }
+  if ! git merge-base --is-ancestor "$upstream" HEAD; then
+    if ! git rebase -q "$upstream" >/dev/null 2>&1; then
+      git rebase --abort 2>/dev/null
+      say "$repo: rebase onto $upstream failed (conflict?); resolve by hand"; return 1
+    fi
+    say "$repo: rebased onto $upstream"
+  fi
+
+  n=$(git rev-list --count "$upstream..HEAD")
+  if [ "$n" -gt 0 ]; then
+    git push -q "$remote" "HEAD:$merge" || { say "$repo: push rejected"; return 1; }
+    say "$repo: pushed $n commits"
+  elif [ -t 1 ]; then
+    say "$repo: up to date"
+  fi
+}
+
+status=0
+while IFS= read -r line || [ -n "$line" ]; do
+  line=${line%%#*}
+  read -r path _ <<< "$line" || true
+  [ -n "$path" ] || continue
+  (sync_repo "${path/#\~/$HOME}") || status=1
+done < "$CONFIG"
+exit $status

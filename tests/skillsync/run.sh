@@ -15,9 +15,9 @@ check() { local name=$1; shift; if "$@"; then pass "$name"; else fail "$name"; f
 
 export HOME="$TMP/home"
 unset XDG_CONFIG_HOME XDG_STATE_HOME CLAUDE_CONFIG_DIR SKILL_SOURCES
-mkdir -p "$HOME/.claude" "$HOME/.agents/skills/plan" "$HOME/.config/agents"
+mkdir -p "$HOME/.claude" "$HOME/.agents/skills/plan" "$HOME/.config/dotfiles"
 echo "dotfiles plan" > "$HOME/.agents/skills/plan/SKILL.md"
-SOURCES="$HOME/.config/agents/skill-sources"
+SOURCES="$HOME/.config/dotfiles/skill-sources"
 
 skill() {  # dir name [frontmatter-name]
   mkdir -p "$1/$2/scripts"

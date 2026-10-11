@@ -257,7 +257,7 @@ class AgentWiringTest(unittest.TestCase):
 
     def test_skill_sources_sync_repo_skills_with_prefix(self):
         self.init(agents="claude/amp")
-        sources = self.home / ".config/agents/skill-sources"
+        sources = self.home / ".config/dotfiles/skill-sources"
         self.assertIn(f"list repos in {sources}", self.apply())
         self.write(self.home / "src/meridian/.agents/skills/planning/SKILL.md",
                    "---\nname: planning\ndescription: d\n---\nbody\n")

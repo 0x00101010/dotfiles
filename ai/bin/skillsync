@@ -2,7 +2,7 @@
 # skillsync: copy skills from other repos into ~/.agents/skills as <repo>-<skill>.
 set -euo pipefail
 
-SOURCES=${SKILL_SOURCES:-${XDG_CONFIG_HOME:-$HOME/.config}/agents/skill-sources}
+SOURCES=${SKILL_SOURCES:-${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/skill-sources}
 DEST=$HOME/.agents/skills
 CLAUDE=${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills
 STATE=${XDG_STATE_HOME:-$HOME/.local/state}/skillsync/installed

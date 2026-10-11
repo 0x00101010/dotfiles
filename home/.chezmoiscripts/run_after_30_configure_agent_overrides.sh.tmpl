@@ -51,7 +51,7 @@ printf '%s\n' "$instructions" | write_file {{ joinPath $codex "AGENTS.md" | repl
 
 # Skills from other repos: copied as <repo>-<skill> by skillsync when a sources
 # file exists; otherwise just say where to list them.
-skill_sources="${XDG_CONFIG_HOME:-$HOME/.config}/agents/skill-sources"
+skill_sources="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/skill-sources"
 if [ -f "$skill_sources" ]; then
   {{ joinPath (includeTemplate "ai-root" .) "bin/skillsync" | replace "'" "'\\''" | printf "'%s'" }}
 else

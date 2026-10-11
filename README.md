@@ -30,6 +30,38 @@ works (`curl … | bash`) — it falls back to `/dev/tty` for prompts.
    `run_once_*` bootstrap scripts (Homebrew packages, apt packages, mise,
    tmux/oh-my-zsh plugins, Docker, etc.).
 
+## Day-to-day commands
+
+From the repo root, `just` lists every recipe:
+
+| Recipe | Does |
+| --- | --- |
+| `just setup` | `chezmoi init`; add `--prompt` to re-answer saved questions |
+| `just apply` / `just diff` | `chezmoi apply -v` / preview the changes |
+| `just test` | every check below, none touching your home |
+| `just sync` / `just sync-log` | run reposync now / show its recent cron log |
+| `just skills` | rerun skillsync |
+| `just config` | open `~/.config/dotfiles` |
+
+## Local config: `~/.config/dotfiles/`
+
+Machine-specific lists that may name private checkouts live here, one file per
+tool, outside this repo: `reposync` and `skill-sources`. Chezmoi creates
+`reposync` once with usage comments and never overwrites it. Existing
+`~/.config/agents/skill-sources` files are not moved; move them by hand.
+
+## reposync
+
+`~/.local/bin/reposync` runs from the user crontab every 5 minutes (the entry
+tagged `# reposync (managed by chezmoi)`; other entries are kept). For each repo
+listed in `~/.config/dotfiles/reposync` it commits all changes as
+`auto-sync: N files [host] <time>`, fetches, rebases onto the checked-out
+branch's upstream, and pushes without force. Repos are skipped mid-rebase/merge,
+on a detached HEAD, or without an upstream; any file edited within the last
+minute defers the commit. A rebase conflict is aborted, leaving the local work
+in a commit for you to resolve. Rebased commits are re-signed, so signing must
+work without a prompt. Log: `~/.local/state/reposync/log`.
+
 ## Manual / legacy entry points
 
 The OS-specific helpers still exist if you prefer to read or tweak them
@@ -76,7 +108,7 @@ intact) and `devslot release` returns it once the PR is open. Locks older than 1
 on clean, fully pushed slots are reclaimed automatically; parallelism is the slot count.
 
 Skills kept in other repos (company or personal, not committed here) come in
-through `~/.local/bin/skillsync`. List sources in `~/.config/agents/skill-sources`,
+through `~/.local/bin/skillsync`. List sources in `~/.config/dotfiles/skill-sources`,
 one per line: `<repo-or-skills-dir> [as <prefix>] [only <skill>,<skill>]`. A repo
 contributes `.agents/skills/*` and `.claude/skills/*`; each skill is copied to
 `~/.agents/skills/<prefix>-<skill>` (prefix defaults to the directory name) with
@@ -170,6 +202,7 @@ tests/bootstrap/run.sh
 python3 tests/agents/test_wiring.py
 tests/devslot/run.sh
 tests/skillsync/run.sh
+tests/reposync/run.sh
 ```
 
 The wiring tests apply only agent targets in disposable homes and run only the

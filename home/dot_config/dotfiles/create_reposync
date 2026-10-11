@@ -1,0 +1,3 @@
+# Repos reposync keeps in sync every 5 minutes, one path per line (~ allowed).
+# Each run commits all changes as "auto-sync: ...", rebases onto the checked-out
+# branch's upstream, and pushes without force. Log: ~/.local/state/reposync/log
