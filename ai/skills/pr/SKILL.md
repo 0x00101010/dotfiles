@@ -44,7 +44,7 @@ Follow [review.md](review.md). Skip trivial and docs-only diffs (typo, one-line 
 
 ### 5. Open a draft PR
 
-Commit, push, `gh pr create --draft`, using the formats below. Before writing the body, load every installed `*-pr-conventions` skill and follow those whose scope matches this repo.
+Commit, push, `gh pr create --draft` (with `--base <branch>` when given a base other than the default), using the formats below. Before writing the body, load every installed `*-pr-conventions` skill and follow those whose scope matches this repo.
 
 ### 6. Iterate until ready (mandatory)
 

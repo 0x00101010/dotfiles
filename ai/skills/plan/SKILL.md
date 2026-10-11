@@ -28,13 +28,11 @@ Collect background/specialist results before drafting. Stop when further researc
 
 ## 3. Place the plan
 
-Default location: `<plan-root>/<project>/plans/<plan-name>.md`, using the **Plan root** from the shared instructions. The work profile uses its company context's `projects/`; the personal profile uses its personal context's `projects/personal/`. Do not hard-code either checkout path into this skill.
+Default location: `<plan-root>/<project>/plans/<plan-name>.md`, using the **Plan root** from the shared instructions.
 
-Read the context repository's guidance first. Reuse an existing project and its imported layout when applicable, rather than creating a duplicate project. Keep company plans out of personal context and personal plans out of company context.
+Read the context repository's guidance first. Reuse an existing project and its imported layout when applicable, rather than creating a duplicate project. If a plan for this work already exists, update it instead of creating another. Keep company plans out of personal context and personal plans out of company context.
 
-Plan name: lowercase, hyphen-separated, concise, accomplishment-based (`add-staged-sync.md`, `fix-enclave-build.md`). Ask if project or name is unclear.
-
-Present the draft path + plan and get confirmation before writing, unless the user explicitly asked to write and the destination is unambiguous.
+Plan name: lowercase, hyphen-separated, concise, accomplishment-based (`add-staged-sync.md`, `fix-enclave-build.md`). Ask only if the project or name is unclear; otherwise write the plan, then show its path and a short summary.
 
 ## 4. Plan format
 
@@ -44,7 +42,6 @@ Use this shape; omit empty sections.
 # <Title>
 
 > Source: <free text | Linear | GitHub | path>
-> Status: Draft
 
 ## Context
 Evidence-backed background and constraints.
@@ -61,38 +58,33 @@ Scope exclusions.
 ## Phase 1: <name>
 **Objective:** ...
 **Repo:** <registry name, or `current`>
+**Depends on:** `None`, or `Phase N (merged)` / `Phase N (stacked)`, comma-separated.
 **Actions:**
 1. ...
 **Verification:** ...
 **Exit criteria:** ...
 **PR boundary:** Standalone PR description, or `Not a PR boundary`.
-**Parallelizable:** Yes/No; if yes, name the workstream.
 
 ## Phase 2: <name>
 ...
 
-## Workstream A: <name>
-Only include `## Workstream` headings when safe parallel execution exists. State dependencies, touched areas, integration contract, deliverable, and verification.
-
-## Implementation order
-1. Dependency-aware order.
-
-## Verification plan
-- Required tests/checks/manual validation.
+## End-to-end check
+Only when the whole needs a check no single phase covers.
 
 ## Risks and rollback
 - Risk → mitigation / rollback.
 
 ## Handoff to PR skill
-- Suggested branch prefix/slug.
-- PR-ready slices.
+- Branch prefix.
 ```
 
-## 5. Parallelism rules
+## 5. Dependencies
 
-Mark work parallel only when workstreams are independent and have clear integration contracts. Do not parallelize unresolved product/design decisions, shared core-file edits without ownership, or phases that depend on APIs/types not yet defined.
+`**Depends on:**` is the only ordering signal; phases with no dependency path between them run in parallel.
 
-Use `## Workstream <letter>: <name>` headings for safe parallel work. Describe ownership and dependencies for the user or executing agents; writing a plan does not start those agents.
+- `(merged)`, the default: the phase starts after the dependency's PR merges.
+- `(stacked)`: the phase branches off the dependency's unmerged branch and targets it. Use it only when waiting for review would stall the work; at most one stacked dependency per phase.
+- Add a dependency whenever two phases touch the same files, one uses an API or type the other defines, or an unresolved product/design decision sits between them.
 
 ## 6. PR compatibility
 
@@ -106,7 +98,6 @@ Use `## Workstream <letter>: <name>` headings for safe parallel work. Describe o
 After writing:
 
 - Print the plan path and any unresolved questions.
-- Todo → append ` | PLAN:<relative-path>` only when requested, relative to the active context root; do not mark done.
 - Linear/GitHub → draft a comment with an appropriate link and 1–3 sentence TL;DR. Post only when authorized; do not change status or disclose private context to a broader audience.
 
 ## Rules
