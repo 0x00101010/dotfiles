@@ -27,7 +27,7 @@ git clone https://github.com/Aloxaf/fzf-tab ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/p
 
 # Install foundry
 curl -L https://foundry.paradigm.xyz | bash
-"$HOME/.foundry/bin/foundryup"
+"${FOUNDRY_DIR:-${XDG_CONFIG_HOME:-$HOME}/.foundry}/bin/foundryup"
 
 {{- else }}
 echo "[chezmoi] Skipping Darwin bootstrap, this is {{ .chezmoi.os }}"

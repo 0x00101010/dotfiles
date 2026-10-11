@@ -156,5 +156,45 @@ for drives in "" "/dev/nvme0n1"; do
   check "raid detection exits 0 with drives [$drives]" bash -c "ls() { printf '%s\n' $drives; }; source '$TMP/raid-head.sh'; exit 1"
 done
 
+# --- Foundry: invoke the binary at the installer's destination -------------
+# Run only the Foundry section; never execute Homebrew or other installers.
+HOME="$TMP/work" XDG_CONFIG_HOME="$TMP/work/.config" chezmoi execute-template \
+  --source "$REPO" --override-data '{"chezmoi":{"os":"darwin"}}' \
+  < "$SCRIPTS/run_once_00_bootstrap.darwin.sh.tmpl" \
+  | sed -n '/^# Install foundry/,$p' > "$TMP/foundry.sh"
+for location in home xdg override empty; do
+  dir="$TMP/foundry-$location"
+  mkdir -p "$dir/bin" "$dir/home"
+  export LOG="$dir/log"; : > "$LOG"
+  case "$location" in
+    home) expected="$dir/home/.foundry"; set -- ;;
+    xdg) expected="$dir/custom config/.foundry"; set -- "XDG_CONFIG_HOME=$dir/custom config" ;;
+    override) expected="$dir/custom foundry"; set -- "FOUNDRY_DIR=$expected" "XDG_CONFIG_HOME=$dir/custom config" ;;
+    empty) expected="$dir/home/.foundry"; set -- FOUNDRY_DIR= XDG_CONFIG_HOME= ;;
+  esac
+  # Stub the installer at each independently specified expected destination.
+  cat > "$dir/bin/curl" <<'CURL'
+#!/bin/sh
+cat <<'INSTALL'
+mkdir -p "$EXPECTED_FOUNDRY_DIR/bin"
+cat > "$EXPECTED_FOUNDRY_DIR/bin/foundryup" <<'BINARY'
+#!/bin/sh
+printf "%s\n" "$0" >> "$LOG"
+BINARY
+chmod +x "$EXPECTED_FOUNDRY_DIR/bin/foundryup"
+INSTALL
+CURL
+  chmod +x "$dir/bin/curl"
+  if env -u FOUNDRY_DIR -u XDG_CONFIG_HOME "$@" HOME="$dir/home" \
+    EXPECTED_FOUNDRY_DIR="$expected" PATH="$dir/bin:/usr/bin:/bin" \
+    bash -euo pipefail "$TMP/foundry.sh" > "$dir/out" 2>&1 &&
+    grep -qxF "$expected/bin/foundryup" "$LOG"; then
+    pass "Foundry invokes installed binary ($location)"
+  else
+    cat "$dir/out"
+    fail "Foundry invokes installed binary ($location)"
+  fi
+done
+
 echo
 if [ "$fails" -eq 0 ]; then echo "all bootstrap checks passed"; else echo "$fails bootstrap check(s) failed"; exit 1; fi
