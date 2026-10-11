@@ -60,7 +60,8 @@ elif [ "$PLATFORM" = "darwin" ]; then
     log "Installing Homebrew"
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
   fi
-  eval "$(/opt/homebrew/bin/brew shellenv 2>/dev/null || /usr/local/bin/brew shellenv)"
+  # Prefer brew from PATH so a stubbed brew (tests) cannot put the real one first.
+  eval "$(brew shellenv 2>/dev/null || /opt/homebrew/bin/brew shellenv 2>/dev/null || /usr/local/bin/brew shellenv)"
   log "Installing prerequisites via brew"
   brew install gnupg jq
 fi
