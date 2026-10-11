@@ -34,11 +34,8 @@ _set_ghostty_title() {
 
 _sync_tmux_title() {
   [[ -n "$TMUX" ]] || return
-  local branch
-  branch=$(git symbolic-ref --quiet --short HEAD 2>/dev/null || git rev-parse --short HEAD 2>/dev/null)
   tmux set-option -gq @title_host "$(_ghostty_title_host)"
   tmux set-option -pq -t "$TMUX_PANE" @title_dir "$(_ghostty_title_dir)"
-  tmux set-option -pq -t "$TMUX_PANE" @title_branch "$branch"
 }
 
 _run_amp_with_title_guard() {
