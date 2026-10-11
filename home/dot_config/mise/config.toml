@@ -1,4 +1,5 @@
 [tools]
+gh = "latest"
 gitleaks = "latest"
 go = "prefix:1.24"
 golangci-lint = "latest"

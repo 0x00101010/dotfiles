@@ -32,7 +32,7 @@ Parse an `in <repo>` suffix (e.g. `/pr add cache in base`). Otherwise use the cu
 
 ### 2. Implement
 
-Read the repo's guidance files first. Work in the current directory, unless it is a repo's default worktree with `dev<N>` worktrees beside it: then `cd "$(devslot claim <branch>)"` to reuse a warm build, and `devslot release` after step 6. Create no other worktrees. Bug fix → write a reproducing test first. Run the repo's tests, lint, and typecheck/build.
+Read the repo's guidance files first. Work in the current directory, unless it is a repo's default worktree with `dev<N>` worktrees beside it: then `cd "$(devslot claim <branch>)"` to reuse a warm build, and `devslot release` after step 6. Otherwise, on the default branch: require a clean tree, then `git fetch origin && git switch -c <branch> origin/<default>`. Branch: `<prefix>/<slug>`, with your usual prefix in this repo (`git log --author`). Create no other worktrees. Bug fix → write a reproducing test first. Run the repo's tests, lint, and typecheck/build.
 
 ### 3. Simplify
 
@@ -44,18 +44,18 @@ Follow [review.md](review.md). Skip trivial and docs-only diffs (typo, one-line 
 
 ### 5. Open a draft PR
 
-Commit, push, `gh pr create --draft`, using the formats below.
+Commit, push, `gh pr create --draft`, using the formats below. Before writing the body, load every installed `*-pr-conventions` skill and follow those whose scope matches this repo.
 
 ### 6. Iterate until ready (mandatory)
 
-Do NOT return control until CI is green AND every unresolved review thread is addressed (code change or reply) and resolved.
+Do NOT return control until CI is green AND every review thread is fixed and resolved, or answered. After the PR is open, push new commits; never amend, rebase, or force-push.
 
-1. Wait for CI to complete.
-2. Check failed → fix the root cause (never skip or disable tests), push, GOTO 1.
-3. Pull all review threads (top-level + inline).
-4. For each unresolved thread: fix it or reply with reasoning, then resolve it. Non-trivial fixes go through steps 3–4 first.
+1. Wait for CI: `gh pr checks --watch`.
+2. Check failed → unrelated to the diff (flaky): rerun once with `gh run rerun <run-id> --failed`. Also fails on the base branch: report it instead of fixing it. Otherwise fix the root cause (never skip or disable tests), push, GOTO 1.
+3. Pull inline threads with `gh api graphql` on `pullRequest.reviewThreads` (`isResolved`, comments), and top-level comments and review bodies with `gh pr view --comments`, which misses inline threads.
+4. For each unresolved thread or top-level comment without your reply: fixed with code → reply with the commit, then resolve the thread (`resolveReviewThread`); not changing it → reply with why and leave it open for the reviewer. Non-trivial fixes go through steps 3–4 first.
 5. Pushed anything in step 2 or 4 → GOTO 1.
-6. CI green and no unresolved threads → report the PR URL and stop.
+6. CI green and every thread resolved or answered → report the PR URL and stop. Leave the PR as a draft.
 
 Return early ONLY when:
 
