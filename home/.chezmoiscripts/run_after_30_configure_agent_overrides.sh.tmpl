@@ -47,3 +47,14 @@ ln -sf {{ joinPath .chezmoi.homeDir ".agents/skills/_shared/instructions.md" | r
 printf '%s\n' "$instructions" | write_file {{ joinPath $codex "AGENTS.md" | replace "'" "'\\''" | printf "'%s'" }}
 {{- end }}
 {{- end }}
+{{- if or (has "claude" $agents) (has "codex" $agents) (has "amp" $agents) }}
+
+# Skills from other repos: copied as <repo>-<skill> by skillsync when a sources
+# file exists; otherwise just say where to list them.
+skill_sources="${XDG_CONFIG_HOME:-$HOME/.config}/agents/skill-sources"
+if [ -f "$skill_sources" ]; then
+  {{ joinPath (includeTemplate "ai-root" .) "bin/skillsync" | replace "'" "'\\''" | printf "'%s'" }}
+else
+  echo "[chezmoi] No repo skills synced: list repos in $skill_sources (one per line), then run skillsync."
+fi
+{{- end }}

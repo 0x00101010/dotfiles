@@ -19,4 +19,5 @@
 {{- if not (or (has "claude" $agents) (has "codex" $agents) (has "amp" $agents)) }}
 .agents/skills/_shared
 .local/bin/devslot
+.local/bin/skillsync
 {{- end }}

@@ -75,6 +75,18 @@ free slot (lock in the slot's git dir, branch off `origin/<default>`, build cach
 intact) and `devslot release` returns it once the PR is open. Locks older than 12h
 on clean, fully pushed slots are reclaimed automatically; parallelism is the slot count.
 
+Skills kept in other repos (company or personal, not committed here) come in
+through `~/.local/bin/skillsync`. List sources in `~/.config/agents/skill-sources`,
+one per line: `<repo-or-skills-dir> [as <prefix>] [only <skill>,<skill>]`. A repo
+contributes `.agents/skills/*` and `.claude/skills/*`; each skill is copied to
+`~/.agents/skills/<prefix>-<skill>` (prefix defaults to the directory name) with
+its frontmatter `name` rewritten, so agents see `meridian-planning` rather than a
+second `planning`. Claude gets `~/.claude/skills/<prefix>-<skill>` links to the
+copies. The copies are not chezmoi-managed; `chezmoi apply` reruns `skillsync`
+when the sources file exists and otherwise prints where to create it. Skills
+dropped from the list are removed again; a name that already exists and was not
+installed by skillsync is refused.
+
 Both profiles install `pr`, `plan`, `execute-plan`, `agent-browser`, and `beautiful-mermaid` for
 the selected agents. Each file links to its source under `ai/skills/`, including
 bundled scripts, templates, and references. Individual links preserve sibling
@@ -156,6 +168,7 @@ stale todo files (including archives and habits) from both context repositories.
 tests/bootstrap/run.sh
 python3 tests/agents/test_wiring.py
 tests/devslot/run.sh
+tests/skillsync/run.sh
 ```
 
 The wiring tests apply only agent targets in disposable homes and run only the

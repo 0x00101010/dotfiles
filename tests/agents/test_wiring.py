@@ -63,6 +63,7 @@ class AgentWiringTest(unittest.TestCase):
         result = subprocess.run(["bash"], input=script, env=self.env, cwd=self.home,
                                 text=True, capture_output=True)
         self.assertEqual(result.returncode, 0, result.stderr)
+        return result.stdout
 
     def write(self, path, text):
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -133,6 +134,7 @@ class AgentWiringTest(unittest.TestCase):
         self.assertFalse((self.home / "src/workspace").exists())
         self.assertFalse((self.home / "src/0x00101010/workspace").exists())
         self.assertEqual((self.home / ".local/bin/devslot").resolve(), REPO / "ai/bin/devslot")
+        self.assertEqual((self.home / ".local/bin/skillsync").resolve(), REPO / "ai/bin/skillsync")
         before = [p.read_bytes() for p in [*paths, settings, shared]]
         self.apply()
         self.assertEqual(before, [p.read_bytes() for p in [*paths, settings, shared]])
@@ -223,6 +225,7 @@ class AgentWiringTest(unittest.TestCase):
                    if p.startswith(".config/amp/")]
         self.assertEqual(managed, [".config/amp/AGENTS.md", ".config/amp/plugins/pr-review.ts"])
         self.assertEqual((self.home / ".local/bin/devslot").resolve(), REPO / "ai/bin/devslot")
+        self.assertEqual((self.home / ".local/bin/skillsync").resolve(), REPO / "ai/bin/skillsync")
         plugin = self.home / ".config/amp/plugins/pr-review.ts"
         self.assertTrue(plugin.is_symlink())
         self.assertEqual(plugin.resolve(), REPO / "ai/amp/plugins/pr-review.ts")
@@ -249,6 +252,25 @@ class AgentWiringTest(unittest.TestCase):
             self.assertFalse((self.home / ".agents/skills" / name).exists())
         self.assertFalse((self.home / ".agents/skills/_shared/instructions.md").exists())
         self.assertFalse((self.home / ".local/bin/devslot").exists())
+        self.assertFalse((self.home / ".local/bin/skillsync").exists())
+        self.assertNotIn("skill", self.apply())
+
+    def test_skill_sources_sync_repo_skills_with_prefix(self):
+        self.init(agents="claude/amp")
+        sources = self.home / ".config/agents/skill-sources"
+        self.assertIn(f"list repos in {sources}", self.apply())
+        self.write(self.home / "src/meridian/.agents/skills/planning/SKILL.md",
+                   "---\nname: planning\ndescription: d\n---\nbody\n")
+        self.write(sources, "~/src/meridian\n")
+        out = self.apply()
+        self.assertIn("skillsync: 1 skill(s) from 1 source(s)", out)
+        copy = self.home / ".agents/skills/meridian-planning/SKILL.md"
+        self.assertFalse(copy.is_symlink())
+        self.assertEqual(copy.read_text(), "---\nname: meridian-planning\ndescription: d\n---\nbody\n")
+        self.assertEqual((self.home / ".claude/skills/meridian-planning").resolve(), copy.parent)
+        self.assertNotIn(".agents/skills/meridian-planning",
+                         self.cm("managed", "--include=files,symlinks").stdout)
+        self.skills(self.home / ".claude/skills")
 
     def test_personal_claude_override(self):
         claude = self.root / "Claude's $custom config"

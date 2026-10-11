@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+# skillsync: copy skills from other repos into ~/.agents/skills as <repo>-<skill>.
+set -euo pipefail
+
+SOURCES=${SKILL_SOURCES:-${XDG_CONFIG_HOME:-$HOME/.config}/agents/skill-sources}
+DEST=$HOME/.agents/skills
+CLAUDE=${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills
+STATE=${XDG_STATE_HOME:-$HOME/.local/state}/skillsync/installed
+dry=0
+
+usage() {
+  cat >&2 <<EOF
+usage: skillsync [--dry-run]
+
+Reads $SOURCES, one source per line:
+  <repo-or-skills-dir> [as <prefix>] [only <skill>,<skill>]
+A repo contributes <repo>/.agents/skills/* and <repo>/.claude/skills/*.
+Each skill is copied to ~/.agents/skills/<prefix>-<skill> with its frontmatter
+name rewritten, and linked from the Claude skills dir. Prefix defaults to the
+source's directory name. Skills dropped from the list are removed again.
+EOF
+  exit 2
+}
+
+case ${1:-} in --dry-run) dry=1 ;; "") ;; *) usage ;; esac
+
+die() { echo "skillsync: $*" >&2; exit 1; }
+run() { (( dry )) && { echo "+ $*"; return; }; "$@"; }
+
+[ -f "$SOURCES" ] || die "no sources file at $SOURCES; list repos there (one per line) to add their skills"
+
+skill_dirs() {  # path -> dirs that contain SKILL.md
+  local p=$1 d
+  if ls "$p"/*/SKILL.md >/dev/null 2>&1; then
+    for d in "$p"/*/SKILL.md; do dirname "$d"; done
+  else
+    for d in "$p"/.agents/skills/*/SKILL.md "$p"/.claude/skills/*/SKILL.md; do
+      [ -f "$d" ] && dirname "$d"
+    done
+  fi
+}
+
+rename_frontmatter() {  # file name
+  awk -v name="$2" '
+    NR == 1 && $0 == "---" { fm = 1; print; next }
+    fm && /^name:/ { print "name: " name; done = 1; next }
+    fm && $0 == "---" { if (!done) print "name: " name; fm = 0 }
+    { print }
+  ' "$1" > "$1.tmp" && mv "$1.tmp" "$1"
+}
+
+installed=()
+[ -f "$STATE" ] && while IFS= read -r n; do installed+=("$n"); done < "$STATE"
+wanted=()
+sources=0
+
+while IFS= read -r line || [ -n "$line" ]; do
+  line=${line%%#*}
+  read -ra tok <<< "$line" || true
+  [ ${#tok[@]} -gt 0 ] || continue
+  path=${tok[0]/#\~/$HOME}
+  prefix=$(basename "$path"); only=""
+  i=1
+  while [ $i -lt ${#tok[@]} ]; do
+    case ${tok[$i]} in
+      as) prefix=${tok[$((i+1))]}; i=$((i+2)) ;;
+      only) only=",${tok[$((i+1))]},"; i=$((i+2)) ;;
+      *) die "bad token '${tok[$i]}' in: $line" ;;
+    esac
+  done
+  [ -d "$path" ] || die "missing source $path"
+  sources=$((sources + 1))
+  found=0
+  while IFS= read -r src; do
+    skill=$(basename "$src")
+    [ -z "$only" ] || [[ $only == *",$skill,"* ]] || continue
+    found=1
+    name="$prefix-$skill"
+    printf '%s\n' "${wanted[@]+"${wanted[@]}"}" | grep -qx "$name" && die "duplicate skill name $name"
+    if [ -e "$DEST/$name" ] && ! printf '%s\n' "${installed[@]+"${installed[@]}"}" | grep -qx "$name"; then
+      die "$DEST/$name exists and was not installed by skillsync; pick another prefix with 'as'"
+    fi
+    wanted+=("$name")
+    run rm -rf "$DEST/$name"
+    run cp -R "$src" "$DEST/$name"
+    run rename_frontmatter "$DEST/$name/SKILL.md" "$name"
+    [ -d "$(dirname "$CLAUDE")" ] && { run mkdir -p "$CLAUDE"; run ln -sfn "$DEST/$name" "$CLAUDE/$name"; }
+  done < <(skill_dirs "$path")
+  (( found )) || echo "skillsync: no skills found under $path" >&2
+done < "$SOURCES"
+
+for name in "${installed[@]+"${installed[@]}"}"; do
+  printf '%s\n' "${wanted[@]+"${wanted[@]}"}" | grep -qx "$name" && continue
+  run rm -rf "$DEST/$name" "$CLAUDE/$name"
+done
+
+if (( ! dry )); then
+  mkdir -p "$(dirname "$STATE")"
+  printf '%s\n' "${wanted[@]+"${wanted[@]}"}" > "$STATE"
+fi
+echo "skillsync: ${#wanted[@]} skill(s) from $sources source(s) in $SOURCES${wanted[0]+: ${wanted[*]}}"
