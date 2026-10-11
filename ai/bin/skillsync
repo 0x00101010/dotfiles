@@ -26,6 +26,11 @@ case ${1:-} in --dry-run) dry=1 ;; "") ;; *) usage ;; esac
 
 die() { echo "skillsync: $*" >&2; exit 1; }
 run() { (( dry )) && { echo "+ $*"; return; }; "$@"; }
+record() {  # mark a name as ours before copying so a failed run cannot orphan it
+  (( dry )) && return
+  mkdir -p "$(dirname "$STATE")"
+  grep -qx "$1" "$STATE" 2>/dev/null || echo "$1" >> "$STATE"
+}
 
 [ -f "$SOURCES" ] || die "no sources file at $SOURCES; list repos there (one per line) to add their skills"
 
@@ -81,6 +86,7 @@ while IFS= read -r line || [ -n "$line" ]; do
       die "$DEST/$name exists and was not installed by skillsync; pick another prefix with 'as'"
     fi
     wanted+=("$name")
+    record "$name"
     run mkdir -p "$DEST"
     run rm -rf "$DEST/$name"
     run cp -R "$src" "$DEST/$name"

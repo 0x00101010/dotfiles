@@ -66,6 +66,10 @@ check "dropped sources are removed" bash -c "[ ! -e '$HOME/.agents/skills/meridi
 skill "$TMP/src/other/.agents/skills" direct
 printf '%s\n' "$TMP/src/loose" "$TMP/src/other as loose" > "$SOURCES"
 check "duplicate names are refused" bash -c "! '$SKILLSYNC' 2>/dev/null"
+printf '%s\n' "$TMP/src/other" "$TMP/src/loose bogus" > "$SOURCES"
+"$SKILLSYNC" 2>/dev/null && fail "bad token should abort"
+printf '%s\n' "$TMP/src/other" > "$SOURCES"
+check "copies from an aborted run are still recognized" bash -c "'$SKILLSYNC' >/dev/null 2>&1 && [ -f '$HOME/.agents/skills/other-direct/SKILL.md' ]"
 
 mkdir -p "$TMP/src/dotfiles-clash/.agents/skills" && skill "$TMP/src/dotfiles-clash/.agents/skills" x
 printf '%s\n' "$TMP/src/dotfiles-clash as foo" > "$SOURCES"
