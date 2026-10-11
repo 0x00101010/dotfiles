@@ -40,7 +40,6 @@ From the repo root, `just` lists every recipe:
 | `just apply` / `just diff` | `chezmoi apply -v` / preview the changes |
 | `just test` | every check below, none touching your home |
 | `just sync` / `just sync-log` | run reposync now / show its recent cron log |
-| `just runner` / `just runner-log` | Amp runner status and served directories / its recent log |
 | `just skills` | rerun skillsync |
 | `just config` | open `~/.config/dotfiles` |
 
@@ -100,15 +99,6 @@ Selecting Amp renders the same instructions to `~/.config/amp/AGENTS.md` and lin
 `~/.config/amp/plugins/pr-review.ts` to `ai/amp/plugins/`; it adds
 `review_with_models`, which the `pr` skill uses to run reviews on two models (deep tier) or one (light).
 Existing Amp settings are left alone.
-
-On Linux, selecting Amp also installs and enables `amp-runner.service` (systemd
-user unit, lingering on, so it survives logout and reboot). It runs
-`amp --no-tui --runner-id <hostname> --no-serve-cwd --discover-dirs=~/src --discover-depth 3`,
-serving every Git checkout and worktree under `~/src` (including `dev<N>` slots),
-so `create_thread` and ampcode.com can start threads on this machine in parallel.
-Threads inherit the unit's environment, not your shell's; add tools to its
-`PATH` in the unit. After editing the unit, `just apply` reloads it and prints a
-reminder to `systemctl --user restart amp-runner` once no thread is running.
 
 Selecting any agent links `~/.local/bin/devslot` to `ai/bin/devslot`. The `pr`
 skill tells agents to work in the current checkout, except in repos that
