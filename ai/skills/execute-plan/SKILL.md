@@ -11,18 +11,18 @@ Read `~/.agents/skills/_shared/instructions.md` for the plan root, repo registry
 
 - No `## Phase` headings → run `plan` first and confirm before executing.
 - `## Open questions` lists a blocker → stop and ask; do not guess.
-- A phase already marked `**Status:** done` → skip it.
+- A phase already marked `**Status:** done` → skip it. Marked `**Status:** open — <PR URL>` → its PR exists; resume it at step 4.4 in its workspace, and replace the line when it finishes.
 - The user names a phase → run only that phase.
 
 ## 2. Schedule slices
 
 Each phase is one slice unless its `**PR boundary:**` says `Not a PR boundary`, in which case merge it into the next phase's slice; the merged slice waits on both phases' dependencies.
 
-A slice is ready when every `**Depends on:**` entry is met: `(merged)` → that phase's PR is merged (`gh pr view <url> --json state`); `(stacked)` → that phase is done. A dependency whose PR was closed unmerged counts as blocked. Older plans without `**Depends on:**`: follow `## Implementation order` and `**Parallelizable:**`, treating each sequential phase as `(merged)` on the one before.
+A slice is ready when every `**Depends on:**` entry is met: `(merged)` → that phase's PR is merged (`gh pr view <url> --json state`); `(stacked)` → that phase's PR is open. A dependency whose PR was closed unmerged counts as blocked. Older plans without `**Depends on:**`: follow `## Implementation order` and `**Parallelizable:**`, treating each sequential phase as `(merged)` on the one before.
 
 First, for each done `(stacked)` phase whose parent PR has merged: in a workspace from step 3, check out its branch, run `git rebase --onto origin/<default> <parent-head>` (parent head: `gh pr view <parent-url> --json headRefOid`), `git push --force-with-lease`, and `gh pr edit <url> --base <default>`. Then rebase each phase stacked on the one you just rebased the same way, onto its parent's new branch tip, cutting at the parent's head from before its rebase; its base stays the parent's branch. Conflicts → `git rebase --abort` and report it.
 
-Start every ready slice at once; when one finishes, start whatever became ready. Slot repos limit themselves (`devslot claim` waits when no slot is free). Repos without slots run one slice at a time per repo, because one checkout holds one branch. Slices still waiting on an unmerged PR stay pending: report them and stop; rerunning the skill picks them up. A blocked slice → let running slices finish, start nothing new, and report.
+Run every ready slice as one batch through step 4; whenever a batch stage ends, start a new batch with whatever became ready. Slot repos limit themselves (`devslot claim` waits when no slot is free). Repos without slots run one slice at a time per repo, because one checkout holds one branch. Slices still waiting on an unmerged PR stay pending: report them and stop; rerunning the skill picks them up. A blocked slice → let running slices finish, start nothing new, and report.
 
 ## 3. Workspace per slice
 
@@ -33,27 +33,32 @@ Resolve `**Repo:**` through the registry (fall back to `in <repo>` text or the c
 
 Base: `<default>`, or for a `(stacked)` dependency, that phase's branch. Branch: `<prefix>/<slug>`, prefix from `## Handoff to PR skill`; default prefix is the user's usual one in that repo (`git log --author`), slug from the phase name.
 
-## 4. Run the slice
+## 4. Run a batch
 
-Subagents cannot run the multi-model review, so you review between two subagents. Give each one: the absolute workspace path, the branch, the base branch when stacked (for `gh pr create --base`), the phase text verbatim (objective, actions, verification, exit criteria), and the instruction to follow the `pr` skill and work only in that directory.
+Subagents cannot run the multi-model review, and a subagent call blocks you until every subagent started in that turn returns. So subagents do only short, bounded work; you review, and you do all waiting with background shell processes. Give each subagent: the absolute workspace path, the branch, the base branch when stacked (for `gh pr create --base`), the phase text verbatim (objective, actions, verification, exit criteria), and the instruction to follow the `pr` skill and work only in that directory.
 
-1. **Implement.** The first subagent follows `pr` steps 1–3, commits locally, and stops without pushing. It does not split an oversized diff. Its final message: what it built, the checks it ran, the diff size with a proposed split if over the limit, anything left undone.
-2. **Review.** Diff over the `pr` size rule → do not ship; mark the phase blocked with the size and proposed split. Otherwise run `pr` step 4 ([review.md](../pr/review.md)) yourself on `git -C <path> diff origin/<base>...HEAD`, including validating each finding.
-3. **Ship.** The second subagent gets the verified findings, fixes them, reruns checks, then follows `pr` steps 5–6. Its final message: the PR URL, the checks it ran, anything left undone.
-4. **Re-review.** If step 2 found blockers, rerun those lenses on the final diff once; new blockers → another ship subagent with them, which pushes new commits.
+1. **Implement.** One subagent per slice, all started in one turn. Each follows `pr` steps 1–3, commits locally, and stops without pushing. It does not split an oversized diff. Final message: what it built, the checks it ran, the diff size with a proposed split if over the limit, anything left undone.
+2. **Review.** Diff over the `pr` size rule → do not ship; mark the phase blocked with the size and proposed split. Otherwise run `pr` step 4 ([review.md](../pr/review.md)) yourself on `git -C <path> diff origin/<base>...HEAD`, one `review_with_models` call per slice in the same turn, and validate each finding.
+3. **Open.** One subagent per slice, all in one turn. Each gets the verified findings, fixes them, reruns checks, follows `pr` step 5, and returns as soon as the draft PR exists; it must not run `pr` step 6. Final message: the PR URL, the checks it ran, anything left undone. Append `**Status:** open — <PR URL>` under the phase heading. If step 2 found blockers, rerun those lenses once on `origin/<base>...<branch>`; new blockers → a fix subagent.
+4. **Watch.** For each PR, start `gh pr checks <url> --watch` as a background process and keep its pid. Then go back to step 2 of this skill: start the next batch with whatever became ready (stacked children are ready now) and run it through steps 1–3 while the checks run. Between stages, and at least every 10 minutes, poll the pids with `shell_command_status` and pull review threads and comments as in `pr` step 6.3. Then:
+   - Checks failed → `pr` step 6.2: flaky → rerun once; also fails on the base branch → report; otherwise a fix subagent.
+   - Unresolved thread or unanswered comment → a fix subagent with the thread text; it applies `pr` step 6.4.
+   - A fix subagent gets the path, branch, PR URL, and one failure or thread. It fixes, pushes new commits (never amend or force-push), replies, and returns. After it pushes, restart the watch for that PR.
+   - `pr`'s return-early conditions apply per slice: a scope/design decision, a question only the user can answer, or the same CI failure after 3 fix attempts → mark the slice blocked with the question and move on.
+   - Checks green and every thread resolved or answered → the slice is finished.
 
 When the slice is finished:
 
 - Confirm the PR exists and matches the branch: `gh pr view <url> --json state,headRefName`.
 - Slot repo → `devslot release <path>` (it refuses dirty or unpushed trees; resolve that first, do not force).
 - Otherwise → `git switch <default>` in that checkout.
-- Append under the phase heading: `**Status:** done — <PR URL>`, or `**Status:** blocked — <one line>`.
+- Set the phase's status line (append one if missing) to `**Status:** done — <PR URL>`, or `**Status:** blocked — <one line>`.
 
 Only these status lines may be written into the plan; leave every other line as is.
 
 ## 5. Report
 
-When no slice is ready: list each phase with its PR URL, blocker, or the merge it waits on; slots released; stacked PRs rebased or with rebase conflicts; and anything the user must decide. Do not merge, transition issues, or force-push beyond the stacked rebase.
+When no slice is ready and no PR is still being watched: list each phase with its PR URL, blocker, or the merge it waits on; slots released; stacked PRs rebased or with rebase conflicts; and anything the user must decide. Do not merge, transition issues, or force-push beyond the stacked rebase.
 
 ## Rules
 

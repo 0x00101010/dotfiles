@@ -142,8 +142,10 @@ repo registry. It preserves the phased-plan and PR-handoff format without
 depending on retired skills or any particular coding agent's research tools.
 `execute-plan` runs a written plan: each phase's `**Repo:**` resolves through the
 registry, slot repos are claimed with `devslot`, other repos get a branch in their
-default checkout, each slice goes through `pr` in a subagent, and a `**Status:**`
-line is appended under the phase.
+default checkout, ready slices run as a batch (implement subagents → multi-model
+review in the orchestrator → open-PR subagents), CI and review comments are
+watched by the orchestrator in background processes while the next batch runs,
+and a `**Status:**` line is kept under the phase.
 
 `_shared/workspace.md` is now a profile-aware reference, installed as
 `~/.agents/skills/_shared/instructions.md` for any selected agent. Claude's
