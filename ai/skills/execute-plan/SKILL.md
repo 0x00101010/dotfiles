@@ -3,7 +3,7 @@ name: execute-plan
 description: Execute an existing implementation plan phase by phase. Use for "execute the plan", "run the plan", "implement <plan>", or when handed a plan path. Resolves each phase's repo and workspace, runs each PR-ready slice through the pr skill, and records progress in the plan file.
 ---
 
-Read `~/.agents/skills/_shared/instructions.md` for the plan root, repo registry, and checkout layout. Refer to `plan` for the plan format and `pr` for how each slice is shipped. Invoking this skill authorizes creating branches, pushing them, opening PRs for the plan's slices, and rebasing stacked PRs once their parent merges — nothing else.
+Read `~/.agents/skills/_shared/instructions.md` for the plan root, repo registry, and checkout layout. Refer to `plan` for the plan format and `pr` for how each slice is shipped. Invoking this skill authorizes creating branches, pushing them, opening PRs for the plan's slices, pushing commits to the default branch of `pr` direct repos, and rebasing stacked PRs once their parent merges — nothing else.
 
 ## 1. Resolve the plan
 
@@ -18,7 +18,7 @@ Read `~/.agents/skills/_shared/instructions.md` for the plan root, repo registry
 
 Each phase is one slice unless its `**PR boundary:**` says `Not a PR boundary`, in which case merge it into the next phase's slice; the merged slice waits on both phases' dependencies.
 
-A slice is ready when every `**Depends on:**` entry is met: `(merged)` → that phase's PR is merged (`gh pr view <url> --json state`); `(stacked)` → that phase's PR is open. A dependency whose PR was closed unmerged counts as blocked. Older plans without `**Depends on:**`: follow `## Implementation order` and `**Parallelizable:**`, treating each sequential phase as `(merged)` on the one before.
+A slice is ready when every `**Depends on:**` entry is met: `(merged)` → that phase's PR is merged (`gh pr view <url> --json state`); `(stacked)` → that phase's PR is open. A phase in a direct repo meets both once its commits are pushed. A dependency whose PR was closed unmerged counts as blocked. Older plans without `**Depends on:**`: follow `## Implementation order` and `**Parallelizable:**`, treating each sequential phase as `(merged)` on the one before.
 
 First, for each done `(stacked)` phase whose parent PR has merged: in a workspace from step 3, check out its branch, run `git rebase --onto origin/<default> <parent-head>` (parent head: `gh pr view <parent-url> --json headRefOid`), `git push --force-with-lease`, and `gh pr edit <url> --base <default>`. Then rebase each phase stacked on the one you just rebased the same way, onto its parent's new branch tip, cutting at the parent's head from before its rebase; its base stays the parent's branch. Conflicts → `git rebase --abort` and report it.
 
@@ -29,6 +29,7 @@ Run every ready slice as one batch through step 4; whenever a batch stage ends, 
 Resolve `**Repo:**` through the registry (fall back to `in <repo>` text or the current repo; ambiguous → ask). Then:
 
 - Slot repo (`dev<N>` beside the default worktree): `path=$(devslot claim <branch> <repo-root> --note "<plan>:<phase>")`; stacked → then `git -C "$path" reset -q --hard origin/<base>` on the fresh branch.
+- Direct repo (see `pr`): the checkout itself, on the default branch. Its slices run one at a time and never branch.
 - Otherwise: in the default checkout, require a clean tree, then `git fetch origin && git switch -c <branch> origin/<base>`.
 
 Base: `<default>`, or for a `(stacked)` dependency, that phase's branch. Branch: `<prefix>/<slug>`, prefix from `## Handoff to PR skill`; default prefix is the user's usual one in that repo (`git log --author`), slug from the phase name.
@@ -53,6 +54,8 @@ When the slice is finished:
 - Slot repo → `devslot release <path>` (it refuses dirty or unpushed trees; resolve that first, do not force).
 - Otherwise → `git switch <default>` in that checkout.
 - Set the phase's status line (append one if missing) to `**Status:** done — <PR URL>`, or `**Status:** blocked — <one line>`.
+
+Direct-repo slices skip the branch, PR, and thread steps: step 3 pushes, step 4 watches only CI on the pushed commit, and the status links the last commit (`**Status:** done — <commit URL>`).
 
 Only these status lines may be written into the plan; leave every other line as is.
 

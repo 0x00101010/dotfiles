@@ -1,6 +1,6 @@
 ---
 name: pr
-description: Implement work, simplify and self-review it, ship it as a PR ready for review, then iterate on review and CI until ready.
+description: Implement work, simplify and self-review it, ship it as a PR ready for review, then iterate on review and CI until ready. In repos you own and auto-sync, push commits straight to the default branch instead.
 ---
 
 Goal: a PR a reviewer can approve on first read. Small diff, self-reviewed, concise prose.
@@ -31,6 +31,8 @@ These apply to every step, including fixes made while iterating.
 `$ARGUMENTS` describes the work: free text, an issue tracker ID/URL, or a GitHub issue (`gh issue view`). Fetch the spec when given a reference. Ambiguous → ask ONE clarifying question.
 
 Parse an `in <repo>` suffix (e.g. `/pr add cache in base`). Otherwise use the current repo, or the repo registry named in the profile context. Ambiguous → ask.
+
+Repo top level listed in `~/.config/dotfiles/reposync` (`~` is home; ignore trailing slashes and `#` comments) → it is a direct repo: follow [Direct repos](#direct-repos) where it differs from the steps below.
 
 ### 2. Implement
 
@@ -66,6 +68,15 @@ Return early ONLY when:
 - Feedback requires a scope/design decision you cannot make alone.
 - The same CI failure persists after 3 fix attempts → summarize what was tried, ask.
 - A thread asks a question only the user can answer.
+
+### Direct repos
+
+Owned repos that skip review: no branch, no PR. reposync commits every file left untouched for a minute and pushes it to the upstream within 5 minutes, so commit early or your work lands as an `auto-sync` commit.
+
+- Step 2: work on the default branch in the checkout; `git pull --rebase --autostash` first. Leave other uncommitted changes alone; stage only your files (`git add <paths>`).
+- Step 3: commit once checks pass. Over the size rule → a stack of commits instead of stacked PRs, split the same way, each committed once it passes checks on its own.
+- Step 4: fix findings with new commits.
+- Steps 5–6: `git pull --rebase --autostash && git push`; never force-push. If a CI workflow runs on the push, watch it (`gh run list --commit <sha>`, `gh run watch <id>`) and handle failures as step 6.2 does. Report the commit links and stop.
 
 ## Formats
 
