@@ -1,6 +1,6 @@
 ---
 name: pr
-description: Implement work, simplify and self-review it, ship it as a draft PR, then iterate on review and CI until ready.
+description: Implement work, simplify and self-review it, ship it as a PR ready for review, then iterate on review and CI until ready.
 ---
 
 Goal: a PR a reviewer can approve on first read. Small diff, self-reviewed, concise prose.
@@ -46,9 +46,9 @@ Then measure against the size rule with `git diff --numstat -M origin/<base>...`
 
 Follow [review.md](review.md). Skip trivial and docs-only diffs (typo, one-line config, prose).
 
-### 5. Open a draft PR
+### 5. Open the PR
 
-Commit, push, `gh pr create --draft` (with `--base <branch>` when given a base other than the default or when stacked on a parent slice), using the formats below. Before writing the body, load every installed `*-pr-conventions` skill and follow those whose scope matches this repo.
+Commit, push, `gh pr create` (with `--base <branch>` when given a base other than the default or when stacked on a parent slice), using the formats below. Open it ready for review, not as a draft, so review bots run while you iterate. Before writing the body, load every installed `*-pr-conventions` skill and follow those whose scope matches this repo.
 
 ### 6. Iterate until ready (mandatory)
 
@@ -59,7 +59,7 @@ Do NOT return control until CI is green AND every review thread is fixed and res
 3. Pull inline threads with `gh api graphql` on `pullRequest.reviewThreads` (`isResolved`, comments), and top-level comments and review bodies with `gh pr view --comments`, which misses inline threads.
 4. For each unresolved thread or top-level comment without your reply: fixed with code → reply with the commit, then resolve the thread (`resolveReviewThread`); not changing it → reply with why and leave it open for the reviewer. Non-trivial fixes go through steps 3–4 first.
 5. Pushed anything in step 2 or 4 → GOTO 1.
-6. CI green and every thread resolved or answered → report the PR URL and stop. Leave the PR as a draft.
+6. CI green and every thread resolved or answered → report the PR URL and stop.
 
 Return early ONLY when:
 

@@ -3,7 +3,7 @@ name: execute-plan
 description: Execute an existing implementation plan phase by phase. Use for "execute the plan", "run the plan", "implement <plan>", or when handed a plan path. Resolves each phase's repo and workspace, runs each PR-ready slice through the pr skill, and records progress in the plan file.
 ---
 
-Read `~/.agents/skills/_shared/instructions.md` for the plan root, repo registry, and checkout layout. Refer to `plan` for the plan format and `pr` for how each slice is shipped. Invoking this skill authorizes creating branches, pushing them, opening draft PRs for the plan's slices, and rebasing stacked PRs once their parent merges — nothing else.
+Read `~/.agents/skills/_shared/instructions.md` for the plan root, repo registry, and checkout layout. Refer to `plan` for the plan format and `pr` for how each slice is shipped. Invoking this skill authorizes creating branches, pushing them, opening PRs for the plan's slices, and rebasing stacked PRs once their parent merges — nothing else.
 
 ## 1. Resolve the plan
 
@@ -39,7 +39,7 @@ Subagents cannot run the multi-model review, and a subagent call blocks you unti
 
 1. **Implement.** One subagent per slice, all started in one turn. Each follows `pr` steps 1–3, commits locally, and stops without pushing. It does not split an oversized diff. Final message: what it built, the checks it ran, the diff size with a proposed split if over the limit, anything left undone.
 2. **Review.** Diff over the `pr` size rule → do not ship; mark the phase blocked with the size and proposed split. Otherwise run `pr` step 4 ([review.md](../pr/review.md)) yourself on `git -C <path> diff origin/<base>...HEAD`, one `review_with_models` call per slice in the same turn, and validate each finding.
-3. **Open.** One subagent per slice, all in one turn. Each gets the verified findings, fixes them, reruns checks, follows `pr` step 5, and returns as soon as the draft PR exists; it must not run `pr` step 6. Final message: the PR URL, the checks it ran, anything left undone. Append `**Status:** open — <PR URL>` under the phase heading. If step 2 found blockers, rerun those lenses once on `origin/<base>...<branch>`; new blockers → a fix subagent.
+3. **Open.** One subagent per slice, all in one turn. Each gets the verified findings, fixes them, reruns checks, follows `pr` step 5, and returns as soon as the PR exists; it must not run `pr` step 6. Final message: the PR URL, the checks it ran, anything left undone. Append `**Status:** open — <PR URL>` under the phase heading. If step 2 found blockers, rerun those lenses once on `origin/<base>...<branch>`; new blockers → a fix subagent.
 4. **Watch.** For each PR, start `gh pr checks <url> --watch` as a background process and keep its pid. Then go back to step 2 of this skill: start the next batch with whatever became ready (stacked children are ready now) and run it through steps 1–3 while the checks run. Between stages, and at least every 10 minutes, poll the pids with `shell_command_status` and pull review threads and comments as in `pr` step 6.3. Then:
    - Checks failed → `pr` step 6.2: flaky → rerun once; also fails on the base branch → report; otherwise a fix subagent.
    - Unresolved thread or unanswered comment → a fix subagent with the thread text; it applies `pr` step 6.4.
