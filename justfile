@@ -22,6 +22,7 @@ test:
     tests/devslot/run.sh
     tests/skillsync/run.sh
     tests/reposync/run.sh
+    python3 tests/work-planner/test_runner.py
 
 # Sync the repos in ~/.config/dotfiles/reposync now
 sync:
@@ -35,6 +36,6 @@ sync-log:
 skills:
     ai/bin/skillsync
 
-# Open the local config files (reposync, skill-sources)
+# Open the local config files (reposync, skill-sources, work-planner)
 config:
     ${EDITOR:-vi} ~/.config/dotfiles
