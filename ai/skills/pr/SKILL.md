@@ -1,6 +1,6 @@
 ---
 name: pr
-description: Implement work, simplify and self-review it, ship it as a PR ready for review, then iterate on review and CI until ready. In repos you own and auto-sync, push commits straight to the default branch instead.
+description: Implement work, simplify and self-review it, ship it as a PR ready for review, then iterate on review and CI until ready. In repos you own and auto-sync, push commits straight to the default branch instead. Use for "work on <issue>" with a Linear or GitHub issue ID.
 ---
 
 Goal: a PR a reviewer can approve on first read. Small diff, self-reviewed, concise prose.
@@ -29,6 +29,8 @@ These apply to every step, including fixes made while iterating.
 ### 1. Resolve input
 
 `$ARGUMENTS` describes the work: free text, an issue tracker ID/URL, or a GitHub issue (`gh issue view`). Fetch the spec when given a reference. Ambiguous → ask ONE clarifying question.
+
+Linear issue → before implementing, assign it to me (`assignee: "me"`) and move it to its team's started state (usually "In Progress"), skipping what is already set. Assigned to someone else → ask first.
 
 Parse an `in <repo>` suffix (e.g. `/pr add cache in base`). Otherwise use the current repo, or the repo registry named in the profile context. Ambiguous → ask.
 
