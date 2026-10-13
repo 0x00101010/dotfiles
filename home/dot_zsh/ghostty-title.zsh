@@ -72,8 +72,10 @@ _run_amp_with_title_guard() {
   return $status
 }
 
+# Locally, Amp plays a sound instead of ringing the terminal bell when a thread
+# finishes. AMP_FORCE_BEL makes it send BEL, which Ghostty shows as 🔔 on the tab.
 amp() {
-  _run_amp_with_title_guard "$@"
+  AMP_FORCE_BEL=1 _run_amp_with_title_guard "$@"
 }
 
 autoload -Uz add-zsh-hook
