@@ -63,6 +63,8 @@ at 08:00
 ```
 
 The rest describes sources, output destination, capacity, and approved writes.
+The plan layout (daily and weekly sections, priorities, planner comment, task
+issues) lives in the runner's prompt, so edit it here and `chezmoi apply`.
 Keep identities and project IDs in that local file, not in Git. The runner uses
 Python 3.9+ and the authenticated Amp CLI with its existing tool permissions;
 it never enables blanket approval. Source and write restrictions are agent
