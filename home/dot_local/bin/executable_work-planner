@@ -33,6 +33,12 @@ the output project, including archived issues and all pages, for exact titles:
 Never adopt an unmarked issue or overwrite human edits. Stop on identity collisions.
 Reuse a complete existing daily plan after readback instead of creating duplicates.
 Create the weekly plan first if missing (remaining days only), then the daily plan.
+Carry unfinished items from the previous daily plan, and from last week's plan into a
+new weekly plan, unless the new plan already covers them. After today's plans are
+read back, close the previous daily plan and, in a new week, last week's plan: move
+each planner-owned plan to the team's completed state, skipping ones already closed
+or canceled. Closing is an approved update of a planner-owned plan. Read the state
+back; report a failed close as a gap, not a failed run.
 Include source windows, retrieval times, partial coverage and per-source checkpoints.
 Read every written issue and comment back separately: verify body, title, marker,
 project, team, assignee and links. Do not report success merely because a write
