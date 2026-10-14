@@ -1,13 +1,13 @@
 ---
 name: execute-plan
-description: Execute an existing implementation plan phase by phase. Use for "execute the plan", "run the plan", "implement <plan>", or when handed a plan path. Resolves each phase's repo and workspace, runs each PR-ready slice through the pr skill, and records progress in the plan file.
+description: Execute an existing implementation plan phase by phase, from a plan file or a Linear project. Use for "execute the plan", "run the plan", "implement <plan>", or when handed a plan path or Linear project. Resolves each phase's repo and workspace, runs each PR-ready slice through the pr skill, and records progress in the plan file or reads it from Linear.
 ---
 
 Read `~/.agents/skills/_shared/instructions.md` for the plan root, repo registry, and checkout layout. Refer to `plan` for the plan format and `pr` for how each slice is shipped. Invoking this skill authorizes creating branches, pushing them, opening PRs for the plan's slices, pushing commits to the default branch of `pr` direct repos, and rebasing stacked PRs once their parent merges — nothing else.
 
 ## 1. Resolve the plan
 
-`$ARGUMENTS` is a plan path or a name under the plan root (`<plan-root>/*/plans/<name>.md`). Read it in full.
+`$ARGUMENTS` is a plan path, a name under the plan root (`<plan-root>/*/plans/<name>.md`), or a Linear project (URL, `P-` ID, or name, optionally narrowed to a milestone). Linear project → follow [Linear projects](#linear-projects) where it differs from the steps below. Read the plan in full.
 
 - No `## Phase` headings → run `plan` first and confirm before executing.
 - `## Open questions` lists a blocker → stop and ask; do not guess.
@@ -61,11 +61,21 @@ Only these status lines may be written into the plan; leave every other line as 
 
 ## 5. Report
 
-When no slice is ready and no PR is still being watched: list each phase with its PR URL, blocker, or the merge it waits on; slots released; stacked PRs rebased or with rebase conflicts; and anything the user must decide. Do not merge, transition issues, or force-push beyond the stacked rebase.
+When no slice is ready and no PR is still being watched: list each phase with its PR URL, blocker, or the merge it waits on; slots released; stacked PRs rebased or with rebase conflicts; and anything the user must decide. Do not merge, transition issues beyond `pr`'s claim, or force-push beyond the stacked rebase.
+
+## Linear projects
+
+The project is the plan: its description and milestones are context, each issue is a phase, and Linear and GitHub hold all state, so nothing is written back beyond `pr`'s claim.
+
+- **Resolve.** `get_project` with milestones, every issue in the project (`list_issues`, paging), and `get_issue` with relations for each open issue. A named milestone → only its issues. Skip completed and canceled issues. A parent issue's sub-issues are its phases; the parent is not one.
+- **Slices.** An issue is a slice only if it needs a code change in a repo. Investigations, design decisions, sign-offs, deploy or ops steps outside a repo, and issues assigned to someone else are left to the user: never started, listed in the report with the reason, and their dependents wait on them. Resolve each slice's repo from its title and description through the registry; collect every ambiguous one and ask once before starting.
+- **Depends on.** Each `blocked by` relation, including blockers outside the project, is a `(merged)` dependency. It is met when the blocker is completed or its PR is merged; a canceled blocker is blocked. There are no stacked dependencies.
+- **Branch.** The issue's `gitBranchName`, so Linear links the PR. Give the implement subagent the issue ID so `pr` step 1 claims it.
+- **Status.** Never written. Find each issue's PR with `gh pr list --head <branch> --state all`: open → resume at step 4.4; merged → done.
 
 ## Rules
 
 - Never fabricate PR URLs or check results; quote the subagent's evidence.
 - One slice per branch; never reuse a workspace for two slices at once.
-- Do not edit plan prose, reorder phases, or start phases the plan marks blocked.
+- Do not edit plan prose or Linear issues and projects, reorder phases, or start phases the plan marks blocked.
 - When a slice is blocked, do not retry it with a different design; report and ask.

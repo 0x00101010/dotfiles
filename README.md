@@ -171,7 +171,10 @@ registry, slot repos are claimed with `devslot`, other repos get a branch in the
 default checkout, ready slices run as a batch (implement subagents → multi-model
 review in the orchestrator → open-PR subagents), CI and review comments are
 watched by the orchestrator in background processes while the next batch runs,
-and a `**Status:**` line is kept under the phase.
+and a `**Status:**` line is kept under the phase. Given a Linear project instead,
+each code issue is a phase, `blocked by` relations order them, branches use the
+issue's `gitBranchName`, and progress is read from Linear and GitHub, never written
+back.
 
 `_shared/workspace.md` is now a profile-aware reference, installed as
 `~/.agents/skills/_shared/instructions.md` for any selected agent. Claude's
