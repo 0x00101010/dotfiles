@@ -40,6 +40,8 @@ Repo top level listed in `~/.config/dotfiles/reposync` (`~` is home; ignore trai
 
 Read the repo's guidance files first. Work in the current directory, unless it is a repo's default worktree with `dev<N>` worktrees beside it: then `cd "$(devslot claim <branch>)"` to reuse a warm build, and `devslot release` after step 6. Otherwise, on the default branch: require a clean tree, then `git fetch origin && git switch -c <branch> origin/<default>`. Branch: `<prefix>/<slug>`, with your usual prefix in this repo (`git log --author`). Create no other worktrees. Bug fix → write a reproducing test first. Run the repo's tests, lint, and typecheck/build.
 
+Toshi: a session worktree (under `~/.mux/`) is the current directory, never a slot repo's default worktree. Work there; on a Toshi-generated branch, require a clean tree and create your branch in it as above.
+
 ### 3. Simplify
 
 Reread the full diff against the base branch as a reviewer seeing it for the first time. For each hunk, ask: can it be deleted, shrunk, or replaced with existing code and stay correct? Apply the cuts, remove comments that break the comment rule, and rerun checks.
@@ -57,6 +59,8 @@ Commit, push, `gh pr create` (with `--base <branch>` when given a base other tha
 ### 6. Iterate until ready (mandatory)
 
 Do NOT return control until CI is green AND every review thread is fixed and resolved, or answered. After the PR is open, push new commits; never amend, rebase, or force-push, except to rebase a stacked PR after its parent merges.
+
+Exceptions: the task that launched you says to stop once the PR exists → return after step 5. A `pr_track` tool exists (Toshi) → call it with the PR URL and `mode: "ask"`, and use its wakes and `pr_status` instead of `gh pr checks --watch` in sub-step 1; the rest is unchanged.
 
 1. Wait for CI: `gh pr checks --watch`.
 2. Check failed → unrelated to the diff (flaky): rerun once with `gh run rerun <run-id> --failed`. Also fails on the base branch: report it instead of fixing it. Otherwise fix the root cause (never skip or disable tests), push, GOTO 1.

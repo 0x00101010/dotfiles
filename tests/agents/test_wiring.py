@@ -11,6 +11,7 @@ import unittest
 REPO = Path(__file__).resolve().parents[2]
 OVERRIDES = REPO / "home/.chezmoiscripts/run_after_30_configure_agent_overrides.sh.tmpl"
 SKILLS = ("agent-browser", "beautiful-mermaid", "execute-plan", "plan", "pr")
+PI_AGENTS = ("pr-reviewer", "pr-worker")
 
 
 class AgentWiringTest(unittest.TestCase):
@@ -87,6 +88,13 @@ class AgentWiringTest(unittest.TestCase):
         for stale in ("~/src/workspace", "workspace.md", "`repos`", "`workon`"):
             self.assertNotIn(stale, plan)
 
+    def pi_agents(self):
+        for name in PI_AGENTS:
+            link = self.home / ".pi/agent/agents" / f"{name}.md"
+            self.assertTrue(link.is_symlink(), link)
+            self.assertEqual(link.resolve(), REPO / "ai/pi/agents" / f"{name}.md")
+            self.assertIn(f"name: {name}\n", link.read_text())
+
     def instructions(self, paths, profile):
         context = self.home / ("src/0x00101010/coinbase" if profile == "work" else "src/0x00101010/workspace")
         projects = context / ("projects" if profile == "work" else "projects/personal")
@@ -125,6 +133,7 @@ class AgentWiringTest(unittest.TestCase):
         self.assertEqual(len({p.read_bytes() for p in paths}), 1)
         for folder in (".pi", ".pi/agent"):  # cbcode keeps these owner-only
             self.assertEqual((self.home / folder).stat().st_mode & 0o777, 0o700)
+        self.pi_agents()
         settings = self.home / ".claude/settings.json"
         self.assertEqual(json.loads(settings.read_text())["plansDirectory"], str(projects))
         self.skills(self.home / ".claude/skills")
@@ -244,7 +253,8 @@ class AgentWiringTest(unittest.TestCase):
         self.instructions([self.home / ".pi/agent/AGENTS.md"], "work")
         managed = [p for p in self.cm("managed", "--include=files,symlinks").stdout.splitlines()
                    if p.startswith(".pi/")]
-        self.assertEqual(managed, [".pi/agent/AGENTS.md"])
+        self.assertEqual(managed, [".pi/agent/AGENTS.md", *(f".pi/agent/agents/{a}.md" for a in PI_AGENTS)])
+        self.pi_agents()
         self.skills(self.home / ".agents/skills")
         self.assertEqual((self.home / ".local/bin/devslot").resolve(), REPO / "ai/bin/devslot")
         self.assertFalse((self.home / ".claude").exists())

@@ -142,6 +142,11 @@ Selecting Pi renders the same instructions to `~/.pi/agent/AGENTS.md`, which Pi
 loads in every directory, Toshi sessions and subagents included. Only that file is
 managed; cbcode owns the rest of `~/.pi/agent` (settings, models, skills) and
 rewrites it on launch. `~/.pi` and `~/.pi/agent` stay owner-only (0700).
+It also links two subagent definitions from `ai/pi/agents/` into
+`~/.pi/agent/agents/`: `pr-reviewer` (read-only, one lens brief, model chosen
+per review tier) and `pr-worker` (ships one slice with `pr`, launches its own
+`pr-reviewer`s, stops once the PR exists). `review.md` and `execute-plan` use them
+only when Pi's `subagent` tool lists them; Amp and Claude keep their paths.
 
 Selecting any agent links `~/.local/bin/devslot` to `ai/bin/devslot`. The `pr`
 skill tells agents to work in the current checkout, except in repos that

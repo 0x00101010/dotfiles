@@ -59,6 +59,15 @@ Direct-repo slices skip the branch, PR, and thread steps: step 3 pushes, step 4 
 
 Only these status lines may be written into the plan; leave every other line as is.
 
+## Pi: no batches
+
+If the `subagent` tool lists a `pr-worker` agent, this section replaces step 2's batching paragraph and step 4's intro and sub-steps 1–3; everything else applies as written.
+
+- **Start.** Launch each slice as soon as it is ready: one background `pr-worker` per slice, each its own `subagent` call, with the workspace path, branch, base when stacked, the phase text verbatim (and the Linear issue ID), and the instruction to work only in that directory and stop once the PR exists. Do not wait for sibling slices. Step 2's per-repo limits still apply.
+- **Return.** Blocked, or over the size rule → mark the phase blocked with its reason. Otherwise check its findings table: every blocker fixed or rejected with evidence; a rejection you doubt → a fix `pr-worker`. Append `**Status:** open — <PR URL>`, start any slice that became ready, and continue at step 4.4.
+- **Watch.** In step 4.4, `pr_track` each PR with `mode: "ask"` instead of `gh pr checks --watch` and polling, and act on its wakes and `pr_status`. A fix subagent is a `pr-worker` given the path, branch, PR URL, and one failure or thread.
+- **Report** once no worker is running and every tracked PR is finished or blocked.
+
 ## 5. Report
 
 When no slice is ready and no PR is still being watched: list each phase with its PR URL, blocker, or the merge it waits on; slots released; stacked PRs rebased or with rebase conflicts; and anything the user must decide. Do not merge, transition issues beyond `pr`'s claim, or force-push beyond the stacked rebase.

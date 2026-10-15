@@ -18,6 +18,15 @@ Give it the intent (1–3 sentences), the diff command (e.g. `git diff <base>...
 
 If a `review_with_models` tool is available, call it with the tier below and one task per lens, each prompt being the full brief. `deep` runs every task on two models from different providers; `light` on one. Otherwise skip tiers and use your subagents on their default model.
 
+Pi: no `review_with_models`, but the `subagent` tool lists a `pr-reviewer` agent → use tiers instead of that fallback. Launch one `pr-reviewer` per lens × tier model in one parallel `subagent` call, each with its `model` below and the full brief as its task, and wait for all of them. Both tiers use two providers:
+
+| Tier | Models |
+| --- | --- |
+| `deep` | `anthropic/claude-fable-5-1:high`, `cbhq-openai/gpt-6-astra:high` |
+| `light` | `anthropic/claude-opus-5-5:medium`, `cbhq-openai/gpt-6.1-sol:medium` |
+
+Merge duplicate findings across models and keep which models raised each. A reviewer that fails or times out → rerun it once; still failing → report that lens and model as unreviewed.
+
 Use `deep` if any holds; otherwise `light`. Unsure → `deep`: a missed bug costs more than the tokens.
 
 - Security boundary: authn/authz, crypto, secrets, permissions, parsing untrusted input.
