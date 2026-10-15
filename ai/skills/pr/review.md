@@ -1,6 +1,6 @@
 # Self-review
 
-Run each lens as an independent read-only reviewer: parallel subagents when available, otherwise separate passes of your own. Reviewers never edit, commit, push, or comment.
+Run one read-only reviewer on one model for the entire diff. Lenses are checklist sections within that task, not separate subagents. Do not fan out by lens or model. Reviewers never edit, commit, push, comment, or spawn other reviewers.
 
 ## Choose lenses
 
@@ -10,35 +10,15 @@ Always run correctness and fit. Add the others when the diff touches:
 - **Security:** untrusted input, authn/authz, secrets, crypto, shell/SQL/templates, network, file paths, dependencies, CI workflows.
 - **Performance:** hot paths, loops over unbounded data, I/O or queries in loops, caching, allocation, locking.
 
-## Brief each reviewer
+## Brief the reviewer
 
-Give it the intent (1–3 sentences), the diff command (e.g. `git diff <base>...HEAD`), the repo guidance files, and the **Shared rules** and its lens copied verbatim from this file.
+Give it the intent (1–3 sentences), the diff command (e.g. `git diff <base>...HEAD`), the repo guidance files, and the **Shared rules** and every selected lens copied verbatim from this file in one combined brief.
 
-## Pick a model tier
+## Run the review
 
-If a `review_with_models` tool is available, call it with the tier below and one task per lens, each prompt being the full brief. `deep` runs every task on two models from different providers; `light` on one. Otherwise skip tiers and use your subagents on their default model.
+If the `subagent` tool lists `pr-reviewer`, launch it once with the combined brief. Use its configured default model unless the user specifies one. Otherwise use one read-only subagent on its default model; if subagents are unavailable, do one combined review yourself. Wait for the review before proceeding.
 
-Pi: no `review_with_models`, but the `subagent` tool lists a `pr-reviewer` agent → use tiers instead of that fallback. Launch one `pr-reviewer` per lens × tier model in one parallel `subagent` call, each with its `model` below and the full brief as its task, and wait for all of them. Both tiers use two providers:
-
-| Tier | Models |
-| --- | --- |
-| `deep` | `anthropic/claude-fable-5-1:high`, `cbhq-openai/gpt-6-astra:high` |
-| `light` | `anthropic/claude-opus-5-5:medium`, `cbhq-openai/gpt-6.1-sol:medium` |
-
-Merge duplicate findings across models and keep which models raised each. A reviewer that fails or times out → rerun it once; still failing → report that lens and model as unreviewed.
-
-Use `deep` if any holds; otherwise `light`. Unsure → `deep`: a missed bug costs more than the tokens.
-
-- Security boundary: authn/authz, crypto, secrets, permissions, parsing untrusted input.
-- Funds, consensus, or state that is hard to repair: schemas, migrations, deletion.
-- Concurrency, ordering, retries, cache invalidation.
-- Public API, wire format, or config format that others depend on.
-- New non-trivial logic (state machine, algorithm) rather than wiring.
-- Production infrastructure, deploys, or CI permissions.
-- Roughly 300+ hand-written changed lines, or changes across several modules.
-- Touched code has weak tests.
-
-Typical `light`, when no trigger above applies: docs, test-only changes, mechanical refactors covered by tests, small fixes with a reproducing test, local config, routine dependency bumps.
+A reviewer that fails or times out → rerun it once with the same combined brief and model; still failing → report the selected lenses and model as unreviewed.
 
 ## Shared rules
 
@@ -48,11 +28,13 @@ Typical `light`, when no trigger above applies: docs, test-only changes, mechani
 - Not findings: what linters, formatters, or type checkers catch; taste; nits a senior engineer would skip; hypothetical future needs.
 - Prefer zero findings over weak ones.
 
-Output:
+Return a verdict for each selected lens, followed by one deduplicated findings list:
 
 ```text
 <lens>: ready | changes needed
-- [blocker|should-fix] path:line: issue; consequence; minimal fix
+
+Findings:
+- [blocker|should-fix] <lens> path:line: issue; consequence; minimal fix
 ```
 
 Blocker: wrong behavior, data loss, security hole, broken build or tests. Should-fix: a real maintainability or reviewer-cost problem. Drop anything weaker.
@@ -83,7 +65,7 @@ Report only with a size and frequency argument: what grows, how often it runs, w
 
 ## Validate and act
 
-1. Merge duplicates across reviewers. Verify each finding against the code yourself; discard any you cannot confirm, even if two models agree.
+1. Verify each finding against the code yourself; discard any you cannot confirm.
 2. Fix blockers and should-fixes. Defer only with a reason worth stating in the PR's Notes.
 3. When findings conflict, simplicity wins unless correctness or security is at stake.
-4. If you fixed blockers, rerun only the lenses that found them, on the new diff. At most one extra round.
+4. If you fixed blockers, run at most one follow-up review on the new diff, with one reviewer on one model covering only the affected lenses.

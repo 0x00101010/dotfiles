@@ -135,7 +135,8 @@ A missing context checkout never selects the other profile's checkout.
 
 Selecting Amp renders the same instructions to `~/.config/amp/AGENTS.md` and links
 `~/.config/amp/plugins/pr-review.ts` to `ai/amp/plugins/`; it adds
-`review_with_models`, which the `pr` skill uses to run reviews on two models (deep tier) or one (light).
+`review_with_models` for optional reviews on two models (deep tier) or one (light).
+The `pr` skill uses one reviewer on one model with all selected lenses in one brief.
 Existing Amp settings are left alone.
 
 Selecting Pi renders the same instructions to `~/.pi/agent/AGENTS.md`, which Pi
@@ -143,9 +144,9 @@ loads in every directory, Toshi sessions and subagents included. Only that file 
 managed; cbcode owns the rest of `~/.pi/agent` (settings, models, skills) and
 rewrites it on launch. `~/.pi` and `~/.pi/agent` stay owner-only (0700).
 It also links two subagent definitions from `ai/pi/agents/` into
-`~/.pi/agent/agents/`: `pr-reviewer` (read-only, one lens brief, model chosen
-per review tier) and `pr-worker` (ships one slice with `pr`, launches its own
-`pr-reviewer`s, stops once the PR exists). `review.md` and `execute-plan` use them
+`~/.pi/agent/agents/`: `pr-reviewer` (read-only, all selected lenses in one brief,
+default model unless the user specifies one) and `pr-worker` (ships one slice
+with `pr`, launches one `pr-reviewer`, stops once the PR exists). `review.md` and `execute-plan` use them
 only when Pi's `subagent` tool lists them; Amp and Claude keep their paths.
 
 Selecting any agent links `~/.local/bin/devslot` to `ai/bin/devslot`. The `pr`
