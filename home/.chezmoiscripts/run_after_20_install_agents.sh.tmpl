@@ -25,11 +25,12 @@ for agent in{{ range .agents }} {{ . | quote }}{{ end }}; do
     claude) install_agent claude https://claude.ai/install.sh bash ;;
     codex)  install_agent codex https://chatgpt.com/codex/install.sh sh ;;
     amp)    install_agent amp https://ampcode.com/install.sh bash ;;
+    pi)     command -v cbcode >/dev/null 2>&1 || echo "[chezmoi] pi: install Toshi/cbcode; it manages Pi itself." >&2 ;;
     *) echo "[chezmoi] Unknown agent in chezmoi data: $agent" >&2; exit 1 ;;
   esac
 done
 
-{{- if eq .profile "work" }}
+{{- if and (eq .profile "work") (not (has "pi" .agents)) }}
 echo "[chezmoi] cbcode: not installed. No verified setup contract yet; see {{ .contextRoot }}/setup/." >&2
 {{- end }}
 

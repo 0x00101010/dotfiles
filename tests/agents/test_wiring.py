@@ -44,7 +44,7 @@ class AgentWiringTest(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
         return result
 
-    def init(self, profile="work", agents="claude/codex/amp"):
+    def init(self, profile="work", agents="claude/codex/amp/pi"):
         self.cm("init", "--prompt", "--promptChoice", f"Machine profile={profile}",
                 "--promptMultichoice", f"Coding agents to install={agents}",
                 "--promptString", "What is your email address=test@example.com",
@@ -54,7 +54,7 @@ class AgentWiringTest(unittest.TestCase):
     def apply(self):
         paths = self.cm("managed", "--include=files,symlinks,remove").stdout.splitlines()
         targets = [str(self.home / p) for p in paths if p.startswith(
-            (".claude/", ".codex/", ".config/amp/", ".agents/skills/", ".local/bin/")
+            (".claude/", ".codex/", ".config/amp/", ".pi/", ".agents/skills/", ".local/bin/")
         )]
         # No targets must never turn into a whole-home apply.
         if targets:
@@ -119,9 +119,12 @@ class AgentWiringTest(unittest.TestCase):
     def test_fresh_work_and_repeat(self):
         self.init()
         self.apply()
-        paths = [self.home / p for p in (".claude/CLAUDE.md", ".codex/AGENTS.md", ".config/amp/AGENTS.md")]
+        paths = [self.home / p for p in (".claude/CLAUDE.md", ".codex/AGENTS.md",
+                                         ".config/amp/AGENTS.md", ".pi/agent/AGENTS.md")]
         projects = self.instructions(paths, "work")
         self.assertEqual(len({p.read_bytes() for p in paths}), 1)
+        for folder in (".pi", ".pi/agent"):  # cbcode keeps these owner-only
+            self.assertEqual((self.home / folder).stat().st_mode & 0o777, 0o700)
         settings = self.home / ".claude/settings.json"
         self.assertEqual(json.loads(settings.read_text())["plansDirectory"], str(projects))
         self.skills(self.home / ".claude/skills")
@@ -193,6 +196,7 @@ class AgentWiringTest(unittest.TestCase):
                      ".agents/skills/beautiful-mermaid/scripts/local.ts",
                      ".agents/skills/plan/notes.md",
                      ".claude/managed-settings.json", ".codex/config.toml", ".codex/auth.json",
+                     ".pi/agent/settings.json", ".pi/agent/models.json", ".pi/agent/skills/hub/SKILL.md",
                      ".config/amp/settings.json", ".config/amp/plugins/company.ts",
                      ".cache/amp/global-skills/company/SKILL.md"]
         for p in preserved:
@@ -234,6 +238,20 @@ class AgentWiringTest(unittest.TestCase):
         self.skills(self.home / ".agents/skills")
         self.instructions([], "work")
 
+    def test_pi_only_renders_instructions_and_shared_skills(self):
+        self.init(agents="pi")
+        self.apply()
+        self.instructions([self.home / ".pi/agent/AGENTS.md"], "work")
+        managed = [p for p in self.cm("managed", "--include=files,symlinks").stdout.splitlines()
+                   if p.startswith(".pi/")]
+        self.assertEqual(managed, [".pi/agent/AGENTS.md"])
+        self.skills(self.home / ".agents/skills")
+        self.assertEqual((self.home / ".local/bin/devslot").resolve(), REPO / "ai/bin/devslot")
+        self.assertFalse((self.home / ".claude").exists())
+        self.assertFalse((self.home / ".codex").exists())
+        self.assertFalse((self.home / ".config/amp").exists())
+        self.instructions([], "work")
+
     def test_codex_only_installs_shared_bundles(self):
         self.init(agents="codex")
         self.apply()
@@ -242,6 +260,7 @@ class AgentWiringTest(unittest.TestCase):
         self.assertFalse((self.home / ".claude").exists())
         self.assertFalse((self.home / ".config/amp/AGENTS.md").exists())
         self.assertFalse((self.home / ".config/amp/plugins/pr-review.ts").exists())
+        self.assertFalse((self.home / ".pi").exists())
 
     def test_no_agents_preserves_existing_files(self):
         self.init(agents="")
@@ -251,6 +270,7 @@ class AgentWiringTest(unittest.TestCase):
         for name in SKILLS:
             self.assertFalse((self.home / ".agents/skills" / name).exists())
         self.assertFalse((self.home / ".agents/skills/_shared/instructions.md").exists())
+        self.assertFalse((self.home / ".pi/agent/AGENTS.md").exists())
         self.assertFalse((self.home / ".local/bin/devslot").exists())
         self.assertFalse((self.home / ".local/bin/skillsync").exists())
         self.assertNotIn("skill", self.apply())

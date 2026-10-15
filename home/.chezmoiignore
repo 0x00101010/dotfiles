@@ -5,18 +5,21 @@
 {{- if or (not (has "codex" $agents)) (and (env "CODEX_HOME") (ne (env "CODEX_HOME") (joinPath .chezmoi.homeDir ".codex"))) }}
 .codex
 {{- end }}
-{{- if not (or (has "codex" $agents) (has "amp" $agents)) }}
+{{- if not (or (has "codex" $agents) (has "amp" $agents) (has "pi" $agents)) }}
 .agents/skills/pr
 .agents/skills/plan
 .agents/skills/execute-plan
 .agents/skills/agent-browser
 .agents/skills/beautiful-mermaid
 {{- end }}
+{{- if not (has "pi" $agents) }}
+.pi
+{{- end }}
 {{- if not (has "amp" $agents) }}
 .config/amp/AGENTS.md
 .config/amp/plugins/pr-review.ts
 {{- end }}
-{{- if not (or (has "claude" $agents) (has "codex" $agents) (has "amp" $agents)) }}
+{{- if not (or (has "claude" $agents) (has "codex" $agents) (has "amp" $agents) (has "pi" $agents)) }}
 .agents/skills/_shared
 .local/bin/devslot
 .local/bin/skillsync

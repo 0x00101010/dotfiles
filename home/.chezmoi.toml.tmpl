@@ -8,13 +8,15 @@
 {{- /* Explicit machine profile; never inferred from OS, hostname, or email.
        Asked once, then preserved. To change it: chezmoi init --prompt */}}
 {{- $profile := promptChoiceOnce . "profile" "Machine profile" (list "work" "personal") }}
-{{- $agentChoices := list "claude" "codex" "amp" }}
+{{- $agentChoices := list "claude" "codex" "amp" "pi" }}
+{{- /* Pi (Toshi) is installed and launched by cbcode, so detect it by that binary. */}}
+{{- $agentBinaries := dict "claude" "claude" "codex" "codex" "amp" "amp" "pi" "cbcode" }}
 {{- $agentData := . }}
 {{- /* Seed only a missing selection; the native once-prompt still honors --prompt. */}}
 {{- if not (hasKey . "agents") }}
 {{-   $installed := list }}
 {{-   range $agentChoices }}
-{{-     if lookPath . }}
+{{-     if lookPath (get $agentBinaries .) }}
 {{-       $installed = append $installed . }}
 {{-     end }}
 {{-   end }}

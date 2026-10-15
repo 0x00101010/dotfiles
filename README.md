@@ -109,13 +109,14 @@ before running anything:
 ## Coding agents
 
 `chezmoi init` asks for an explicit `work` or `personal` profile. On first setup,
-it automatically selects supported agents (`claude`, `codex`, `amp`) already on
-`PATH`, without prompting or running their binaries. If none are found, it asks
+it automatically selects supported agents (`claude`, `codex`, `amp`, `pi`) already on
+`PATH` (`pi` is detected by `cbcode`), without prompting or running their binaries. If none are found, it asks
 with a multi-select prompt. Saved selections, including an empty list, are kept
 on subsequent runs. Use `chezmoi init --prompt` to choose explicitly instead;
 include `--prompt` when supplying a `--promptMultichoice` answer to override detection.
 Agent selection controls binary installation and the wiring below. Authentication
-is separate; cbcode remains unconfigured until its internal setup is verified.
+is separate. `pi` is the harness behind Toshi; cbcode installs and manages it, so
+selecting `pi` installs nothing and only renders its instructions.
 
 `ai/instructions/AGENTS.md` is the common source. Chezmoi adds profile context:
 
@@ -130,11 +131,17 @@ A missing context checkout never selects the other profile's checkout.
 | Claude | `~/.claude/CLAUDE.md` | `~/.claude/skills/` |
 | Codex | `~/.codex/AGENTS.md` | `~/.agents/skills/` |
 | Amp | `~/.config/amp/AGENTS.md` | Shared with Codex; Amp also reads `~/.claude/skills/` |
+| Pi (Toshi) | `~/.pi/agent/AGENTS.md` | Shared with Codex (`~/.agents/skills/`) |
 
 Selecting Amp renders the same instructions to `~/.config/amp/AGENTS.md` and links
 `~/.config/amp/plugins/pr-review.ts` to `ai/amp/plugins/`; it adds
 `review_with_models`, which the `pr` skill uses to run reviews on two models (deep tier) or one (light).
 Existing Amp settings are left alone.
+
+Selecting Pi renders the same instructions to `~/.pi/agent/AGENTS.md`, which Pi
+loads in every directory, Toshi sessions and subagents included. Only that file is
+managed; cbcode owns the rest of `~/.pi/agent` (settings, models, skills) and
+rewrites it on launch. `~/.pi` and `~/.pi/agent` stay owner-only (0700).
 
 Selecting any agent links `~/.local/bin/devslot` to `ai/bin/devslot`. The `pr`
 skill tells agents to work in the current checkout, except in repos that
