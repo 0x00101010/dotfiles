@@ -60,7 +60,7 @@ Commit, push, `gh pr create` (with `--base <branch>` when given a base other tha
 
 Do NOT return control until CI is green AND every review thread is fixed and resolved, or answered. After the PR is open, push new commits; never amend, rebase, or force-push, except to rebase a stacked PR after its parent merges.
 
-Exceptions: the task that launched you says to stop once the PR exists → return after step 5. A `pr_track` tool exists (Toshi) → call it with the PR URL and `mode: "ask"`, and use its wakes and `pr_status` instead of `gh pr checks --watch` in sub-step 1; the rest is unchanged.
+Exceptions: the task that launched you says to stop once the PR exists → return after step 5. A `pr_track` tool exists (Toshi) → call it with the PR URL and `mode: "auto"`, and use its wakes and `pr_status` instead of `gh pr checks --watch` in sub-step 1; the rest is unchanged.
 
 1. Wait for CI: `gh pr checks --watch`.
 2. Check failed → unrelated to the diff (flaky): rerun once with `gh run rerun <run-id> --failed`. Also fails on the base branch: report it instead of fixing it. Otherwise fix the root cause (never skip or disable tests), push, GOTO 1.

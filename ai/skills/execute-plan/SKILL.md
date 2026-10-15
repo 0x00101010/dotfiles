@@ -63,9 +63,9 @@ Only these status lines may be written into the plan; leave every other line as 
 
 If the `subagent` tool lists a `pr-worker` agent, this section replaces step 2's batching paragraph and step 4's intro and sub-steps 1–3; everything else applies as written.
 
-- **Start.** Launch each slice as soon as it is ready: one background `pr-worker` per slice, each its own `subagent` call, with the workspace path, branch, base when stacked, the phase text verbatim (and the Linear issue ID), and the instruction to work only in that directory and stop once the PR exists. Do not wait for sibling slices. Step 2's per-repo limits still apply.
-- **Return.** Blocked, or over the size rule → mark the phase blocked with its reason. Otherwise check its findings table: every blocker fixed or rejected with evidence; a rejection you doubt → a fix `pr-worker`. Append `**Status:** open — <PR URL>`, start any slice that became ready, and continue at step 4.4.
-- **Watch.** In step 4.4, `pr_track` each PR with `mode: "ask"` instead of `gh pr checks --watch` and polling, and act on its wakes and `pr_status`. A fix subagent is a `pr-worker` given the path, branch, PR URL, and one failure or thread.
+- **Start.** Launch each slice as soon as it is ready: one background `pr-worker` per slice, each its own `subagent` call, with the workspace path, branch, base when stacked, the phase text verbatim (and the Linear issue ID), and the instruction to work only in that directory and stop once the PR exists. Keep each slice's PR URL and worker run id for this session. Do not wait for sibling slices. Step 2's per-repo limits still apply.
+- **Return.** Blocked, or over the size rule → mark the phase blocked with its reason. Otherwise check its findings table: every blocker fixed or rejected with evidence; a rejection you doubt → resume that worker with your objection. Append `**Status:** open — <PR URL>`, start any slice that became ready, and continue at step 4.4.
+- **Watch.** In step 4.4, `pr_track` each PR with `mode: "auto"` instead of `gh pr checks --watch` and polling, and act on its wakes and `pr_status`. A fix goes to the `pr-worker` that built the PR: check its run with `subagent` `status`, then `resume` it with the PR URL and one failure or thread. No run id, or resume refused → launch a fresh `pr-worker` with the same model, given the path, branch, PR URL, and that failure or thread, and note the fallback in the report.
 - **Report** once no worker is running and every tracked PR is finished or blocked.
 
 ## 5. Report

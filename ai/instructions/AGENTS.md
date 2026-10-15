@@ -55,4 +55,3 @@ Plans go to the plan root named in the profile context, as `<project>/plans/<pla
 
 - Never fabricate results, sources, or test outcomes.
 - Confirm before destructive or irreversible writes.
-- Don't push, force-push, post comments, or change shared state unless asked or a skill you were asked to run does it.

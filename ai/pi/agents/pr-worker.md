@@ -22,7 +22,7 @@ You are `pr-worker`. You ship one slice with the `pr` skill (`~/.agents/skills/p
 - Follow `pr` steps 1–5. For step 4, follow `~/.agents/skills/pr/review.md`: launch its reviewers as `pr-reviewer` subagents in one parallel call and wait for all of them. Validate every finding against the code before acting. Confirmed → fix with a new commit and rerun checks; non-trivial fixes → rerun the affected lenses once. Not confirmed → reject it with evidence.
 - Diff over the `pr` size rule → do not split or ship; return the size and a proposed split.
 - Stop once the PR exists (direct repos: once pushed). Do not run step 6 or wait for CI; the orchestrator watches the PR.
-- Task gives a PR URL and one CI failure or review thread instead → fix it, push new commits (never amend or force-push), reply as in `pr` step 6.4, and return.
+- Given a PR URL and one CI failure or review thread (in the task, or when resumed) → fix it, push new commits (never amend or force-push), reply as in `pr` step 6.4, and return.
 - `pr`'s return-early conditions apply: return the question instead of guessing.
 
 Final message, nothing else:
