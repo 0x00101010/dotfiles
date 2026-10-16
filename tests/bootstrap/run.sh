@@ -140,7 +140,7 @@ check "work warns about missing coinbase context" has "$TMP/work/agents.out" "co
 check "work never references workspace" lacks "$TMP/work/agents.out" "workspace"
 run_agents "$TMP/personal"
 check "personal installs all three selected agents" bash -c \
-  "[ \"\$(wc -l < '$TMP/personal/agents.log')\" = 3 ] && grep -q claude.ai '$TMP/personal/agents.log' && grep -q chatgpt.com/codex '$TMP/personal/agents.log' && grep -q ampcode.com '$TMP/personal/agents.log'"
+  "[ \$(wc -l < '$TMP/personal/agents.log') = 3 ] && grep -q claude.ai '$TMP/personal/agents.log' && grep -q chatgpt.com/codex '$TMP/personal/agents.log' && grep -q ampcode.com '$TMP/personal/agents.log'"
 check "personal never references coinbase or cbcode" bash -c "! grep -Eq 'coinbase|cbcode' '$TMP/personal/agents.out'"
 mkdir -p "$TMP/personal/src/0x00101010/workspace"; run_agents "$TMP/personal"
 check "no warning once the context checkout exists" lacks "$TMP/personal/agents.out" "missing"
