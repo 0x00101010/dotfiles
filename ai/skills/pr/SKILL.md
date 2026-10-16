@@ -52,10 +52,15 @@ Then measure against the size rule with `git diff --numstat -M origin/<base>...`
 
 #### UI evidence
 
-For a UI-exception PR, capture evidence before step 4. Run the app locally and drive each changed flow with the `agent-browser` skill:
+For a UI-exception PR, capture evidence before step 4, from the app running locally:
+
+- Repo depends on Playwright → write a throwaway capture script in the repo so it resolves the repo's Playwright: `setViewportSize` per width, `page.route` to force each state, `page.screenshot`, and the `recordVideo` context option for recordings. Run it once on the base branch for "before" and once on the PR head for "after", then delete it before committing.
+- Otherwise → drive each changed flow with the `agent-browser` skill (`agent-browser record` for recordings).
+
+Capture:
 
 - PNG before/after screenshots of every changed view, in each state the diff touches (empty, loading, error, populated); add mobile and desktop widths when layout changes.
-- Interactive changes (animation, drag, multi-step flows): also a `.webm` recording of the interaction (`agent-browser record`), under 10 MB.
+- Interactive changes (animation, drag, multi-step flows): also a `.webm` recording of the interaction, under 10 MB.
 - Internal or sensitive data → use synthetic data and say so.
 - Save evidence outside the repo (e.g. `$TMPDIR/pr-evidence/`); never commit it.
 
