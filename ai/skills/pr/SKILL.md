@@ -55,8 +55,9 @@ Then measure against the size rule with `git diff --numstat -M origin/<base>...`
 For a UI-exception PR, capture evidence before step 4. Run the app locally and drive each changed flow with the `agent-browser` skill:
 
 - PNG before/after screenshots of every changed view, in each state the diff touches (empty, loading, error, populated); add mobile and desktop widths when layout changes.
-- Interactive changes (animation, drag, multi-step flows): also a GIF of the interaction. Record with `agent-browser record`, convert with `ffmpeg`, keep it under 10 MB so it renders inline.
+- Interactive changes (animation, drag, multi-step flows): also a `.webm` recording of the interaction (`agent-browser record`), under 10 MB.
 - Internal or sensitive data → use synthetic data and say so.
+- Save evidence outside the repo (e.g. `$TMPDIR/pr-evidence/`); never commit it.
 
 Screenshots must come from the running app at the PR's head; no mockups.
 
@@ -68,7 +69,7 @@ Follow [review.md](review.md). Skip trivial and docs-only diffs (typo, one-line 
 
 Commit, push, `gh pr create` (with `--base <branch>` when given a base other than the default or when stacked on a parent slice), using the formats below. Open it ready for review, not as a draft, so review bots run while you iterate. Before writing the body, load every installed `*-pr-conventions` skill and follow those whose scope matches this repo.
 
-UI-exception PR → after creating it, upload the evidence as release assets: `gh release create screenshots-pr-<N> --prerelease --target <default> --title "PR #<N> Screenshots" --notes "Screenshots for PR review" <files>` (`gh release upload` adds more later). Prerelease, not draft: draft assets do not render for reviewers. Then `gh pr edit` the body to embed them from `https://<host>/<owner>/<repo>/releases/download/screenshots-pr-<N>/<file>`.
+UI-exception PR → upload the evidence as GitHub PR attachments with `gh pr create --attach <file>`, one flag per file. Reference each screenshot in the body by the same path, as in `![Empty state, after](<path>)`; `gh` rewrites it to the uploaded URL. Recordings render as a player and are appended to the end of the body. Replacing evidence later: `gh pr edit <N> --attach <file>`. A non-zero exit after the PR URL prints means some uploads failed: rerun those with `gh pr edit`.
 
 ### 6. Iterate until ready (mandatory)
 
@@ -119,7 +120,7 @@ Optional, at most 3 bullets: risks, trade-offs, or rejected alternatives a revie
 
 Omit ticket numbers, boilerplate, test plans, and commands run. CI shows verification; the diff shows details. For complex changes only, longer context that materially helps reviewers goes last in `<details><summary>AI explanation</summary> … </details>`.
 
-UI-exception PRs add `## Evidence` after What: a before/after table with one row per view and state, the GIF inline for interactions, and one line naming the route, viewport, and data source (real or synthetic).
+UI-exception PRs end with `## Evidence`, after any AI explanation, so appended recordings land in it: a before/after screenshot table with one row per view and state, and one line naming the route, viewport, and data source (real or synthetic).
 
 Example:
 
