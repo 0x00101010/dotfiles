@@ -18,6 +18,8 @@ These apply to every step, including fixes made while iterating.
 
 **Size.** A reviewer should finish a PR in one sitting: at most 200 changed lines (additions plus deletions) of hand-written source, and at most 400 including tests. Lockfiles, generated code, snapshots, vendored files, and pure renames or moves do not count. Mechanical changes (codemods, bulk renames, regenerated files) have no cap but get their own PR, never mixed with logic.
 
+UI exception: when the hand-written lines are mostly presentational (components, styles, layout, copy, render-only state) and any logic still fits the 200-line cap, the soft limit is 600 changed lines including tests, covering one user-facing flow and at most 3 changed views. The PR must carry [visual evidence](#ui-evidence); without it, the normal limits apply.
+
 **Comments.** Default to none. Comment only what the code cannot say: a non-obvious reason, invariant, constraint, or workaround (with a link). Never narrate what the code does, restate names, record history ("now uses X", "added for Y"), or reference tickets, plans, or the PR. Follow repo conventions for public API docs.
 
 **Writing.** Applies to commits, PR descriptions, code comments, and review replies. Cut until any further cut would lose information. Plain words; no jargon, hype, or filler. Specifics over summaries.
@@ -46,7 +48,17 @@ Toshi: a session worktree (under `~/.mux/`) is the current directory, never a sl
 
 Reread the full diff against the base branch as a reviewer seeing it for the first time. For each hunk, ask: can it be deleted, shrunk, or replaced with existing code and stay correct? Apply the cuts, remove comments that break the comment rule, and rerun checks.
 
-Then measure against the size rule with `git diff --numstat -M origin/<base>...`. Over the limit → split into stacked PRs. Prefer, in order: a pure refactor before the behavior change; new code before the change that wires it in, only if the first PR stands alone; one module or layer per PR. Each slice gets its own branch off the previous one, passes checks on its own, and follows the standalone rule. Run steps 4–6 for each slice, bottom of the stack first. No coherent split → keep one PR and say why in your report, not in the PR.
+Then measure against the size rule with `git diff --numstat -M origin/<base>...`. Over the limit → split into stacked PRs. Prefer, in order: a pure refactor before the behavior change; new code before the change that wires it in, only if the first PR stands alone; one module or layer per PR; for UI-exception diffs, one flow per PR. Each slice gets its own branch off the previous one, passes checks on its own, and follows the standalone rule. Run steps 4–6 for each slice, bottom of the stack first. No coherent split → keep one PR and say why in your report, not in the PR.
+
+#### UI evidence
+
+For a UI-exception PR, capture evidence before step 4. Run the app locally and drive each changed flow with the `agent-browser` skill:
+
+- PNG before/after screenshots of every changed view, in each state the diff touches (empty, loading, error, populated); add mobile and desktop widths when layout changes.
+- Interactive changes (animation, drag, multi-step flows): also a GIF of the interaction. Record with `agent-browser record`, convert with `ffmpeg`, keep it under 10 MB so it renders inline.
+- Internal or sensitive data → use synthetic data and say so.
+
+Screenshots must come from the running app at the PR's head; no mockups.
 
 ### 4. Self-review
 
@@ -55,6 +67,8 @@ Follow [review.md](review.md). Skip trivial and docs-only diffs (typo, one-line 
 ### 5. Open the PR
 
 Commit, push, `gh pr create` (with `--base <branch>` when given a base other than the default or when stacked on a parent slice), using the formats below. Open it ready for review, not as a draft, so review bots run while you iterate. Before writing the body, load every installed `*-pr-conventions` skill and follow those whose scope matches this repo.
+
+UI-exception PR → after creating it, upload the evidence as release assets: `gh release create screenshots-pr-<N> --prerelease --target <default> --title "PR #<N> Screenshots" --notes "Screenshots for PR review" <files>` (`gh release upload` adds more later). Prerelease, not draft: draft assets do not render for reviewers. Then `gh pr edit` the body to embed them from `https://<host>/<owner>/<repo>/releases/download/screenshots-pr-<N>/<file>`.
 
 ### 6. Iterate until ready (mandatory)
 
@@ -104,6 +118,8 @@ Optional, at most 3 bullets: risks, trade-offs, or rejected alternatives a revie
 ```
 
 Omit ticket numbers, boilerplate, test plans, and commands run. CI shows verification; the diff shows details. For complex changes only, longer context that materially helps reviewers goes last in `<details><summary>AI explanation</summary> … </details>`.
+
+UI-exception PRs add `## Evidence` after What: a before/after table with one row per view and state, the GIF inline for interactions, and one line naming the route, viewport, and data source (real or synthetic).
 
 Example:
 

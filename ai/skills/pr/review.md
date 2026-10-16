@@ -14,6 +14,8 @@ Always run correctness and fit. Add the others when the diff touches:
 
 Give it the intent (1–3 sentences), the diff command (e.g. `git diff <base>...HEAD`), the repo guidance files, and the **Shared rules** and every selected lens copied verbatim from this file in one combined brief.
 
+UI-exception diff → also pass the evidence file paths and add to the brief: "Should-fix: a changed view or state with no screenshot, or a screenshot that contradicts the diff (copy, layout, missing state)."
+
 ## Run the review
 
 If the `subagent` tool lists `pr-reviewer`, launch it once with the combined brief. Use its configured default model unless the user specifies one. Otherwise use one read-only subagent on its default model; if subagents are unavailable, do one combined review yourself. Wait for the review before proceeding.
