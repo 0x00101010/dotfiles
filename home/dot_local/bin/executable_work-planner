@@ -81,8 +81,8 @@ Daily description, in this order:
    Priority is Urgent, High, Med, or Low: the linked Linear issue's priority when set,
    otherwise judged from deadlines, blockers, and people waiting. Sort each section
    by priority, highest first; within a priority, blocking and deadline items first.
-5. "PR reviews": `- [ ] [<repo>#<number> <title>](<PR link>)`, nothing more.
-6. The marker footer.
+5. The marker footer.
+Do not include PR reviews or review requests anywhere in the daily plan.
 
 ### Planner comment
 After writing a plan's description, add one comment on that plan issue containing
