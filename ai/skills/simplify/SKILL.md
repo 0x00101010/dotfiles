@@ -3,17 +3,19 @@ name: simplify
 description: Make code smaller and easier to read without changing behavior - delete dead code, reuse existing helpers, inline single-use layers, drop checks for impossible states. Checks each change on its own and keeps or reverts it. Use for "/simplify", "simplify this branch or path", or a scheduled simplify run.
 ---
 
-`$ARGUMENTS`: `[<scope>] [output=report|pr]`.
+`$ARGUMENTS`: `[<scope>] [output=report|pr] [review=skip]`.
 
 **Scope:**
 
-- Default: files changed on the current branch against `origin/<default>`.
+- Default: files changed on the current branch against `origin/<default>`. In place (no `output`), only the lines the branch added or changed (`git diff -U0 origin/<default>...HEAD`): never edit code outside those hunks, except to delete something the branch itself made unreachable.
 - `since=<n>h|<n>d`: files changed by commits on `origin/<default>` in that window (`git log origin/<default> --since="<n> hours ago"` or `"<n> days ago"` `--name-only --format=`), minus deleted files. Git silently misparses `--since=24h`, so always spell the unit out.
 - `<path or glob>`: every file under it.
 
 Exclude generated, vendored, lockfile, and snapshot files.
 
-**Output:** omitted → work on the current branch in place. `report` → an isolated branch, nothing pushed, results sent with `notify`. `pr` → an isolated branch shipped as a ready PR.
+**Output:** omitted → work on the current branch in place. `report` → an isolated branch, nothing pushed. `pr` → an isolated branch shipped as a ready PR.
+
+**Review:** `review=skip` (the caller reviews the whole diff afterwards, as `pr` does) → skip step 4 and hand the step 4 question to the caller's review.
 
 Unattended (an automation, or the prompt says so): never ask. Anything that would need a question → stop and say why in the result.
 
@@ -52,13 +54,14 @@ Out of bounds: test assertions, renames for taste, formatting, and anything a fo
 
 ## 4. Review
 
-Nothing kept → skip. Otherwise run the `review` skill on the kept commits (`panel=dual` when unattended, `single` otherwise) and add: "Does any change alter observable behavior: return values, errors, ordering, side effects, timing-sensitive paths, or anything a caller outside the file could notice?" A verified blocker → `git revert` that commit and rerun `check`.
+Nothing kept, or `review=skip` → skip. Otherwise run the `review` skill on the kept commits (`panel=dual` when unattended, `single` otherwise) and add: "Does any change alter observable behavior: return values, errors, ordering, side effects, timing-sensitive paths, or anything a caller outside the file could notice?" A verified blocker → `git revert` that commit and rerun `check`.
 
 ## 5. Output
 
-- Omitted → reply with the summary below.
-- `report` → send the summary with `notify`; push nothing; release the workspace.
-- `pr` with kept commits → follow `pr` steps 5–6 (step 4 is done). Evidence: the review result and `check`'s `Beyond CI` line. Then `notify` with the PR link.
+- Omitted or `report` → reply with the summary below. `report` pushes nothing and releases the workspace.
+- `pr` with kept commits → follow `pr` steps 5–6 (step 4 is done). Evidence: the review result and `check`'s `Beyond CI` line.
+
+Unattended → also append a row to `~/.local/state/loop/runs.tsv` in the format the `loop` skill defines (skill `simplify`), so the work-planner sees the run.
 
 ```text
 Simplify: <scope> | output: <mode>
