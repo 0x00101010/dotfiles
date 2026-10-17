@@ -31,7 +31,7 @@ Unattended (an automation, or the prompt says so): never ask. Anything that woul
 
 ## 1. Prepare
 
-1. The `workspace` skill with branch `<type>/<skill>-<yyyymmdd-hhmm>`.
+1. The `workspace` skill with branch `<type>/<skill>-<yyyymmdd-hhmm>` and `isolated`.
 2. The `check` skill with `baseline` on the skill's scope. Not green → stop and report.
 3. Metric → take the baseline: run it `Noise` times and record the median and the spread (max − min).
 4. Open the log at `~/.local/state/loop/<repo>/<skill>-<scope-slug>.tsv`, the same path for every run with this repo, skill, and scope. New file → write the header:

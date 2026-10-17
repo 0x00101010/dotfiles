@@ -19,7 +19,7 @@ Unattended (an automation, or the prompt says so): never ask. Anything that woul
 
 ## 1. Prepare
 
-1. No `output` → require a clean tree and stay on the current branch. Otherwise → the `workspace` skill with branch `refactor/simplify-<yyyymmdd>`.
+1. No `output` → require a clean tree and stay on the current branch. Otherwise → the `workspace` skill with branch `refactor/simplify-<yyyymmdd>` and `isolated`.
 2. Run the `check` skill with `baseline` on the scope's packages. Not green → stop and report it; do not fix it.
 
 ## 2. Find candidates
