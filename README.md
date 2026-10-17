@@ -55,7 +55,7 @@ tool, outside this repo: `reposync`, `skill-sources`, `work-planner`, and `notif
 The `work-planner` skill (`ai/skills/work-planner`) publishes daily and weekly
 plan issues in Linear from Slack, Linear, and overnight loop results
 (`~/.local/state/loop/runs.tsv`, loop automations, loop PRs). A local Toshi
-automation runs it every day at 05:00 with the prompt "Run the work-planner
+automation runs it every day at 05:30, after the 05:00 recap, with the prompt "Run the work-planner
 skill"; pause or reschedule it in the Automations hub. Toshi must be open.
 
 It reads plain-text instructions from `~/.config/dotfiles/work-planner`: start
