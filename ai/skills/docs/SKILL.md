@@ -24,7 +24,7 @@ Unattended (an automation, or the prompt says so): never ask. Anything that woul
 Extract checkable claims from docs in scope and verify each against the repo:
 
 1. Commands: `npm run`/`pnpm` scripts, `just` recipes, `make` targets, `cargo` aliases, and repo scripts that do not exist (`package.json`, `just --list`, `make -n <target>`, the file itself).
-2. File and directory paths that do not exist.
+2. File and directory paths, app routes, and pages or features named in prose ("the Upgrades page") that no longer exist.
 3. CLI flags, env vars, and config keys that no code reads (grep the code, or `<binary> --help` when it is already built).
 4. Internal links and anchors that do not resolve.
 5. Symbols (functions, types, crates, packages) that were renamed or deleted.
