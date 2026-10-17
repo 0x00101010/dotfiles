@@ -70,7 +70,7 @@ Nothing kept → skip. Otherwise run the `review` skill with `panel=dual` on `or
 
 Track each opened PR with `pr_track` in `mode: auto`, so CI failures and review threads are fixed without asking.
 
-The PR's Evidence: the review result, the metric baseline → final, `check`'s `Beyond CI` line, and the log attached as a file.
+The PR's Evidence: the review result, the metric baseline → final, and `check`'s `Beyond CI` line. Never put the decision log in the PR; it stays local.
 
 Release the workspace. Never merge, force-push, or touch the default branch.
 
