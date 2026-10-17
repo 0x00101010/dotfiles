@@ -22,7 +22,7 @@ Unattended (an automation, or the prompt says so): never ask. Anything that woul
 ## 1. Prepare
 
 1. No `output` → require a clean tree and stay on the current branch. Otherwise → the `workspace` skill with branch `refactor/simplify-<yyyymmdd>` and `isolated`.
-2. Run the `check` skill with `baseline` on the scope's packages. Not green → stop and report it; do not fix it.
+2. Run the `check` skill with `baseline` on the scope's packages, unless the caller just ran `check` green on this same commit (as `pr` step 2 does). Not green → stop and report it; do not fix it.
 
 ## 2. Find candidates
 
@@ -39,10 +39,12 @@ Rank by lines removed, then by layers a reader no longer has to trace. Skip a ca
 ## 3. Apply, one candidate at a time
 
 1. Make the smallest change that realizes the candidate.
-2. Run `check` on the scope's packages.
+2. Run `check fast` on the scope's packages.
 3. Keep only if it is green and the keep rule holds → commit it alone (`git add <paths>`, imperative subject). Otherwise → `git reset --hard HEAD`.
 
 Stop when candidates run out or the next change would push the diff past the `pr` size rule.
+
+Then, with anything kept, run one full `check` on the scope's packages. Red → find the culprit by reverting kept commits newest first, one at a time, until it is green; keep the reverts and list each culprit as reverted.
 
 **Keep rule:**
 

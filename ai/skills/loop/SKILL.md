@@ -51,7 +51,7 @@ Rows stay single-line; evidence is a pointer (commit SHA, `path:line`, failing c
 Have the skill list its candidates in scope, ranked, minus the ones the log rules out. Then, one per pass, strictly in sequence: never batch one pass's edit with the previous pass's commit or check.
 
 1. Have the skill make exactly one change: the top remaining candidate.
-2. Run `check` on the scope, the candidate check, and the metric (`Noise` samples).
+2. Run `check fast` on the scope, the candidate check, and the metric (`Noise` samples).
 3. Keep only if everything is green, the keep rule holds, and, with a metric, the new median beats the current one by more than the baseline spread. Keep → commit it alone; its median becomes the one to beat. Otherwise → `git reset --hard HEAD`.
 4. Log the row either way: `kept` or `reverted`, why, evidence, and the metric before → after.
 
@@ -59,7 +59,7 @@ Stop when any holds: no candidates left; `passes` reached; 3 reverts in a row; w
 
 ## 3. Judge
 
-Nothing kept → skip. Otherwise run the `review` skill with `panel=dual` on `origin/<base>...HEAD`, adding the skill's intent and the review question. A verified blocker → `git revert` that commit, rerun `check`, and log it; do not fix forward. Then run `check` once more on the final head.
+Nothing kept → skip. Otherwise run the `review` skill with `panel=dual` on `origin/<base>...HEAD`, adding the skill's intent and the review question. A verified blocker → `git revert` that commit, rerun `check`, and log it; do not fix forward. Then run one full `check` on the final head. Red → revert kept commits newest first, one at a time, until it is green, and log each culprit as `reverted`.
 
 ## 4. Output
 

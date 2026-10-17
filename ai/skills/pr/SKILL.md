@@ -44,7 +44,7 @@ Read the repo's guidance files first. Get a checkout and a `<type>/<slug>` branc
 
 ### 3. Simplify
 
-Reread the full diff against the base branch as a reviewer seeing it for the first time. For each hunk, ask: can it be deleted, shrunk, or replaced with existing code and stay correct? Apply the cuts, remove comments that break the comment rule, and rerun checks.
+Run the `simplify` skill in place with `review=skip`; it reuses step 2's green check. Pass its behavior question to step 4. Then reread the diff once more for comments that break the comment rule.
 
 Then measure against the size rule with `git diff --numstat -M origin/<base>...`. Over the limit → split into stacked PRs. Prefer, in order: a pure refactor before the behavior change; new code before the change that wires it in, only if the first PR stands alone; one module or layer per PR; for UI-exception diffs, one flow per PR. Each slice gets its own branch off the previous one, passes checks on its own, and follows the standalone rule. Run steps 4–6 for each slice, bottom of the stack first. No coherent split → keep one PR and say why in your report, not in the PR.
 
@@ -54,7 +54,7 @@ Every PR carries proof of what CI does not show. Collect it before step 5:
 
 - **Verification beyond CI:** `check`'s `Beyond CI` line (journeys from a `verify-<repo>` skill), a bug reproduced on the base and gone on the head, a benchmark or metric on base vs head, or a run of the real binary or service. Record what was verified, how, and the result.
 - **Review:** the result line from step 4, or `skipped (<reason>)`.
-- **From a caller:** anything it hands over, such as a loop's decision log.
+- **From a caller:** anything it hands over, such as a loop's metric baseline → final.
 - **UI changes:** screenshots and recordings, below.
 
 Never list the repo's standard tests, lint, typecheck, or build; CI shows those. Nothing verified beyond CI → say so.
@@ -77,7 +77,7 @@ Screenshots must come from the running app at the PR's head; no mockups.
 
 ### 4. Self-review
 
-Run the `review` skill (`panel=single`) on the diff and act on its findings. Skip trivial and docs-only diffs (typo, one-line config, prose).
+Run the `review` skill (`panel=single`) on the diff, adding the question `simplify` handed over in step 3, and act on its findings. Skip trivial and docs-only diffs (typo, one-line config, prose).
 
 ### 5. Open the PR
 

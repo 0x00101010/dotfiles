@@ -3,7 +3,10 @@ name: check
 description: Find and run the checks that prove a repo still works for a scope - tests, lint, typecheck or build, and verify-<repo> journeys - and say what they prove beyond CI. Can take a baseline that detects red or flaky starting points. Used by pr, simplify, and loop.
 ---
 
-`$ARGUMENTS`: `[scope=<paths or packages>] [baseline]`. Default scope: the whole repo.
+`$ARGUMENTS`: `[scope=<paths or packages>] [fast] [baseline]`. Default scope: the whole repo.
+
+- Full (default): every command below.
+- `fast`: only the typecheck or build and the tests of the packages in scope (`cargo check -p` plus `cargo nextest run -p`, `tsc --noEmit` plus the scope's test files). No lint, docs, or repo-wide suites, no verify journeys. For per-change checks; a full check must follow before anything ships.
 
 ## Find
 
@@ -13,8 +16,10 @@ description: Find and run the checks that prove a repo still works for a scope -
 
 ## Run
 
-- `baseline`: run everything twice before any change. A command CI runs is red → stop and return `red`. A command CI does not run is red (a local-only linter, a version mismatch) → drop it for this run and list it under `Failures`. The two runs disagree → return `flaky` with the test that changed.
-- Otherwise: run everything once.
+Run each command once.
+
+- A failing command → rerun just that command once. Passes the second time → `flaky`, naming the test; continue.
+- `baseline` (before any change): a command CI runs is red → stop and return `red`. A command CI does not run is red (a local-only linter, a version mismatch) → drop it for this run and list it under `Failures`.
 
 Never edit tests, assertions, lint config, or CI to make a check pass.
 
