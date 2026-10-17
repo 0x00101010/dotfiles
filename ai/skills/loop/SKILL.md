@@ -7,10 +7,11 @@ Goal: changes each proven by a check before and after, from runs a reviewer can 
 
 ## Input
 
-`$ARGUMENTS`: `<skill> [output=report|pr] [passes=<n>] [skill arguments]`.
+`$ARGUMENTS`: `<skill> [output=report|pr] [passes=<n>] [to=me|<channel ID>] [skill arguments]`.
 
 - `output`: `report` (default) or `pr`.
 - `passes`: the most passes this run makes; default 8.
+- `to`: where `notify` sends the report; default `me`.
 - Everything else goes to the skill.
 
 Read the skill's `SKILL.md`. It must find ranked candidates and change code, or have a `## Loop` section. Otherwise stop: it cannot be looped.
@@ -69,7 +70,7 @@ The PR's Evidence: the review result, the metric baseline → final, `check`'s `
 
 Release the workspace. Never merge, force-push, or touch the default branch.
 
-Last, send this report with `notify`:
+Last, when the run kept a change, opened a PR, or stopped on a failure (red or flaky baseline, an error), send this report with `notify` to `to`. A run that found nothing to do sends nothing:
 
 ```text
 Loop: <skill> <skill arguments> | output: <mode>

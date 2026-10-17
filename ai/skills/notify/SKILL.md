@@ -6,7 +6,7 @@ description: Send a short message to the user on Slack, as a DM by default or to
 `$ARGUMENTS`: `[to=me|<channel ID>] <message>`. Default `to=me`.
 
 1. `to=me` → get the user's Slack ID from `slack_read_user_profile` with no arguments.
-2. Through `mux-mcp-gateway`, list the `slack` server's tools with `mux_mcp_list_tools`, then call the exact `slack_send_message` name it returns via `mux_mcp_call` with `server_id: "slack"`, `tool_name`, and `channel_id` set to the user or channel ID. Hosted tool names can carry a prefix, so never guess the name.
+2. Through `mux-mcp-gateway`, list the `slack` server's tools with `mux_mcp_list_tools`, then call the exact `slack_send_message` name it returns via `mux_mcp_call` with `server_id: "slack"`, `tool_name`, and `channel_id` set to the user or channel ID. Hosted tool names can carry a prefix, so never guess the name. Make the send a direct tool call, never inside a batched script: batched sends are held for a confirmation that never comes in an unattended run.
 3. Write Slack mrkdwn: `<url|text>` links, `*bold*`, bullets with `•`. No tables. Under 3,000 characters.
 4. Slack unreachable → put the message in your final reply and say it was not sent.
 
