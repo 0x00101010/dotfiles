@@ -32,7 +32,7 @@ Within scope:
 - options, fallbacks, or defensive checks for states that cannot happen;
 - comments that narrate code, restate names, or reference history or tickets.
 
-Rank by lines removed, then by layers a reader no longer has to trace. Skip a candidate when no test exercises it (the repo's coverage tool when it is fast, otherwise no test references the function or module) and list it as `uncovered`.
+Rank by lines removed, then by layers a reader no longer has to trace. Skip a candidate that changes reachable code no test exercises (the repo's coverage tool when it is fast, otherwise no test references the function or module) and list it as `uncovered`. Deleting unreachable code needs no test: the typecheck or build proves nothing uses it.
 
 ## 3. Apply, one candidate at a time
 
@@ -45,7 +45,7 @@ Stop when candidates run out or the next change would push the diff past the `pr
 **Keep rule:**
 
 - Net lines go down, or branches or abstractions go down with no net line increase.
-- No change to a public surface: exported symbols, wire or storage formats, CLI flags, config keys, log or metric names.
+- No change to a public surface: symbols other packages or users import (in a published library, every export), wire or storage formats, CLI flags, config keys, log or metric names. An export nothing in the repo imports, in an app, is dead code.
 - No new dependency, file, or abstraction.
 
 Out of bounds: test assertions, renames for taste, formatting, and anything a formatter or linter would do.
