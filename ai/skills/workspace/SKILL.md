@@ -24,7 +24,7 @@ Report the path, branch, base, and which case applied.
 
 When the caller is done:
 
-- Slot → `devslot release <path>`. It refuses dirty or unpushed trees; resolve that, never force.
+- Slot → `devslot release <path>`. It refuses dirty or unpushed trees; resolve that, never force. A run that pushes nothing (a report) first runs `git -C <path> switch -q --detach origin/<default>`: the branch keeps its commits and the slot frees.
 - Temporary worktree → `git worktree remove <path>`. The branch stays.
 - Case 4 → `git switch <default>`.
 - Direct repo or Toshi worktree → nothing.
