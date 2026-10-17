@@ -52,9 +52,9 @@ On verified delivery only: write `<date>.receipt` with `Cutoff`, `Daily: <daily 
 
 Otherwise leave `pending` in place, do not emit that line, and say what is unresolved.
 
-### Alerts
+### Inbox
 
-Send one alert with the `notify` skill in `alert` mode only when something needs Francis: a loop automation failed, auto-paused, or missed a run, or the plan could not be fully published (a failed or uncertain run, or a missing source). First line: `Planner <date>: <what broke>`; details: each item with its link, plus the Linear plan link. A normal day sends nothing; the plan lives in Linear.
+Post one message with the `notify` skill in `inbox` mode only when something needs Francis: a loop automation failed, auto-paused, or missed a run, or the plan could not be fully published (a failed or uncertain run, or a missing source). First line: `Planner <date>: <what broke>`; details: each item with its link, plus the Linear plan link. A normal day sends nothing; the plan lives in Linear.
 
 ### Retries
 
