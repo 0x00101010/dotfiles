@@ -15,3 +15,5 @@
 {{- /* pr/review.md moved to the review skill. */}}
 .agents/skills/pr/review.md
 .claude/skills/pr/review.md
+{{- /* The work planner is now a skill run by a Toshi automation. */}}
+.local/bin/work-planner

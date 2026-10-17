@@ -1,0 +1,12 @@
+#!/bin/sh
+# Keep the existing ~/.zshenv (installers write to it) and append one managed block.
+# Every zsh reads it, including non-interactive agent and automation shells, so they
+# see the same mise-managed and Go-installed tools as interactive ones.
+marker='# dotfiles: agent PATH'
+contents=$(cat)
+printf '%s\n' "$contents" | sed "/^$marker\$/,/^# end dotfiles: agent PATH\$/d"
+cat <<BLOCK
+$marker
+export PATH="\$HOME/.local/share/mise/shims:\$HOME/go/bin:\$HOME/.local/bin:\$PATH"
+# end dotfiles: agent PATH
+BLOCK

@@ -22,7 +22,6 @@ test:
     tests/devslot/run.sh
     tests/skillsync/run.sh
     tests/reposync/run.sh
-    python3 tests/work-planner/test_runner.py
 
 # Sync the repos in ~/.config/dotfiles/reposync now
 sync:

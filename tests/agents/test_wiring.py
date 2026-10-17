@@ -11,7 +11,7 @@ import unittest
 REPO = Path(__file__).resolve().parents[2]
 OVERRIDES = REPO / "home/.chezmoiscripts/run_after_30_configure_agent_overrides.sh.tmpl"
 SKILLS = ("agent-browser", "beautiful-mermaid", "check", "execute-plan", "loop", "notify", "plan", "pr",
-          "review", "simplify", "workspace")
+          "review", "simplify", "work-planner", "workspace")
 PI_AGENTS = ("pr-reviewer", "pr-worker")
 
 

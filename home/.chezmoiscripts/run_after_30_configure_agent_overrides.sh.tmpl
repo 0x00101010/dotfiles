@@ -33,7 +33,7 @@ printf '%s\n' "$instructions" | write_file "$claude_dir/CLAUDE.md"
 printf '%s' "$settings" | write_file "$claude_dir/settings.json"
 cat {{ joinPath .chezmoi.sourceDir "dot_claude/statusline.sh" | replace "'" "'\\''" | printf "'%s'" }} | write_file "$claude_dir/statusline.sh"
 ai_skills={{ joinPath (includeTemplate "ai-root" .) "skills" | replace "'" "'\\''" | printf "'%s'" }}
-for skill in pr plan execute-plan agent-browser beautiful-mermaid check loop notify review simplify workspace; do
+for skill in pr plan execute-plan agent-browser beautiful-mermaid check loop notify review simplify workspace work-planner; do
   while IFS= read -r -d '' source; do
     target="$claude_dir/skills/${source#"$ai_skills/"}"
     mkdir -p "$(dirname "$target")"

@@ -31,6 +31,8 @@ Use the `pr-reviewer` agent when the `subagent` tool lists it; otherwise a read-
 - **single:** one reviewer on its default model unless the user names one.
 - **dual:** two reviewers in parallel on the same brief, models from different providers. Deep tier `anthropic/claude-opus-5-5` + `cbhq-openai/gpt-6.1-sol` when any holds: it deletes production resources; it touches sequencer, consensus, node, or smart-contract code; it changes auth, keys, IAM, secrets, or CI workflows; it has more than 200 changed hand-written lines; an earlier review of this change returned changes needed. Otherwise light tier `anthropic/claude-sonnet-5-5` + `cbhq-openai/gpt-6-luna`.
 
+In an unattended run, write the parallel-launch workflow script to a file first, then launch it by path (`workflow: "./<file>.js"`) in a later step. Inline workflow blocks were not picked up in automations.
+
 A reviewer that fails or times out → rerun it once with the same brief and model. Still failing → `single`: report the lenses as unreviewed; `dual`: continue with the other and note `single reviewer (<model> failed)`.
 
 ## Shared rules

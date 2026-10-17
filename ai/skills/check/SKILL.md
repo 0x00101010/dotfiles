@@ -13,7 +13,7 @@ description: Find and run the checks that prove a repo still works for a scope -
 
 ## Run
 
-- `baseline`: run everything twice before any change. Red → stop and return `red`. The two runs disagree → return `flaky` with the test that changed.
+- `baseline`: run everything twice before any change. A command CI runs is red → stop and return `red`. A command CI does not run is red (a local-only linter, a version mismatch) → drop it for this run and list it under `Failures`. The two runs disagree → return `flaky` with the test that changed.
 - Otherwise: run everything once.
 
 Never edit tests, assertions, lint config, or CI to make a check pass.

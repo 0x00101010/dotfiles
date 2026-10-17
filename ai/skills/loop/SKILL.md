@@ -1,17 +1,17 @@
 ---
 name: loop
-description: Run a code-changing skill as a bounded, logged loop - "/loop <skill> <args>". One change per pass, checked and kept or reverted, an optional metric with noise rules, a decision log that carries across runs, stop rules, a two-model review, then a report or a PR. Use for "/loop <skill>" or scheduled runs that should make many verified changes.
+description: Run a code-changing skill as a bounded, logged loop - "/loop <skill> <args>". One change per pass, checked and kept or reverted, an optional metric with noise rules, a decision log that carries across runs, stop rules, a two-model review, then a report or a PR. Each run appends a summary row that the work-planner skill reads. Use for "/loop <skill>" or scheduled runs that should make many verified changes.
 ---
 
 Goal: changes each proven by a check before and after, from runs a reviewer can trust without watching them.
 
 ## Input
 
-`$ARGUMENTS`: `<skill> [output=report|pr] [passes=<n>] [to=me|<channel ID>] [skill arguments]`.
+`$ARGUMENTS`: `<skill> [output=report|pr] [passes=<n>] [max_open=<n>] [skill arguments]`.
 
 - `output`: `report` (default) or `pr`.
 - `passes`: the most passes this run makes; default 8.
-- `to`: where `notify` sends the report; default `me`.
+- `max_open`: the most open PRs this skill may have in the repo; default 2.
 - Everything else goes to the skill.
 
 Read the skill's `SKILL.md`. It must find ranked candidates and change code, or have a `## Loop` section. Otherwise stop: it cannot be looped.
@@ -35,13 +35,14 @@ Unattended (an automation, or the prompt says so): never ask. Anything that woul
 1. The `workspace` skill with branch `<type>/<skill>-<yyyymmdd-hhmm>` and `isolated`.
 2. The `check` skill with `baseline` on the skill's scope. Not green → stop and report.
 3. Metric → take the baseline: run it `Noise` times and record the median and the spread (max − min).
-4. Open the log at `~/.local/state/loop/<repo>/<skill>-<scope-slug>.tsv`, the same path for every run with this repo, skill, and scope. New file → write the header:
+4. Open the log at `~/.local/state/loop/<org>-<repo>/<skill>-<scope-slug>.tsv` (`<org>-<repo>` from the `origin` URL, e.g. `protocols-base`), the same path for every run with this repo, skill, and scope. New file → write the header:
 
    ```text
    ts	pass	candidate	decision	why	evidence	result
    ```
 
    Append a `start` row: branch, check commands, baseline. Read earlier rows: skip any candidate already kept or rejected, unless its files changed on `origin/<default>` since that row.
+5. Earlier PRs from this skill (`gh pr list --author @me --state all --search "head:<type>/<skill>-"`): each one closed without merging and not yet logged → append a `rejected` row for each of its candidates, so they are not proposed again.
 
 Rows stay single-line; evidence is a pointer (commit SHA, `path:line`, failing command), never prose. Append only: a wrong row gets a later row that supersedes it.
 
@@ -63,14 +64,17 @@ Nothing kept → skip. Otherwise run the `review` skill with `panel=dual` on `or
 ## 4. Output
 
 - `report`, or nothing kept → push nothing.
+- `pr`, and this skill already has `max_open` or more open PRs in the repo (same `gh pr list`, `--state open`) → push nothing; the outcome is `capped`.
 - `pr`, `PR: run` → follow `pr` steps 5–6 (step 4 is done).
 - `pr`, `PR: change` → for each kept commit, a fresh `workspace` branch off `origin/<base>` with that commit cherry-picked, then `pr` steps 5–6 for each.
+
+Track each opened PR with `pr_track` in `mode: auto`, so CI failures and review threads are fixed without asking.
 
 The PR's Evidence: the review result, the metric baseline → final, `check`'s `Beyond CI` line, and the log attached as a file.
 
 Release the workspace. Never merge, force-push, or touch the default branch.
 
-Last, when the run kept a change, opened a PR, or stopped on a failure (red or flaky baseline, an error), send this report with `notify` to `to`. A run that found nothing to do sends nothing:
+Last, append one row to `~/.local/state/loop/runs.tsv` (header on a new file: `ts	repo	skill	args	outcome	kept	prs	stop`). `repo` is `<host>/<org>/<repo>` (e.g. `coinbase.ghe.com/protocols/base`). `outcome` is `pr`, `report`, `capped`, `nothing`, or `failed`; `prs` is the PR URLs or `-`. Do this even when the run stops early. Then end the reply with this report:
 
 ```text
 Loop: <skill> <skill arguments> | output: <mode>

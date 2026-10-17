@@ -52,39 +52,22 @@ tool, outside this repo: `reposync`, `skill-sources`, and `work-planner`. Chezmo
 
 ## Work planner
 
-`~/.local/bin/work-planner` reads plain-text instructions from
-`~/.config/dotfiles/work-planner`. Start with these three required directives,
-then a blank line before the free-form instructions:
+The `work-planner` skill (`ai/skills/work-planner`) publishes daily and weekly
+plan issues in Linear from Slack, Linear, and overnight loop results
+(`~/.local/state/loop/runs.tsv`, loop automations, loop PRs). A local Toshi
+automation runs it every day at 05:00 with the prompt "Run the work-planner
+skill"; pause or reschedule it in the Automations hub. Toshi must be open.
 
-```text
-enabled yes
-timezone America/Los_Angeles
-at 08:00
-```
+It reads plain-text instructions from `~/.config/dotfiles/work-planner`: start
+with `timezone <IANA zone>`, then a blank line, then sources, capacity, output
+destination, and approved writes. Keep identities and project IDs in that local
+file, not in Git. The plan layout lives in the skill. Source and write
+restrictions are agent instructions, not a tool sandbox.
 
-The rest describes sources, output destination, capacity, and approved writes.
-The plan layout (daily and weekly sections, priorities, planner comment, task
-issues) lives in the runner's prompt, so edit it here and `chezmoi apply`.
-Keep identities and project IDs in that local file, not in Git. The runner uses
-Python 3.9+ and the authenticated Amp CLI with its existing tool permissions;
-it never enables blanket approval. Source and write restrictions are agent
-instructions, not a tool sandbox. Each run starts fresh without old conversations.
-
-`work-planner --dry-run` prints the prompt without starting an agent.
-`work-planner --run-now` runs immediately, still respecting pause and daily deduplication.
-On macOS, `work-planner --install` installs and loads `local.work-planner` in
-`~/Library/LaunchAgents/`. Loading it can run the planner immediately. Calendar
-triggers catch up after sleep; login and 15-minute local checks cover missed starts.
-Only a due run invokes Amp. Schedule changes are picked up within 15 minutes while awake.
-The Mac stays awake during a run, not overnight; shutdown/logged-out time cannot run jobs.
-
-Logs and verified daily receipts live in `~/.local/state/work-planner/`, owner-only.
-The agent must read Linear writes back before returning a receipt; this is not an
-independent API verifier or an exactly-once guarantee. An uncertain or failed run
-blocks further publication: inspect `pending` and its log, then use
-`work-planner --retry --run-now` to reconcile before retrying. Runs time out after
-30 minutes and require the same reconciliation. Set `enabled no` to pause future
-runs; to unload the job, run `launchctl bootout gui/$(id -u)/local.work-planner`.
+Receipts live in `~/.local/state/work-planner/`, owner-only. The agent writes
+`pending` before its first Linear write and `<date>.receipt` only after reading
+every write back; this is not an exactly-once guarantee. A leftover `pending`
+makes the next run reconcile before publishing.
 
 ## reposync
 

@@ -17,6 +17,7 @@
 .agents/skills/review
 .agents/skills/simplify
 .agents/skills/workspace
+.agents/skills/work-planner
 {{- end }}
 {{- if not (has "pi" $agents) }}
 .pi
