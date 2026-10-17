@@ -75,7 +75,7 @@ Only when the whole needs a check no single phase covers.
 - Risk → mitigation / rollback.
 
 ## Handoff to PR skill
-- Branch prefix.
+- Branch type per phase (`feat`, `fix`, `perf`, ...) when the change doesn't make it obvious.
 ```
 
 ## 5. Dependencies

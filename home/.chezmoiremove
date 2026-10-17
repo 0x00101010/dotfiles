@@ -11,3 +11,7 @@
 .claude/skills/repos
 .claude/skills/workon
 {{- end }}
+
+{{- /* pr/review.md moved to the review skill. */}}
+.agents/skills/pr/review.md
+.claude/skills/pr/review.md

@@ -1,6 +1,6 @@
 ---
 name: pr-reviewer
-description: Read-only PR reviewer for one combined brief covering all selected lenses from pr/review.md. Uses its configured default model unless the user specifies one.
+description: Read-only PR reviewer for one combined brief covering all selected lenses from the review skill. Uses its configured default model unless the user specifies one.
 tools: read, grep, find, ls, bash
 thinking: high
 defaultContext: fresh

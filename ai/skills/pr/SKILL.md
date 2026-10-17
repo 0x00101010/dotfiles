@@ -36,13 +36,11 @@ Linear issue → before implementing, assign it to me (`assignee: "me"`) and mov
 
 Parse an `in <repo>` suffix (e.g. `/pr add cache in base`). Otherwise use the current repo, or the repo registry named in the profile context. Ambiguous → ask.
 
-Repo top level listed in `~/.config/dotfiles/reposync` (`~` is home; ignore trailing slashes and `#` comments) → it is a direct repo: follow [Direct repos](#direct-repos) where it differs from the steps below.
+The `workspace` skill identifies a direct repo (one that reposync auto-commits): follow [Direct repos](#direct-repos) where it differs from the steps below.
 
 ### 2. Implement
 
-Read the repo's guidance files first. Work in the current directory, unless it is a repo's default worktree with `dev<N>` worktrees beside it: then `cd "$(devslot claim <branch>)"` to reuse a warm build, and `devslot release` after step 6. Otherwise, on the default branch: require a clean tree, then `git fetch origin && git switch -c <branch> origin/<default>`. Branch: `<prefix>/<slug>`, with your usual prefix in this repo (`git log --author`). Create no other worktrees. Bug fix → write a reproducing test first. Run the repo's tests, lint, and typecheck/build.
-
-Toshi: a session worktree (under `~/.mux/`) is the current directory, never a slot repo's default worktree. Work there; on a Toshi-generated branch, require a clean tree and create your branch in it as above.
+Read the repo's guidance files first. Get a checkout and a `<type>/<slug>` branch from the `workspace` skill, and release it after step 6. Bug fix → write a reproducing test first. Verify with the `check` skill on the changed packages.
 
 ### 3. Simplify
 
@@ -50,7 +48,18 @@ Reread the full diff against the base branch as a reviewer seeing it for the fir
 
 Then measure against the size rule with `git diff --numstat -M origin/<base>...`. Over the limit → split into stacked PRs. Prefer, in order: a pure refactor before the behavior change; new code before the change that wires it in, only if the first PR stands alone; one module or layer per PR; for UI-exception diffs, one flow per PR. Each slice gets its own branch off the previous one, passes checks on its own, and follows the standalone rule. Run steps 4–6 for each slice, bottom of the stack first. No coherent split → keep one PR and say why in your report, not in the PR.
 
-#### UI evidence
+#### Evidence
+
+Every PR carries proof of what CI does not show. Collect it before step 5:
+
+- **Verification beyond CI:** `check`'s `Beyond CI` line (journeys from a `verify-<repo>` skill), a bug reproduced on the base and gone on the head, a benchmark or metric on base vs head, or a run of the real binary or service. Record what was verified, how, and the result.
+- **Review:** the result line from step 4, or `skipped (<reason>)`.
+- **From a caller:** anything it hands over, such as a loop's decision log.
+- **UI changes:** screenshots and recordings, below.
+
+Never list the repo's standard tests, lint, typecheck, or build; CI shows those. Nothing verified beyond CI → say so.
+
+##### UI evidence
 
 For a UI-exception PR, capture evidence before step 4, from the app running locally:
 
@@ -68,13 +77,13 @@ Screenshots must come from the running app at the PR's head; no mockups.
 
 ### 4. Self-review
 
-Follow [review.md](review.md). Skip trivial and docs-only diffs (typo, one-line config, prose).
+Run the `review` skill (`panel=single`) on the diff and act on its findings. Skip trivial and docs-only diffs (typo, one-line config, prose).
 
 ### 5. Open the PR
 
 Commit, push, `gh pr create` (with `--base <branch>` when given a base other than the default or when stacked on a parent slice), using the formats below. Open it ready for review, not as a draft, so review bots run while you iterate. Before writing the body, load every installed `*-pr-conventions` skill and follow those whose scope matches this repo.
 
-UI-exception PR → upload the evidence as GitHub PR attachments with `gh pr create --attach <file>`, one flag per file. Reference each screenshot in the body by the same path, as in `![Empty state, after](<path>)`; `gh` rewrites it to the uploaded URL. Recordings render as a player and are appended to the end of the body. Replacing evidence later: `gh pr edit <N> --attach <file>`. A non-zero exit after the PR URL prints means some uploads failed: rerun those with `gh pr edit`.
+Upload evidence files (screenshots, recordings, logs) as GitHub PR attachments with `gh pr create --attach <file>`, one flag per file. Reference each screenshot in the body by the same path, as in `![Empty state, after](<path>)`; `gh` rewrites it to the uploaded URL. Recordings render as a player and are appended to the end of the body. Replacing evidence later: `gh pr edit <N> --attach <file>`. A non-zero exit after the PR URL prints means some uploads failed: rerun those with `gh pr edit`.
 
 ### 6. Iterate until ready (mandatory)
 
@@ -99,7 +108,7 @@ Return early ONLY when:
 
 Owned repos that skip review: no branch, no PR. reposync commits every file left untouched for a minute and pushes it to the upstream within 5 minutes, so commit early or your work lands as an `auto-sync` commit.
 
-- Step 2: work on the default branch in the checkout; `git pull --rebase --autostash` first. Leave other uncommitted changes alone; stage only your files (`git add <paths>`).
+- Step 2: `workspace` keeps you on the default branch in the checkout. Leave other uncommitted changes alone; stage only your files (`git add <paths>`).
 - Step 3: commit once checks pass. Over the size rule → a stack of commits instead of stacked PRs, split the same way, each committed once it passes checks on its own.
 - Step 4: fix findings with new commits.
 - Steps 5–6: `git pull --rebase --autostash && git push`; never force-push. If a CI workflow runs on the push, watch it (`gh run list --commit <sha>`, `gh run watch <id>`) and handle failures as step 6.2 does. Report the commit links and stop.
@@ -123,9 +132,21 @@ Owned repos that skip review: no branch, no PR. reposync commits every file left
 Optional, at most 3 bullets: risks, trade-offs, or rejected alternatives a reviewer should know.
 ```
 
-Omit ticket numbers, boilerplate, test plans, and commands run. CI shows verification; the diff shows details. For complex changes only, longer context that materially helps reviewers goes last in `<details><summary>AI explanation</summary> … </details>`.
+Omit ticket numbers, boilerplate, test plans, and checks CI runs; the diff shows details. For complex changes only, longer context that materially helps reviewers goes in `<details><summary>AI explanation</summary> … </details>` before Evidence.
 
-UI-exception PRs end with `## Evidence`, after any AI explanation, so appended recordings land in it: a before/after screenshot table with one row per view and state, and one line naming the route, viewport, and data source (real or synthetic).
+Every body ends with `## Evidence`, so appended recordings land in it:
+
+```markdown
+## Evidence
+**Review:** ready with comments | high, 85% | claude-opus-5-5 + gpt-6.1-sol
+
+| Verified | How | Result |
+|---|---|---|
+| Withdrawal end to end | `verify-bridge` journey `withdraw` | fails on base (stale nonce), passes on head |
+| p99 block build | `just bench-build`, median of 5 | 41 ms → 33 ms |
+```
+
+Nothing verified beyond CI → one line instead of the table: `Not verified beyond CI.` UI changes add a before/after screenshot table with one row per view and state, and one line naming the route, viewport, and data source (real or synthetic). Attached logs are listed by file name.
 
 Example:
 

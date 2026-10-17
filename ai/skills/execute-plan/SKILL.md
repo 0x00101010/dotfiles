@@ -26,21 +26,17 @@ Run every ready slice as one batch through step 4; whenever a batch stage ends, 
 
 ## 3. Workspace per slice
 
-Resolve `**Repo:**` through the registry (fall back to `in <repo>` text or the current repo; ambiguous → ask). Then:
+Resolve `**Repo:**` through the registry (fall back to `in <repo>` text or the current repo; ambiguous → ask). Then get a workspace from the `workspace` skill with the slice's branch and base and the note `<plan>:<phase>`. Direct-repo slices run one at a time and never branch.
 
-- Slot repo (`dev<N>` beside the default worktree): `path=$(devslot claim <branch> <repo-root> --note "<plan>:<phase>")`; stacked → then `git -C "$path" reset -q --hard origin/<base>` on the fresh branch.
-- Direct repo (see `pr`): the checkout itself, on the default branch. Its slices run one at a time and never branch.
-- Otherwise: in the default checkout, require a clean tree, then `git fetch origin && git switch -c <branch> origin/<base>`.
-
-Base: `<default>`, or for a `(stacked)` dependency, that phase's branch. Branch: `<prefix>/<slug>`, prefix from `## Handoff to PR skill`; default prefix is the user's usual one in that repo (`git log --author`), slug from the phase name.
+Base: `<default>`, or for a `(stacked)` dependency, that phase's branch. Branch: `<type>/<slug>`, type from `## Handoff to PR skill` when it names one, slug from the phase name.
 
 ## 4. Run a batch
 
 Keep subagent work short and bounded; coordinate reviews yourself and do all waiting with background shell processes. Give each subagent: the absolute workspace path, the branch, the base branch when stacked (for `gh pr create --base`), the phase text verbatim (objective, actions, verification, exit criteria), and the instruction to follow the `pr` skill and work only in that directory.
 
 1. **Implement.** One subagent per slice, all started in one turn. Each follows `pr` steps 1–3, commits locally, and stops without pushing. It does not split an oversized diff. Final message: what it built, the checks it ran, the diff size with a proposed split if over the limit, anything left undone.
-2. **Review.** Diff over the `pr` size rule → do not ship; mark the phase blocked with the size and proposed split. Otherwise run `pr` step 4 ([review.md](../pr/review.md)) on `git -C <path> diff origin/<base>...HEAD`, one combined review on one model per slice, and validate each finding.
-3. **Open.** One subagent per slice, all in one turn. Each gets the verified findings, fixes them, reruns checks, follows `pr` step 5, and returns as soon as the PR exists; it must not run `pr` step 6. Final message: the PR URL, the checks it ran, anything left undone. Append `**Status:** open — <PR URL>` under the phase heading. If step 2 found blockers, follow `review.md` for one follow-up review on `origin/<base>...<branch>`; new blockers → a fix subagent.
+2. **Review.** Diff over the `pr` size rule → do not ship; mark the phase blocked with the size and proposed split. Otherwise run the `review` skill (`panel=single`) on `git -C <path> diff origin/<base>...HEAD` per slice, and validate each finding.
+3. **Open.** One subagent per slice, all in one turn. Each gets the verified findings, fixes them, reruns checks, follows `pr` step 5, and returns as soon as the PR exists; it must not run `pr` step 6. Final message: the PR URL, the checks it ran, anything left undone. Append `**Status:** open — <PR URL>` under the phase heading. If step 2 found blockers, follow `review` for one follow-up review on `origin/<base>...<branch>`; new blockers → a fix subagent.
 4. **Watch.** For each PR, start `gh pr checks <url> --watch` as a background process and keep its pid. Then go back to step 2 of this skill: start the next batch with whatever became ready (stacked children are ready now) and run it through steps 1–3 while the checks run. Between stages, and at least every 10 minutes, poll the pids with `shell_command_status` and pull review threads and comments as in `pr` step 6.3. Then:
    - Checks failed → `pr` step 6.2: flaky → rerun once; also fails on the base branch → report; otherwise a fix subagent.
    - Unresolved thread or unanswered comment → a fix subagent with the thread text; it applies `pr` step 6.4.
@@ -51,8 +47,7 @@ Keep subagent work short and bounded; coordinate reviews yourself and do all wai
 When the slice is finished:
 
 - Confirm the PR exists and matches the branch: `gh pr view <url> --json state,headRefName`.
-- Slot repo → `devslot release <path>` (it refuses dirty or unpushed trees; resolve that first, do not force).
-- Otherwise → `git switch <default>` in that checkout.
+- Release the workspace (`workspace`, Release).
 - Set the phase's status line (append one if missing) to `**Status:** done — <PR URL>`, or `**Status:** blocked — <one line>`.
 
 Direct-repo slices skip the branch, PR, and thread steps: step 3 pushes, step 4 watches only CI on the pushed commit, and the status links the last commit (`**Status:** done — <commit URL>`).

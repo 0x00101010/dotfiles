@@ -11,6 +11,12 @@
 .agents/skills/execute-plan
 .agents/skills/agent-browser
 .agents/skills/beautiful-mermaid
+.agents/skills/check
+.agents/skills/loop
+.agents/skills/notify
+.agents/skills/review
+.agents/skills/simplify
+.agents/skills/workspace
 {{- end }}
 {{- if not (has "pi" $agents) }}
 .pi
