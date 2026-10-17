@@ -12,6 +12,7 @@
 .agents/skills/agent-browser
 .agents/skills/beautiful-mermaid
 .agents/skills/check
+.agents/skills/docs
 .agents/skills/loop
 .agents/skills/notify
 .agents/skills/review
