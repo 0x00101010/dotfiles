@@ -46,7 +46,7 @@ Rows stay single-line; evidence is a pointer (commit SHA, `path:line`, failing c
 
 ## 2. Passes
 
-Have the skill list its candidates in scope, ranked, minus the ones the log rules out. Then, one per pass:
+Have the skill list its candidates in scope, ranked, minus the ones the log rules out. Then, one per pass, strictly in sequence: never batch one pass's edit with the previous pass's commit or check.
 
 1. Have the skill make exactly one change: the top remaining candidate.
 2. Run `check` on the scope, the candidate check, and the metric (`Noise` samples).
