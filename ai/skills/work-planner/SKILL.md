@@ -52,6 +52,10 @@ On verified delivery only: write `<date>.receipt` with `Cutoff`, `Daily: <daily 
 
 Otherwise leave `pending` in place, do not emit that line, and say what is unresolved.
 
+### Alerts
+
+Send one alert with the `notify` skill in `alert` mode only when something needs Francis: a loop automation failed, auto-paused, or missed a run, or the plan could not be fully published (a failed or uncertain run, or a missing source). First line: `Planner <date>: <what broke>`; details: each item with its link, plus the Linear plan link. A normal day sends nothing; the plan lives in Linear.
+
 ### Retries
 
 Reconcile plans for EVERY date in `pending` before publishing. An empty search is not proof an uncertain write failed. Stop if it cannot be resolved. Never blindly repeat a timed-out create. Do not modify source issues or send messages.

@@ -46,7 +46,7 @@ From the repo root, `just` lists every recipe:
 ## Local config: `~/.config/dotfiles/`
 
 Machine-specific lists that may name private checkouts live here, one file per
-tool, outside this repo: `reposync`, `skill-sources`, and `work-planner`. Chezmoi creates
+tool, outside this repo: `reposync`, `skill-sources`, `work-planner`, and `notify` (`inbox <channel ID>` and `alert_emoji <name>` for alerts). Chezmoi creates
 `reposync` once with usage comments and never overwrites it. Existing
 `~/.config/agents/skill-sources` files are not moved; move them by hand.
 
