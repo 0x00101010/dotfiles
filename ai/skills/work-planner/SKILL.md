@@ -22,6 +22,10 @@ Read Slack and Linear as the config says, through `mux-mcp-gateway` (`slack` and
 
 The previous receipt points to Linear plans: read those and their planner-marked comments for open threads and per-source coverage checkpoints. If coverage was partial, keep each unscanned source's checkpoint. The previous run's timestamp is not proof that all its sources were scanned.
 
+### Latest recap
+
+The newest file in `~/.local/state/recap/daily/` (and, on Mondays, `weekly/`) written since the previous receipt: carry its slipped commitments and blocked items into actions, and its experiment into the daily context line when it changes today's plan. Missing or older → skip.
+
 ### Loop results
 
 Since the previous receipt's cutoff (first run: 3 days):

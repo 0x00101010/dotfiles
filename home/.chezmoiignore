@@ -7,6 +7,7 @@
 {{- end }}
 {{- if not (or (has "codex" $agents) (has "amp" $agents) (has "pi" $agents)) }}
 .agents/skills/pr
+.agents/skills/recap
 .agents/skills/plan
 .agents/skills/execute-plan
 .agents/skills/agent-browser
