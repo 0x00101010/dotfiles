@@ -8,7 +8,7 @@ description: Make code smaller and easier to read without changing behavior - de
 **Scope:**
 
 - Default: files changed on the current branch against `origin/<default>`.
-- `since=<duration>`: files changed by commits on `origin/<default>` in that window (`git log origin/<default> --since=<duration> --name-only --format=`), minus deleted files.
+- `since=<n>h|<n>d`: files changed by commits on `origin/<default>` in that window (`git log origin/<default> --since="<n> hours ago"` or `"<n> days ago"` `--name-only --format=`), minus deleted files. Git silently misparses `--since=24h`, so always spell the unit out.
 - `<path or glob>`: every file under it.
 
 Exclude generated, vendored, lockfile, and snapshot files.
