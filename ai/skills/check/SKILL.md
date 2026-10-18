@@ -16,7 +16,10 @@ description: Find and run the checks that prove a repo still works for a scope -
 
 ## Run
 
-Run each command once.
+Run each command once, in the workspace's environment:
+
+- `local` → run it here.
+- Remote (`workspace` reported an environment and remote path) → `envrun sync <env> <local dir> <remote path>`, then `envrun run <env> <remote path> <name> -- <cmd>` and `envrun wait <env> <name>` (from a background process for anything over a minute). `<name>` is unique per command, e.g. `<repo>-<branch>-<command>-<n>`. The printed log tail and exit code are the result; `envrun tail` reads more. Runs live in tmux on the remote, so a dropped connection loses nothing. Never build or test that repo locally.
 
 - A failing command → rerun just that command once. Passes the second time → `flaky`, naming the test; continue.
 - `baseline` (before any change): a command CI runs is red → stop and return `red`. A command CI does not run is red (a local-only linter, a version mismatch) → drop it for this run and list it under `Failures`.

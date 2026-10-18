@@ -20,6 +20,7 @@ test:
     tests/bootstrap/run.sh
     python3 tests/agents/test_wiring.py
     tests/devslot/run.sh
+    tests/envrun/run.sh
     tests/skillsync/run.sh
     tests/reposync/run.sh
 

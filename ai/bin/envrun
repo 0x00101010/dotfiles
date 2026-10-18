@@ -1,0 +1,125 @@
+#!/usr/bin/env bash
+# envrun: run a repo's builds and tests in a remote environment over SSH, in tmux.
+set -euo pipefail
+
+CONFIG=${ENVRUN_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/environments}
+SSH=${ENVRUN_SSH:-ssh}
+TMUX_SOCKET=${ENVRUN_TMUX_SOCKET:-envrun}
+POLL_SECS=${ENVRUN_POLL_SECS:-5}
+STATE='$HOME/.local/state/envrun'
+REMOTE_PATH='$HOME/.cargo/bin:$HOME/.local/bin:$HOME/go/bin:$HOME/.local/share/mise/shims:$PATH'
+
+usage() {
+  cat >&2 <<'EOF'
+usage: envrun env <org/repo>                          environment for a repo (default: local)
+       envrun claim <env> <org/repo> <branch> <base-sha> [--note <text>]
+                                                       claim a remote dev slot at base-sha; prints its path
+       envrun sync <env> <local-dir> <remote-dir>      copy the local worktree's files to the slot
+       envrun run <env> <remote-dir> <name> -- <cmd>   start cmd in tmux session envrun-<name>
+       envrun wait <env> <name> [lines]                block until done; print the log tail; exit with cmd's code
+       envrun status <env> <name>                      running, or exit=<code>
+       envrun tail <env> <name> [lines]                print the log tail
+       envrun release <env> <remote-dir>               discard synced files and release the slot
+
+Config (~/.config/dotfiles/environments):
+  env <name> kind=ssh host=<host> [fallback=<host>] [root=<dir>]
+  repo <org/repo> env=<name>
+Logs: ~/.local/state/envrun/<name>.{log,exit} on the remote.
+EOF
+  exit 2
+}
+
+die() { echo "envrun: $*" >&2; exit 1; }
+[ $# -ge 1 ] || usage
+[ -f "$CONFIG" ] || die "no config at $CONFIG"
+
+field() {  # field <env> <key>
+  awk -v e="$1" -v k="$2" '$1=="env" && $2==e { for (i=3;i<=NF;i++) { split($i,kv,"="); if (kv[1]==k) print substr($i, length(k)+2) } }' "$CONFIG"
+}
+
+host() {  # first reachable host of an ssh environment
+  local env=$1 h
+  [ "$(field "$env" kind)" = ssh ] || die "$env is not an ssh environment"
+  for h in $(field "$env" host) $(field "$env" fallback); do
+    "$SSH" -o BatchMode=yes -o ConnectTimeout=3 "$h" true 2>/dev/null && { echo "$h"; return; }
+  done
+  die "$env: no reachable host"
+}
+
+remote() {  # remote <host> <script>: run a bash script on the host with the tool PATH
+  local h=$1; shift
+  "$SSH" -o BatchMode=yes "$h" "PATH=\"$REMOTE_PATH\" bash -s" <<<"$*"
+}
+
+q() { printf '%q' "$1"; }
+
+cmd=$1; shift
+case $cmd in
+  env)
+    [ $# = 1 ] || usage
+    e=$(awk -v r="$1" '$1=="repo" && $2==r { for (i=3;i<=NF;i++) if ($i ~ /^env=/) print substr($i,5) }' "$CONFIG")
+    echo "${e:-local}" ;;
+  claim)
+    [ $# -ge 4 ] || usage
+    env=$1 repo=$2 branch=$3 base=$4; shift 4
+    note=${2:-$branch}; [ "${1:-}" = --note ] || note=$branch
+    h=$(host "$env"); root=$(field "$env" root); root=${root:-'~/src'}
+    remote "$h" "set -e
+root=$root/$(q "$repo")
+git -C \"\$root\" fetch -q origin
+slot=\$(devslot claim $(q "$branch") \"\$root\" --note $(q "$note"))
+git -C \"\$slot\" reset -q --hard $(q "$base")
+echo \"\$slot\"" ;;
+  sync)
+    [ $# = 3 ] || usage
+    env=$1 src=$2 dst=$3; h=$(host "$env")
+    cd "$src"
+    git ls-files -z --cached --others --exclude-standard \
+      | while IFS= read -r -d '' f; do if [ -e "$f" ]; then printf '%s\0' "$f"; fi; done \
+      | rsync -a --from0 --files-from=- --relative -e "$SSH -o BatchMode=yes" ./ "$h:$dst/"
+    gone=$(git ls-files -z --deleted | tr '\0' '\n')
+    if [ -n "$gone" ]; then
+      remote "$h" "cd $(q "$dst") && while IFS= read -r f; do rm -f -- \"\$f\"; done <<'EOF'
+$gone
+EOF"
+    fi ;;
+  run)
+    [ $# -ge 5 ] && [ "$4" = -- ] || usage
+    env=$1 dir=$2 name=$3; shift 4
+    h=$(host "$env")
+    script=$(printf 'cd %q\n%s\n' "$dir" "$*" | base64 | tr -d '\n')
+    remote "$h" "set -e
+mkdir -p $STATE && cd $STATE
+tmux -L $TMUX_SOCKET has-session -t envrun-$(q "$name") 2>/dev/null && { echo 'envrun: $name is already running' >&2; exit 1; }
+rm -f $(q "$name").log $(q "$name").exit
+echo $script | base64 -d > $(q "$name").sh
+tmux -L $TMUX_SOCKET new-session -d -s envrun-$(q "$name") \"PATH=\\\"$REMOTE_PATH\\\" bash $STATE/$(q "$name").sh > $STATE/$(q "$name").log 2>&1; echo \\\$? > $STATE/$(q "$name").exit\"" ;;
+  status|tail|wait)
+    [ $# -ge 2 ] || usage
+    env=$1 name=$2 lines=${3:-200}; h=$(host "$env")
+    probe="cd $STATE 2>/dev/null || { echo missing; exit; }
+if [ -f $(q "$name").exit ]; then echo exit=\$(cat $(q "$name").exit)
+elif tmux -L $TMUX_SOCKET has-session -t envrun-$(q "$name") 2>/dev/null; then echo running
+else echo missing; fi"
+    case $cmd in
+      status) remote "$h" "$probe" ;;
+      tail) remote "$h" "tail -n $lines $STATE/$(q "$name").log" ;;
+      wait)
+        while :; do
+          s=$(remote "$h" "$probe")
+          case $s in
+            running) sleep "$POLL_SECS" ;;
+            exit=*) remote "$h" "tail -n $lines $STATE/$(q "$name").log"; exit "${s#exit=}" ;;
+            *) die "$name: no such run" ;;
+          esac
+        done ;;
+    esac ;;
+  release)
+    [ $# = 2 ] || usage
+    env=$1 dir=$2; h=$(host "$env")
+    remote "$h" "set -e
+cd $(q "$dir")
+git reset -q --hard && git clean -fdq
+devslot release ." ;;
+  *) usage ;;
+esac

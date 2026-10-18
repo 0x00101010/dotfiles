@@ -20,6 +20,10 @@ Read the repo's guidance files. Bare layout (`.bare/` plus a `.git` file): never
 
 Report the path, branch, base, and which case applied.
 
+## Environment
+
+`envrun env <org/repo>` names where this repo builds (`~/.config/dotfiles/environments`; unlisted repos are `local`). `local` → nothing more. Any other environment → edit in the local checkout above as usual, and build remotely: `envrun claim <env> <org/repo> <branch> $(git rev-parse origin/<base>)` claims a dev slot there at the same base and prints its path. Report the environment and the remote path with the rest; `check` syncs to it and runs there. No envrun on PATH → treat every repo as `local`.
+
 ## Release
 
 When the caller is done:
@@ -28,6 +32,7 @@ When the caller is done:
 - Temporary worktree → `git worktree remove <path>`. The branch stays.
 - Case 4 → `git switch <default>`.
 - Direct repo or Toshi worktree → nothing.
+- Remote environment, after the local release → `envrun release <env> <remote path>` (discards synced files; the local branch is the source of truth).
 
 ## Rules
 
