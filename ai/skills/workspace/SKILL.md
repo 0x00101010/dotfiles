@@ -22,7 +22,15 @@ Report the path, branch, base, and which case applied.
 
 ## Environment
 
-`envrun env <org/repo>` names where this repo builds (`~/.config/dotfiles/environments`; unlisted repos are `local`). `local` → nothing more. Any other environment → edit in the local checkout above as usual, and build remotely: `envrun claim <env> <org/repo> <branch> $(git rev-parse origin/<base>)` claims a dev slot there at the same base and prints its path. Report the environment and the remote path with the rest; `check` syncs to it and runs there. No envrun on PATH → treat every repo as `local`.
+`envrun env <org/repo>` names where this repo is worked on (`~/.config/dotfiles/environments`; unlisted repos are `local`; no `envrun` on PATH means everything is `local`). `local` → the cases above.
+
+Any other environment → the workspace is a dev slot on that host, and nothing is checked out locally: `envrun claim <env> <org/repo> <branch> origin/<base> --note "<note>"` prints the remote slot path (the branch starts at `origin/<base>`). Report the environment and that path. All work then happens there:
+
+- Read and search: `envrun exec <env> <path> -- <cmd>` (`rg -n`, `sed -n 'a,bp' <file>`, `git diff`, `git log`). Keep output small; narrow with `rg` before reading.
+- Edit: write a unified diff and pipe it to `envrun patch <env> <path>`; it runs `git apply --check` first, so a stale diff changes nothing. Reread the hunk after it applies. New and deleted files go through the same diff.
+- Git: commit and push there with `envrun exec` (`git add <paths> && git commit -m ...`, `git push -u origin <branch>`). Create the PR from here with `gh pr create -R <org>/<repo> --head <branch>`.
+- Builds and tests: the `check` skill runs them in the slot.
+- Every command another skill gives (`git reset --hard HEAD`, `git revert`, `git diff --numstat`, `git log`) runs in the slot through `envrun exec`; never against a local copy.
 
 ## Release
 
@@ -32,7 +40,7 @@ When the caller is done:
 - Temporary worktree → `git worktree remove <path>`. The branch stays.
 - Case 4 → `git switch <default>`.
 - Direct repo or Toshi worktree → nothing.
-- Remote environment, after the local release → `envrun release <env> <remote path>` (discards synced files; the local branch is the source of truth).
+- Remote slot → `envrun release <env> <path>`. It refuses uncommitted or unpushed work; after a run that pushes nothing (a report), use `--keep-branch`, which keeps the commits on the branch.
 
 ## Rules
 

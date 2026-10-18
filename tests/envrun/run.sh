@@ -59,17 +59,19 @@ EOF
 check "repo maps to its environment" [ "$("$ENVRUN" env org/repo)" = fw ]
 check "unmapped repo is local" [ "$("$ENVRUN" env org/other)" = local ]
 
-slot=$("$ENVRUN" claim fw org/repo feat/x "$base" --note test)
-check "claim falls back to the reachable host and takes dev1 at base" \
+slot=$("$ENVRUN" claim fw org/repo feat/x origin/main --note test)
+check "claim falls back to the reachable host and takes dev1 at the base ref" \
   [ "$slot" = "$ROOT/dev1" ] && [ "$(git -C "$slot" branch --show-current)" = feat/x ] \
   && [ "$(git -C "$slot" rev-parse HEAD)" = "$base" ]
 
-echo two > "$TMP/local/a.txt"; echo new > "$TMP/local/b.txt"; rm "$TMP/local/gone.txt"
-mkdir -p "$TMP/local/target"; echo big > "$TMP/local/target/artifact"
-"$ENVRUN" sync fw "$TMP/local" "$slot"
-check "sync copies changed and new files" [ "$(cat "$slot/a.txt")" = two ] && [ "$(cat "$slot/b.txt")" = new ]
-check "sync removes deleted files" [ ! -e "$slot/gone.txt" ]
-check "sync skips ignored files" [ ! -e "$slot/target/artifact" ]
+check "exec runs in the slot and returns output" [ "$("$ENVRUN" exec fw "$slot" -- 'cat a.txt')" = one ]
+set +e; "$ENVRUN" exec fw "$slot" -- 'false | cat' >/dev/null 2>&1; code=$?; set -e
+check "exec keeps a failure inside a pipe" [ "$code" != 0 ]
+
+printf -- '--- a/a.txt\n+++ b/a.txt\n@@ -1 +1 @@\n-one\n+two\n' | "$ENVRUN" patch fw "$slot"
+check "patch applies a diff in the slot" [ "$(cat "$slot/a.txt")" = two ]
+set +e; printf -- '--- a/a.txt\n+++ b/a.txt\n@@ -1 +1 @@\n-one\n+three\n' | "$ENVRUN" patch fw "$slot" >/dev/null 2>&1; code=$?; set -e
+check "a stale patch is rejected and changes nothing" [ "$code" != 0 ] && [ "$(cat "$slot/a.txt")" = two ]
 
 "$ENVRUN" run fw "$slot" ok -- 'cat a.txt; echo done'
 out=$("$ENVRUN" wait fw ok); code=$?
@@ -89,9 +91,13 @@ check "a running name cannot start twice" bash -c "! '$ENVRUN' run fw '$slot' sl
 "$ENVRUN" wait fw slow >/dev/null
 check "status reports the exit code" [ "$("$ENVRUN" status fw slow)" = exit=0 ]
 
-"$ENVRUN" release fw "$slot" >/dev/null
-check "release discards synced files and frees the slot" \
-  [ ! -e "$slot/b.txt" ] && [ -z "$(git -C "$slot" branch --show-current)" ] \
+check "release refuses uncommitted work" bash -c "! '$ENVRUN' release fw '$slot' 2>/dev/null"
+"$ENVRUN" exec fw "$slot" -- 'git commit -qam work' >/dev/null
+check "release refuses unpushed work" bash -c "! '$ENVRUN' release fw '$slot' 2>/dev/null"
+"$ENVRUN" release fw "$slot" --keep-branch >/dev/null
+check "release --keep-branch frees the slot and keeps the commit on the branch" \
+  [ -z "$(git -C "$slot" branch --show-current)" ] \
+  && [ "$(git -C "$slot" log -1 --format=%s feat/x)" = work ] \
   && [ "$("$REPO/ai/bin/devslot" list "$ROOT" | awk '$1=="dev1"{print $2}')" = free ]
 
 [ "$fails" = 0 ] && echo "all envrun checks passed" || { echo "$fails envrun check(s) failed"; exit 1; }
