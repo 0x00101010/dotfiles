@@ -37,6 +37,7 @@ Touch only what you must. Clean up only your own mess.
 - Unrelated dead code? Mention it — don't delete it.
 - Remove only orphans YOUR changes created.
 - Every changed line should trace directly to the request.
+- Edit files with the edit and write tools, not shell heredocs (`python3 - <<EOF`, `cat > f <<EOF`): the command guard can't parse heredocs and sends them to review.
 
 ## 5. Goal-Driven Execution
 
