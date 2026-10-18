@@ -22,9 +22,13 @@ export GIT_CONFIG_GLOBAL=/dev/null GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@t \
 mkdir -p "$TMP/bin" "$TMP/.local/bin"
 cat > "$TMP/bin/ssh" <<'EOF'
 #!/usr/bin/env bash
-while [ "$1" = -o ]; do shift 2; done
+# Like real ssh, read stdin unless -n is given, even when the command ignores it.
+keep=1
+while :; do case $1 in -n) keep=0; shift ;; -o) shift 2 ;; *) break ;; esac; done
 host=$1; shift
 [ "$host" = down ] && exit 255
+[ "$keep" = 1 ] && [ "$*" = true ] && cat >/dev/null
+[ "$keep" = 0 ] && exec bash -c "$*" </dev/null
 exec bash -c "$*"
 EOF
 chmod +x "$TMP/bin/ssh"

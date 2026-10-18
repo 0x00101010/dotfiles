@@ -44,7 +44,7 @@ host() {  # first reachable host of an ssh environment
   local env=$1 h
   [ "$(field "$env" kind)" = ssh ] || die "$env is not an ssh environment"
   for h in $(field "$env" host) $(field "$env" fallback); do
-    "$SSH" -o BatchMode=yes -o ConnectTimeout=3 "$h" true 2>/dev/null && { echo "$h"; return; }
+    "$SSH" -n -o BatchMode=yes -o ConnectTimeout=3 "$h" true 2>/dev/null && { echo "$h"; return; }
   done
   die "$env: no reachable host"
 }
@@ -72,6 +72,7 @@ root=$root/$(q "$repo")
 git -C \"\$root\" fetch -q origin
 slot=\$(devslot claim $(q "$branch") \"\$root\" --note $(q "$note"))
 git -C \"\$slot\" reset -q --hard $(q "$base")
+mise trust -q \"\$slot\" 2>/dev/null || true
 echo \"\$slot\"" ;;
   exec)
     [ $# -ge 4 ] && [ "$3" = -- ] || usage
@@ -81,8 +82,7 @@ cd $(q "$dir")
 $*" ;;
   patch)
     [ $# = 2 ] || usage
-    env=$1 dir=$2; h=$(host "$env")
-    diff=$(base64 | tr -d '\n')
+    env=$1 dir=$2; diff=$(base64 | tr -d '\n'); h=$(host "$env")
     remote "$h" "set -e
 cd $(q "$dir")
 f=\$(mktemp)
