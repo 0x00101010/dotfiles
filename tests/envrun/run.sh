@@ -76,6 +76,14 @@ printf -- '--- a/a.txt\n+++ b/a.txt\n@@ -1 +1 @@\n-one\n+two\n' | "$ENVRUN" patc
 check "patch applies a diff in the slot" [ "$(cat "$slot/a.txt")" = two ]
 set +e; printf -- '--- a/a.txt\n+++ b/a.txt\n@@ -1 +1 @@\n-one\n+three\n' | "$ENVRUN" patch fw "$slot" >/dev/null 2>&1; code=$?; set -e
 check "a stale patch is rejected and changes nothing" [ "$code" != 0 ] && [ "$(cat "$slot/a.txt")" = two ]
+printf -- '--- a/a.txt\n+++ b/a.txt\n@@ -1,9 +1,9 @@\n-two\n+four\n' | "$ENVRUN" patch fw "$slot"
+check "patch tolerates wrong hunk line counts" [ "$(cat "$slot/a.txt")" = four ]
+printf -- '--- a/a.txt\n+++ b/a.txt\n@@ -1 +1 @@\n-four\n+two\n' | "$ENVRUN" patch fw "$slot"
+check "exec reads a script from stdin, quotes intact" [ "$("$ENVRUN" exec fw "$slot" -- <<'SH'
+x='it'"'"'s "quoted"'
+printf '%s|%s\n' "$x" "$(cat a.txt)"
+SH
+)" = "it's \"quoted\"|two" ]
 
 "$ENVRUN" run fw "$slot" ok -- 'cat a.txt; echo done'
 out=$("$ENVRUN" wait fw ok); code=$?

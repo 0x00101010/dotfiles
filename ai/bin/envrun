@@ -14,8 +14,9 @@ usage() {
 usage: envrun env <org/repo>                          environment for a repo (default: local)
        envrun claim <env> <org/repo> <branch> <base-ref> [--note <text>]
                                                        claim a remote dev slot at base-ref (e.g. origin/main); prints its path
-       envrun exec <env> <remote-dir> -- <cmd>         run a quick command there and print its output (reads, git)
-       envrun patch <env> <remote-dir>                 apply a unified diff from stdin there (git apply --check first)
+       envrun exec <env> <remote-dir> -- [<cmd>]       run a quick command there (reads, git); no cmd → script from stdin
+       envrun patch <env> <remote-dir>                 apply a unified diff from stdin there (git apply --check first;
+                                                       hunk line counts are recounted)
        envrun run <env> <remote-dir> <name> -- <cmd>   start a long command in tmux session envrun-<name>
        envrun wait <env> <name> [lines]                block until done; print the log tail; exit with cmd's code
        envrun status <env> <name>                      running, or exit=<code>
@@ -75,11 +76,13 @@ git -C \"\$slot\" reset -q --hard $(q "$base")
 mise trust -q \"\$slot\" 2>/dev/null || true
 echo \"\$slot\"" ;;
   exec)
-    [ $# -ge 4 ] && [ "$3" = -- ] || usage
-    env=$1 dir=$2; shift 3; h=$(host "$env")
+    [ $# -ge 3 ] && [ "$3" = -- ] || usage
+    env=$1 dir=$2; shift 3
+    if [ $# = 0 ]; then body=$(cat); else body=$*; fi
+    h=$(host "$env")
     remote "$h" "set -o pipefail
 cd $(q "$dir")
-$*" ;;
+$body" ;;
   patch)
     [ $# = 2 ] || usage
     env=$1 dir=$2; diff=$(base64 | tr -d '\n'); h=$(host "$env")
@@ -87,7 +90,7 @@ $*" ;;
 cd $(q "$dir")
 f=\$(mktemp)
 echo $diff | base64 -d > \"\$f\"
-git apply --check --whitespace=nowarn \"\$f\" && git apply --whitespace=nowarn \"\$f\"; rc=\$?
+git apply --recount --check --whitespace=nowarn \"\$f\" && git apply --recount --whitespace=nowarn \"\$f\"; rc=\$?
 rm -f \"\$f\"; exit \$rc" ;;
   run)
     [ $# -ge 5 ] && [ "$4" = -- ] || usage

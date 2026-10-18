@@ -26,8 +26,8 @@ Report the path, branch, base, and which case applied.
 
 Any other environment → the workspace is a dev slot on that host, and nothing is checked out locally: `envrun claim <env> <org/repo> <branch> origin/<base> --note "<note>"` prints the remote slot path (the branch starts at `origin/<base>`). Report the environment and that path. All work then happens there:
 
-- Read and search: `envrun exec <env> <path> -- <cmd>` (`rg -n`, `sed -n 'a,bp' <file>`, `git diff`, `git log`). Keep output small; narrow with `rg` before reading.
-- Edit: write a unified diff and pipe it to `envrun patch <env> <path>`; it runs `git apply --check` first, so a stale diff changes nothing. Reread the hunk after it applies. New and deleted files go through the same diff.
+- Read and search: `envrun exec <env> <path> -- <cmd>` (`rg -n`, `sed -n 'a,bp' <file>`, `git diff`, `git log`). Keep output small; narrow with `rg` before reading. Anything multi-line or with nested quotes goes on stdin: `envrun exec <env> <path> -- <<'SH' ... SH`.
+- Edit: write a unified diff and pipe it to `envrun patch <env> <path>`; it runs `git apply --check` first, so a stale diff changes nothing, and recounts hunk line numbers, so only the context and `-`/`+` lines must be exact. Reread the hunk after it applies. New and deleted files go through the same diff.
 - Git: commit and push there with `envrun exec` (`git add <paths> && git commit -m ...`, `git push -u origin <branch>`). Create the PR from here with `gh pr create -R <org>/<repo> --head <branch>`.
 - Builds and tests: the `check` skill runs them in the slot.
 - Every command another skill gives (`git reset --hard HEAD`, `git revert`, `git diff --numstat`, `git log`) runs in the slot through `envrun exec`; never against a local copy.
