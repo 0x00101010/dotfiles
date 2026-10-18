@@ -87,7 +87,7 @@ EOF"
     [ $# -ge 5 ] && [ "$4" = -- ] || usage
     env=$1 dir=$2 name=$3; shift 4
     h=$(host "$env")
-    script=$(printf 'cd %q\n%s\n' "$dir" "$*" | base64 | tr -d '\n')
+    script=$(printf 'set -o pipefail\ncd %q\n%s\n' "$dir" "$*" | base64 | tr -d '\n')
     remote "$h" "set -e
 mkdir -p $STATE && cd $STATE
 tmux -L $TMUX_SOCKET has-session -t envrun-$(q "$name") 2>/dev/null && { echo 'envrun: $name is already running' >&2; exit 1; }

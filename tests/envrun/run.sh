@@ -79,6 +79,10 @@ check "wait returns the log and exit 0" [ "$code" = 0 ] && grep -q '^two$' <<<"$
 set +e; out=$("$ENVRUN" wait fw bad 2>&1); code=$?; set -e
 check "wait passes the command's exit code through" [ "$code" = 3 ] && grep -q failing <<<"$out"
 
+"$ENVRUN" run fw "$slot" piped -- 'false | cat'
+set +e; "$ENVRUN" wait fw piped >/dev/null 2>&1; code=$?; set -e
+check "a failure inside a pipe is not hidden" [ "$code" != 0 ]
+
 "$ENVRUN" run fw "$slot" slow -- 'sleep 3; echo late'
 check "status reports running" [ "$("$ENVRUN" status fw slow)" = running ]
 check "a running name cannot start twice" bash -c "! '$ENVRUN' run fw '$slot' slow -- true 2>/dev/null"
