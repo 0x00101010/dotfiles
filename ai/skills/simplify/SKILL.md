@@ -28,11 +28,16 @@ Unattended (an automation, or the prompt says so): never ask. Anything that woul
 
 Within scope:
 
-- code nothing reaches: unused functions, branches, flags, parameters;
+- code nothing reaches: private functions, unreachable branches, unused flags and parameters;
 - logic that duplicates an existing helper or the standard library;
-- one-caller wrappers, single-use abstractions, needless indirection;
+- needless indirection: a wrapper whose body is one forwarding call and whose name says no more than that call, or a single-use abstraction (trait, generic, struct) with one implementation;
 - options, fallbacks, or defensive checks for states that cannot happen;
 - comments that narrate code, restate names, or reference history or tickets.
+
+Not candidates, even with one caller or none:
+
+- a named helper whose name labels a step or hides detail the caller does not need. Inline a one-caller helper only when its body reads as clearly as its name, such as a one-line forward or a name that restates the expression;
+- a public constructor, builder method, or variant that mirrors a used sibling (`new` and `new_with_runtime`, `from_wallet` and `from_wallet_with_runtime`). It completes the API even when nothing calls it yet.
 
 Rank by lines removed, then by layers a reader no longer has to trace. Skip a candidate that changes reachable code no test exercises (the repo's coverage tool when it is fast, otherwise no test references the function or module) and list it as `uncovered`. Deleting unreachable code needs no test: the typecheck or build proves nothing uses it.
 
@@ -49,7 +54,7 @@ Then, with anything kept, run one full `check` on the scope's packages. Red → 
 **Keep rule:**
 
 - Net lines go down, or branches or abstractions go down with no net line increase.
-- No change to a public surface: symbols other packages or users import (in a published library, every export), wire or storage formats, CLI flags, config keys, log or metric names. An export nothing in the repo imports, in an app, is dead code.
+- No change to a public surface: symbols other packages or users import (in a published library, every export), wire or storage formats, CLI flags, config keys, log or metric names. In an app, an export nothing in the repo imports is dead code unless the list above protects it.
 - No new dependency, file, or abstraction.
 
 Out of bounds: test assertions, renames for taste, formatting, and anything a formatter or linter would do.
