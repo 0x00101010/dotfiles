@@ -13,6 +13,7 @@ inheritGlobalContext: true
 inheritSkills: false
 skills: pr
 async: true
+timeoutMs: 14400000
 acceptanceRole: writer
 ---
 
