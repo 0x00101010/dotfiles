@@ -1,12 +1,12 @@
 ---
 name: review
-description: Review a diff or PR for real defects with one model or a two-model panel. Returns a verdict, a confidence, and verified findings. Used by pr for self-review, by loop to judge loop output, and by PR-review automations. Use for "review this diff" or "review <PR URL>".
+description: Review a diff or PR for real defects with a two-model panel at a light, standard, or deep tier. Returns a verdict, a confidence, and verified findings. Used by pr for self-review, by loop to judge loop output, and by PR-review automations. Use for "review this diff" or "review <PR URL>".
 ---
 
-`$ARGUMENTS`: `[panel=single|dual] [<PR URL | diff range>]`.
+`$ARGUMENTS`: `[tier=auto|light|standard|deep] [<PR URL | diff range>]`.
 
 - Target: default `git diff origin/<default>...HEAD`. A PR URL → check out its head read-only in a scratch worktree.
-- `panel`: `single` (default) or `dual`.
+- `tier`: `auto` (default) or a tier name. An explicit tier always wins.
 
 Reviewers never edit, commit, push, comment, or spawn other reviewers. Lenses are checklist sections within one brief, never separate reviewers.
 
@@ -26,14 +26,27 @@ UI-exception diff → also pass the evidence file paths and add to the brief: "S
 
 ## Run the review
 
-Use the `pr-reviewer` agent when the `subagent` tool lists it; otherwise a read-only subagent; if subagents are unavailable, review it yourself (`single` only).
+Reviewers are always subagents: the `pr-reviewer` agent when available, otherwise a read-only subagent. If you cannot launch them, stop and report `Review: unavailable (<reason>)`; never review the diff yourself.
 
-- **single:** one reviewer on its default model unless the user names one.
-- **dual:** two reviewers in parallel on the same brief, models from different providers. Deep tier `anthropic/claude-opus-5-5` + `cbhq-openai/gpt-6.1-sol` when any holds: it deletes production resources; it touches sequencer, consensus, node, or smart-contract code; it changes auth, keys, IAM, secrets, or CI workflows; it has more than 200 changed hand-written lines; an earlier review of this change returned changes needed. Otherwise light tier `anthropic/claude-sonnet-5-5` + `cbhq-openai/gpt-6-luna`.
+Run two reviewers in parallel on the same brief, one per model of the tier:
+
+| Tier | Models |
+|---|---|
+| `light` | `anthropic/claude-sonnet-5-5:high` + `cbhq-openai/gpt-6-luna:high` |
+| `standard` | `anthropic/claude-opus-5-5:high` + `cbhq-openai/gpt-6.1-sol:high` |
+| `deep` | `anthropic/claude-fable-5-1:high` + `cbhq-openai/gpt-6-astra:high` |
+
+`tier=auto` → pick the first that holds:
+
+- `deep`: it deletes production resources; it touches sequencer, consensus, node, or smart-contract code; it changes auth, keys, IAM, secrets, or CI workflows; it has more than 200 changed hand-written lines; an earlier review of this change returned changes needed.
+- `light`: the diff is only docs or config (prose, comments, dashboards, monitor thresholds, values files), with no code change.
+- Otherwise `standard`.
+
+Record the tier and why, e.g. `deep (touches consensus)`.
 
 In an unattended run, write the parallel-launch workflow script to a file first, then launch it by path (`workflow: "./<file>.js"`) in a later step. Inline workflow blocks were not picked up in automations.
 
-A reviewer that fails or times out → rerun it once with the same brief and model. Still failing → `single`: report the lenses as unreviewed; `dual`: continue with the other and note `single reviewer (<model> failed)`.
+A reviewer that fails or times out → rerun it once with the same brief and model. Still failing → continue with the other and note `single reviewer (<model> failed)`. Both failing → `Review: unavailable (<reason>)`.
 
 ## Shared rules
 
@@ -82,18 +95,18 @@ Report only with a size and frequency argument: what grows, how often it runs, w
 ## Validate and merge
 
 1. Verify each finding against the code yourself; discard any you cannot confirm.
-2. `dual` → merge: per lens the stricter verdict, the lower confidence, findings deduplicated. A blocker one reviewer raised and the other contradicts → keep it if you confirmed it, and say they disagreed.
+2. Merge: per lens the stricter verdict, the lower confidence, findings deduplicated. A blocker one reviewer raised and the other contradicts → keep it if you confirmed it, and say they disagreed.
 3. Overall verdict: `changes needed` with any blocker, `ready with comments` with only should-fixes, otherwise `ready`.
 
 Result for the caller:
 
 ```text
-Review: <ready | ready with comments | changes needed> | <high|med|low>, NN% | <model(s)>
+Review: <ready | ready with comments | changes needed> | <high|med|low>, NN% | <tier> (<why>): <model> + <model>
 Findings: <verified list, or none>
 ```
 
 ## Acting on findings
 
-When the change is your own: fix blockers and should-fixes; defer only with a reason worth stating in the PR's Notes. When findings conflict, simplicity wins unless correctness or security is at stake. After fixing blockers, run at most one follow-up review on the new diff with the same panel, covering only the affected lenses.
+When the change is your own: fix blockers and should-fixes; defer only with a reason worth stating in the PR's Notes. When findings conflict, simplicity wins unless correctness or security is at stake. After fixing blockers, run at most one follow-up review on the new diff with the same tier, covering only the affected lenses.
 
 When it is someone else's PR: report, never push.

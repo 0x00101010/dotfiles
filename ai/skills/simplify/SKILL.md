@@ -61,7 +61,7 @@ Out of bounds: test assertions, renames for taste, formatting, and anything a fo
 
 ## 4. Review
 
-Nothing kept, or `review=skip` → skip. Otherwise run the `review` skill on the kept commits (`panel=dual` when unattended, `single` otherwise) and add: "Does any change alter observable behavior: return values, errors, ordering, side effects, timing-sensitive paths, or anything a caller outside the file could notice?" A verified blocker → `git revert` that commit and rerun `check`.
+Nothing kept, or `review=skip` → skip. Otherwise run the `review` skill on the kept commits and add: "Does any change alter observable behavior: return values, errors, ordering, side effects, timing-sensitive paths, or anything a caller outside the file could notice?" A verified blocker → `git revert` that commit and rerun `check`.
 
 ## 5. Output
 

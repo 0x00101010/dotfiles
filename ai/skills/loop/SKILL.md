@@ -59,7 +59,7 @@ Stop when any holds: no candidates left; `passes` reached; 3 reverts in a row; w
 
 ## 3. Judge
 
-Nothing kept → skip. Otherwise run the `review` skill with `panel=dual` on `origin/<base>...HEAD`, adding the skill's intent and the review question. A verified blocker → `git revert` that commit, rerun `check`, and log it; do not fix forward. Then run one full `check` on the final head. Red → revert kept commits newest first, one at a time, until it is green, and log each culprit as `reverted`.
+Nothing kept → skip. Otherwise run the `review` skill on `origin/<base>...HEAD`, adding the skill's intent and the review question. A verified blocker → `git revert` that commit, rerun `check`, and log it; do not fix forward. Then run one full `check` on the final head. Red → revert kept commits newest first, one at a time, until it is green, and log each culprit as `reverted`.
 
 ## 4. Output
 

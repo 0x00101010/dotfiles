@@ -47,7 +47,7 @@ Stop when candidates run out or the next fix would push the diff past the `pr` s
 
 ## 4. Review
 
-Nothing kept, or `review=skip` → skip. Otherwise run the `review` skill on the kept commits (`panel=dual` when unattended, `single` otherwise) and add: "Is every changed statement now true according to the code, with nothing else reworded?" A verified blocker → `git revert` that commit.
+Nothing kept, or `review=skip` → skip. Otherwise run the `review` skill on the kept commits and add: "Is every changed statement now true according to the code, with nothing else reworded?" A verified blocker → `git revert` that commit.
 
 ## 5. Output
 

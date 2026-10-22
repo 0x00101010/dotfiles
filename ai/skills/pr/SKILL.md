@@ -44,7 +44,7 @@ Read the repo's guidance files first. Get a checkout and a `<type>/<slug>` branc
 
 ### 3. Simplify
 
-Run the `simplify` skill in place with `review=skip`; it reuses step 2's green check. Pass its behavior question to step 4. Then reread the diff once more for comments that break the comment rule.
+Run the `simplify` skill in place with `review=skip`; it reuses step 2's green check. Pass its behavior question to step 4. Then reread the diff once more for comments that break the comment rule. Skip `simplify` only for the diffs step 4 may skip, and say so in your report.
 
 Then measure against the size rule with `git diff --numstat -M origin/<base>...`. Over the limit → split into stacked PRs. Prefer, in order: a pure refactor before the behavior change; new code before the change that wires it in, only if the first PR stands alone; one module or layer per PR; for UI-exception diffs, one flow per PR. Each slice gets its own branch off the previous one, passes checks on its own, and follows the standalone rule. Run steps 4–6 for each slice, bottom of the stack first. No coherent split → keep one PR and say why in your report, not in the PR.
 
@@ -77,9 +77,11 @@ Screenshots must come from the running app at the PR's head; no mockups.
 
 ### 4. Self-review
 
-Run the `review` skill (`panel=single`) on the diff, adding the question `simplify` handed over in step 3, and act on its findings. Skip trivial and docs-only diffs (typo, one-line config, prose).
+Run the `review` skill on the diff, adding the question `simplify` handed over in step 3, and act on its findings. Skip only typo or docs-only diffs and one-line config changes.
 
 ### 5. Open the PR
+
+Gate: before `gh pr create`, the Evidence `Review:` line holds step 4's result line or `skipped (<reason>)` with a reason step 4 allows. Otherwise run steps 3–4 first. This holds when a PR is requested mid-conversation too.
 
 Commit, push, `gh pr create` (with `--base <branch>` when given a base other than the default or when stacked on a parent slice), using the formats below. Open it ready for review, not as a draft, so review bots run while you iterate. Before writing the body, load every installed `*-pr-conventions` skill and follow those whose scope matches this repo.
 
@@ -138,7 +140,7 @@ Every body ends with `## Evidence`, so appended recordings land in it:
 
 ```markdown
 ## Evidence
-**Review:** ready with comments | high, 85% | claude-opus-5-5 + gpt-6.1-sol
+**Review:** ready with comments | high, 85% | standard: claude-opus-5-5 + gpt-6.1-sol
 
 | Verified | How | Result |
 |---|---|---|

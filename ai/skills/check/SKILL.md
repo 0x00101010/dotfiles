@@ -22,6 +22,7 @@ Run each command once, in the workspace's environment:
 - Remote slot (`workspace` reported an environment and path) → `envrun run <env> <path> <name> -- <cmd>`, then `envrun wait <env> <name>` (from a background process for anything over a minute). `<name>` is unique per command, e.g. `<repo>-<branch>-<command>-<n>`. The printed log tail and exit code are the result; `envrun tail` reads more. Runs live in tmux on the host, so a dropped connection loses nothing. Never build or test that repo locally.
 
 - A failing command → rerun just that command once. Passes the second time → `flaky`, naming the test; continue.
+- A command that fails on the environment, not the code (corrupt build cache, missing or misconfigured tool, auth or network timeout) → one targeted fix that changes no repo file (e.g. `cargo clean -p <crate>`), then rerun it once. Still failing → `env-failed`, naming the cause; stop like `red`, but never report it as `red`.
 - `baseline` (before any change): a command CI runs is red → stop and return `red`. A command CI does not run is red (a local-only linter, a version mismatch) → drop it for this run and list it under `Failures`.
 
 Never edit tests, assertions, lint config, or CI to make a check pass.
@@ -29,7 +30,7 @@ Never edit tests, assertions, lint config, or CI to make a check pass.
 ## Return
 
 ```text
-Check: green | red | flaky
+Check: green | red | flaky | env-failed
 Commands: <each command>
 Beyond CI: <verify journeys or other runs CI does not do, with results, or none>
 Failures: <first failure per failing command, or none>
